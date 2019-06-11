@@ -9,7 +9,16 @@ import gym
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
-ENVIRONMENT = "Qbert-v0"  # More games at: https://gym.openai.com/envs/#atari
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("environment")
+args = parser.parse_args()
+print(args.environment)
+
+
+
+ENVIRONMENT = args.environment  # More games at: https://gym.openai.com/envs/#atari
 AGENT_PATH = ""
 RENDER = False
 RENDER_SPEED = 0.04
