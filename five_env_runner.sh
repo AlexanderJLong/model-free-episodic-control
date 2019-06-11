@@ -2,9 +2,9 @@
 # Run an embarrassingly parallel job, where each command is totally independent
 # Uses gnu parallel as a task scheduler, then executes each task on the available cpus with pbsdsh
 
-#PBS -q expressbw
+#PBS -q normalbw
 #PBS -l ncpus=112
-#PBS -l walltime=00:30:00
+#PBS -l walltime=01:00:00
 #PBS -l mem=500gb
 #PBS -l wd
 
@@ -22,4 +22,4 @@ INPUTS=inputs.txt   # Each line in this file is used as arguments to ${SCRIPT}
 # Pbsdsh starts a very minimal shell. `bash -l` loads all of your startup files, so that things like modules work.
 # The `-c` is so that bash separates out the arguments correctly (otherwise they're all in a single string)
 
-parallel -j ${PBS_NCPUS} pbsdsh -n {%} -- bash -l -c "'${SCRIPT} {}'" :::: ${INPUTS}
+parallel -j $((${PBS_NCPUS}/28)) --rpl '{%} 1 $_=($job->slot()-1)*28' pbsdsh -n {%}  -- bash -l -c "'${SCRIPT} {}'" :::: ${INPUTS}
