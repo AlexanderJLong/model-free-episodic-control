@@ -2,13 +2,14 @@
 # Run an embarrassingly parallel job, where each command is totally independent
 # Uses gnu parallel as a task scheduler, then executes each task on the available cpus with pbsdsh
 
-#PBS -q normal
-#PBS -l ncpus=256
-#PBS -l walltime=48:00:00
+#PBS -q expressbw
+#PBS -l ncpus=112
+#PBS -l walltime=00:30:00
 #PBS -l mem=500gb
 #PBS -l wd
 
 module load parallel/20150322
+module load python3/3.6.7
 
 SCRIPT="python3 main.py"  # Script to run.
 INPUTS=inputs.txt   # Each line in this file is used as arguments to ${SCRIPT}
