@@ -10,7 +10,7 @@
 
 module load parallel/20150322
 
-SCRIPT=./script.sh  # Script to run.
+SCRIPT="python3 main.py"  # Script to run.
 INPUTS=inputs.txt   # Each line in this file is used as arguments to ${SCRIPT}
                     # It's fine to have more input lines than you have requested cpus,
                     # extra jobs will be executed as cpus become available

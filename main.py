@@ -9,14 +9,12 @@ import gym
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
-
 import argparse
+
 parser = argparse.ArgumentParser()
 parser.add_argument("environment")
 args = parser.parse_args()
 print(args.environment)
-
-
 
 ENVIRONMENT = args.environment  # More games at: https://gym.openai.com/envs/#atari
 AGENT_PATH = ""
