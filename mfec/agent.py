@@ -43,7 +43,7 @@ class MFECAgent:
         # Preprocess and project observation to state
         # obs_processed = np.mean(observation, axis=2)
         # obs_processed = imresize(obs_processed, size=self.size)
-        obs_processed = (observation[::2, ::2, 0] + observation[::2, ::2, 1] + observation[::2, ::2, 2]) / 3.0
+        obs_processed = (observation[:-42:2, ::2, 0] + observation[:-42:2, ::2, 1] + observation[:-42:2, ::2, 2]) / 3.0
 
         self.state = np.dot(self.projection, obs_processed.flatten())
 

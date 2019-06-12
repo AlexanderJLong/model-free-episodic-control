@@ -34,7 +34,7 @@ EPSILON = 0.005
 FRAMESKIP = 4  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0.0  # Default gym-setting is .25
 
-SCALE_HEIGHT = 105
+SCALE_HEIGHT = 84
 SCALE_WIDTH = 80
 STATE_DIMENSION = 64
 
@@ -92,7 +92,7 @@ def run_episode(agent, env):
     episode_frames = 0
     episode_reward = 0
 
-
+    env.seed(random.randint(0, 1000000))
     observation = env.reset()
 
     done = False
