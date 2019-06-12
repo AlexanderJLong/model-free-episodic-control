@@ -4,7 +4,7 @@
 
 #PBS -q normalbw
 #PBS -l ncpus=56
-#PBS -l walltime=01:00:00
+#PBS -l walltime=00:01:00
 #PBS -l mem=64gb
 #PBS -l wd
 
@@ -22,4 +22,10 @@ INPUTS=inputs.txt   # Each line in this file is used as arguments to ${SCRIPT}
 # Pbsdsh starts a very minimal shell. `bash -l` loads all of your startup files, so that things like modules work.
 # The `-c` is so that bash separates out the arguments correctly (otherwise they're all in a single string)
 
-parallel -j $((${PBS_NCPUS}/14)) --rpl '{%} 1 $_=($job->slot()-1)*14' pbsdsh -n {%}  -- bash -l -c "'${SCRIPT} {}'" :::: ${INPUTS}
+node_count=$((PBS_NCPUS/14))
+
+for node in $(seq 1 $node_count); do
+  pbsdsh -n $((node*14)) -- bash -l -c ${SCRIPT} &
+done
+
+wait
