@@ -2,7 +2,7 @@
 
 import os
 import random
-import time
+from time import gmtime, strftime
 
 import gym
 
@@ -21,8 +21,9 @@ AGENT_PATH = ""
 RENDER = False
 RENDER_SPEED = 0.04
 
-EPOCHS = 11
-FRAMES_PER_EPOCH = 500000
+EPOCHS = 10000000
+FRAMES_PER_EPOCH = 5000
+EPOCH_SAVE_FREQ = 300
 SEED = 42
 
 ACTION_BUFFER_SIZE = 1000000
@@ -42,7 +43,7 @@ def main():
     random.seed(SEED)
 
     # Create agent-directory
-    execution_time = str(round(time.time()))
+    execution_time = strftime("%Y-%m-%d-%H:%M:%S", gmtime())
     agent_dir = os.path.join("agents", ENVIRONMENT + "_" + execution_time)
     os.makedirs(agent_dir)
 
@@ -76,14 +77,15 @@ def main():
 
 def run_algorithm(agent, agent_dir, env, utils):
     frames_left = 0
-    for _ in range(EPOCHS):
+    for epoch in range(EPOCHS):
         frames_left += FRAMES_PER_EPOCH
         while frames_left > 0:
             episode_frames, episode_reward = run_episode(agent, env)
             frames_left -= episode_frames
             utils.end_episode(episode_frames, episode_reward)
         utils.end_epoch()
-        agent.save(agent_dir)
+        if epoch % EPOCH_SAVE_FREQ is 0:
+            agent.save(agent_dir)
 
 
 def run_episode(agent, env):
