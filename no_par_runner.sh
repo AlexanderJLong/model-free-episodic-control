@@ -8,7 +8,6 @@
 #PBS -l mem=64gb
 #PBS -l wd
 
-module load parallel/20150322five_env_runner.sh
 module load python3/3.6.7
 
 SCRIPT="module load python3/3.6.7; python3 main.py"  # Script to run.
