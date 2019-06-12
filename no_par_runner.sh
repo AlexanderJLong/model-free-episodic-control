@@ -24,7 +24,7 @@ INPUTS=inputs.txt   # Each line in this file is used as arguments to ${SCRIPT}
 node_count=$((PBS_NCPUS/14))
 
 for node in $(seq 1 $node_count); do
-  pbsdsh -n $((node*14)) -- bash -l -c ${SCRIPT} &
+  pbsdsh -n $((node*14)) -- bash -l -c "'${SCRIPT} {}'" :::: ${INPUTS}
 done
 
 wait
