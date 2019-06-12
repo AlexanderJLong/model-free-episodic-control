@@ -11,16 +11,16 @@ from mfec.qec import QEC
 
 class MFECAgent:
     def __init__(
-        self,
-        buffer_size,
-        k,
-        discount,
-        epsilon,
-        height,
-        width,
-        state_dimension,
-        actions,
-        seed,
+            self,
+            buffer_size,
+            k,
+            discount,
+            epsilon,
+            height,
+            width,
+            state_dimension,
+            actions,
+            seed,
     ):
         self.rs = np.random.RandomState(seed)
         self.size = (height, width)
@@ -41,8 +41,10 @@ class MFECAgent:
         self.time += 1
 
         # Preprocess and project observation to state
-        obs_processed = np.mean(observation, axis=2)
-        obs_processed = imresize(obs_processed, size=self.size)
+        # obs_processed = np.mean(observation, axis=2)
+        # obs_processed = imresize(obs_processed, size=self.size)
+        obs_processed = (observation[::2, ::2, 0] + observation[::2, ::2, 1] + observation[::2, ::2, 2]) / 3.0
+
         self.state = np.dot(self.projection, obs_processed.flatten())
 
         # Exploration
