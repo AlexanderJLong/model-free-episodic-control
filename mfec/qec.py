@@ -11,18 +11,17 @@ class QEC:
 
     def estimate(self, state, action):
         buffer = self.buffers[action]
-        state_index = buffer.find_state(state)
-
-        if state_index:
-            return buffer.values[state_index]
         if len(buffer) <= self.k:
             return float("inf")
 
         value = 0.0
         neighbors = buffer.find_neighbors(state, self.k)
-        for neighbor in neighbors:
-            value += buffer.values[neighbor]
-        return value / self.k
+        if np.allclose(buffer.states[neighbors[0]], state):
+            return buffer.values[neighbors[0]]
+        else:
+            for neighbor in neighbors:
+                value += buffer.values[neighbor]
+            return value / self.k
 
     def update(self, state, action, value, time):
         buffer = self.buffers[action]

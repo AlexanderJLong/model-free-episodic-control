@@ -8,7 +8,6 @@ from scipy.misc.pilutil import imresize
 
 from mfec.qec import QEC
 
-
 class MFECAgent:
     def __init__(
             self,
@@ -40,10 +39,10 @@ class MFECAgent:
     def choose_action(self, observation):
         self.time += 1
 
-        # Preprocess and project observation to state
-        # obs_processed = np.mean(observation, axis=2)
-        # obs_processed = imresize(obs_processed, size=self.size)
-        obs_processed = (observation[:-42:2, ::2, 0] + observation[:-42:2, ::2, 1] + observation[:-42:2, ::2, 2]) / 3.0
+        # Preprocess and project observation to state. Its faster manually than calling np.mean.
+        greyscale = (1 / 3) * observation[:, :, 0] + (1 / 3) * observation[:, :, 1] + (1 / 3) * observation[:, :, 2]
+        obs_processed = imresize(greyscale, size=self.size)
+        # pil_processed = np.array(Image.fromarray(greyscale).resize(size=self.size))
 
         self.state = np.dot(self.projection, obs_processed.flatten())
 
