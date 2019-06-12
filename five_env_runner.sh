@@ -4,7 +4,7 @@
 
 #PBS -q normalbw
 #PBS -l ncpus=56
-#PBS -l walltime=01:00:00
+#PBS -l walltime=24:00:00
 #PBS -l mem=64gb
 #PBS -l wd
 
