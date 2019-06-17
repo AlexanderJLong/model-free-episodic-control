@@ -2,7 +2,7 @@
 # Run an embarrassingly parallel job, where each command is totally independent
 # Uses gnu parallel as a task scheduler, then executes each task on the available cpus with pbsdsh
 
-#PBS -q normalbw
+#PBS -q normal
 #PBS -l ncpus=32
 #PBS -l walltime=72:00:00
 #PBS -l mem=32gb
