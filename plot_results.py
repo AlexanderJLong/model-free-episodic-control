@@ -2,34 +2,40 @@ import matplotlib.pyplot as plt
 from glob import glob
 import numpy as np
 import matplotlib
+import pandas as pd
+import seaborn as sns
 from matplotlib.pyplot import figure
+
+from plot import plot_data
 result_files = glob("./agents/*/results.csv")
 """
 structure is:
 time, frames, episodes, reward_avg, reward_max
  """
 
-
 data=[]
 
 for r in result_files:
-    data.append(np.genfromtxt(r, delimiter=",")[1:])
+    data = pd.read_csv(r, sep=',', header=0)
 
-f, axs = plt.subplots(2, 2, sharey=False)
-from scipy.ndimage.filters import gaussian_filter1d
+    smooth=50
+    if smooth > 1:
+        y = np.ones(smooth)
+        x = np.asarray(data[" reward_avg"])
+        z = np.ones(len(x))
+        smoothed_x = np.convolve(x, y, 'same') / np.convolve(z, y, 'same')
+        data[" reward_avg"] = smoothed_x
+    sns.set(style="darkgrid", font_scale=1.5)
+    sns.lineplot(data=data, x=" frames", y=" reward_avg", ci='sd')
+    xscale = np.max(np.asarray(data[' frames'])) > 5e3
+    if xscale:
+        # Just some formatting niceness: x-axis scale in scientific notation if max x is large
+        plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 
-plt.ticklabel_format(style='sci')
-for i, ax in enumerate(axs.flatten()):
-    ax.plot(data[i][:,1], data[i][:,3], alpha=0.15)
-    ax.set_title(result_files[i].split("/")[2])
+    plt.tight_layout(pad=0.5)
+    plt.title(r.split("/")[2])
+    plt.savefig("plots/"+r.split("/")[2])
 
-    ysmoothed = gaussian_filter1d(data[i][:,3], sigma=15)
-    ax.plot(data[i][:,1], ysmoothed)
+    plt.show()
 
-
-fig = matplotlib.pyplot.gcf()
-fig.set_size_inches(18.5, 10.5)
-plt.savefig("plot")
-plt.show()
-
-print(data[0][:,0])
+exit()
