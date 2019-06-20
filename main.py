@@ -22,11 +22,11 @@ RENDER = False
 RENDER_SPEED = 0.04
 
 EPOCHS = 10000000
-FRAMES_PER_EPOCH = 5000
+FRAMES_PER_EPOCH = 10000
 EPOCH_SAVE_FREQ = 300
 SEED = 42
 
-ACTION_BUFFER_SIZE = 1000000
+ACTION_BUFFER_SIZE = 100000
 K = 11
 DISCOUNT = 1
 EPSILON = 0.005
@@ -34,8 +34,8 @@ EPSILON = 0.005
 FRAMESKIP = 4  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0.0  # Default gym-setting is .25
 
-SCALE_HEIGHT = 105
-SCALE_WIDTH = 80
+SCALE_HEIGHT = 84
+SCALE_WIDTH = 84
 STATE_DIMENSION = 64
 
 
@@ -83,8 +83,7 @@ def run_algorithm(agent, agent_dir, env, utils):
             episode_frames, episode_reward = run_episode(agent, env)
             frames_left -= episode_frames
             utils.end_episode(episode_frames, episode_reward)
-        utils.end_epoch()
-        if epoch % EPOCH_SAVE_FREQ is 0:
+        if epoch % EPOCHS is 0:
             agent.save(agent_dir)
 
 
@@ -97,11 +96,6 @@ def run_episode(agent, env):
 
     done = False
     while not done:
-
-        if RENDER:
-            env.render()
-            time.sleep(RENDER_SPEED)
-
         action = agent.choose_action(observation)
         observation, reward, done, _ = env.step(action)
         agent.receive_reward(reward)
