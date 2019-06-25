@@ -16,7 +16,7 @@ parser.add_argument("environment")
 args = parser.parse_args()
 print(args.environment)
 
-ENVIRONMENT = args.environment  # More games at: https://gym.openai.com/envs/#atari
+ENVIRONMENT = "CartPole-v0"  # More games at: https://gym.openai.com/envs/#atari
 AGENT_PATH = ""
 RENDER = False
 RENDER_SPEED = 0.04
@@ -34,8 +34,6 @@ EPSILON = 0.005
 FRAMESKIP = 4  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0.0  # Default gym-setting is .25
 
-SCALE_HEIGHT = 84
-SCALE_WIDTH = 84
 STATE_DIMENSION = 16
 
 
@@ -52,8 +50,6 @@ def main():
     env = gym.make(ENVIRONMENT)
 
     try:
-        env.env.frameskip = FRAMESKIP
-        env.env.ale.setFloat("repeat_action_probability", REPEAT_ACTION_PROB)
         if AGENT_PATH:
             agent = MFECAgent.load(AGENT_PATH)
         else:
