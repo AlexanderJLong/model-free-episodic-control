@@ -1,24 +1,21 @@
 import matplotlib.pyplot as plt
 from glob import glob
 import numpy as np
-import matplotlib
 import pandas as pd
 import seaborn as sns
-from matplotlib.pyplot import figure
 
-from plot import plot_data
 result_files = glob("./agents/*/results.csv")
 """
 structure is:
 time, frames, episodes, reward_avg, reward_max
  """
 
-data=[]
+data = []
 
 for r in result_files:
     data = pd.read_csv(r, sep=',', header=0)
 
-    smooth=50
+    smooth = 50
     if smooth > 1:
         y = np.ones(smooth)
         x = np.asarray(data[" reward_avg"])
@@ -34,7 +31,7 @@ for r in result_files:
 
     plt.tight_layout(pad=0.5)
     plt.title(r.split("/")[2])
-    plt.savefig("plots/"+r.split("/")[2])
+    plt.savefig("plots/" + r.split("/")[2])
 
     plt.show()
 

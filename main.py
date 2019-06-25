@@ -36,7 +36,7 @@ REPEAT_ACTION_PROB = 0.0  # Default gym-setting is .25
 
 SCALE_HEIGHT = 84
 SCALE_WIDTH = 84
-STATE_DIMENSION = 64
+STATE_DIMENSION = 16
 
 
 def main():
