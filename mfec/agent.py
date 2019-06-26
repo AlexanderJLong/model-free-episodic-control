@@ -40,9 +40,7 @@ class MFECAgent:
         self.time += 1
 
         # Preprocess and project observation to state
-        obs_processed = np.mean(observation, axis=2)
-        obs_processed = imresize(obs_processed, size=self.size)
-        self.state = np.dot(self.projection, obs_processed.flatten())
+        self.state = np.dot(self.projection, np.asarray(observation).flatten())
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:

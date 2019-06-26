@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+#from pyvirtualdisplay import Display
+#
+#display = Display(visible=0, size=(80, 60))
+#display.start()
+
+
 import os
 import random
 from time import gmtime, strftime
@@ -16,7 +22,7 @@ parser.add_argument("environment")
 args = parser.parse_args()
 print(args.environment)
 
-ENVIRONMENT = "CartPole-v0"  # More games at: https://gym.openai.com/envs/#atari
+ENVIRONMENT = "CartPole-v0"
 AGENT_PATH = ""
 RENDER = False
 RENDER_SPEED = 0.04
@@ -26,15 +32,15 @@ FRAMES_PER_EPOCH = 10000
 EPOCH_SAVE_FREQ = 300
 SEED = 42
 
-ACTION_BUFFER_SIZE = 100000
-K = 11
-DISCOUNT = 1
+ACTION_BUFFER_SIZE = 10_000
+K = 5
+DISCOUNT = 0.5
 EPSILON = 0.005
 
 FRAMESKIP = 4  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0.0  # Default gym-setting is .25
 
-STATE_DIMENSION = 16
+STATE_DIMENSION = 640
 
 
 def main():
@@ -48,6 +54,11 @@ def main():
     # Initialize utils, environment and agent
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
     env = gym.make(ENVIRONMENT)
+    from cartpole_wrapper import pixel_state_wrapper
+    env = pixel_state_wrapper(env)
+
+    print(env.observation_space.shape)
+    SCALE_HEIGHT, SCALE_WIDTH = env.observation_space.shape
 
     try:
         if AGENT_PATH:
