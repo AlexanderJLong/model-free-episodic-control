@@ -3,13 +3,15 @@
 # Uses gnu parallel as a task scheduler, then executes each task on the available cpus with pbsdsh
 
 #PBS -q normal
-#PBS -l ncpus=32
+#PBS -l ncpus=8
 #PBS -l walltime=48:00:00
 #PBS -l mem=32gb
 #PBS -l wd
 
 module load parallel/20150322
 module load python3/3.6.7
+
+export OMP_NUM_THREADS=8
 
 SCRIPT="module load python3/3.6.7; python3 main.py"  # Script to run.
 INPUTS=inputs.txt   # Each line in this file is used as arguments to ${SCRIPT}
