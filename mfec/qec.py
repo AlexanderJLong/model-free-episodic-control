@@ -16,7 +16,7 @@ class QEC:
 
         value = 0.0
         neighbors = buffer.find_neighbors(state, self.k)
-        if np.array_equal(buffer.states[neighbors[0]], state):
+        if np.allclose(buffer.states[neighbors[0]], state):
             return buffer.values[neighbors[0]]
         else:
             for neighbor in neighbors:

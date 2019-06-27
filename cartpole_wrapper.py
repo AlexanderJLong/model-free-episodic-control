@@ -4,7 +4,7 @@ from gym import spaces
 from collections import deque
 
 class Pixels(gym.ObservationWrapper):
-    def __init__(self, env, downsize=2):
+    def __init__(self, env, downsize=1):
         """
         Origional: 160x600
         """
@@ -113,5 +113,5 @@ def pixel_state_wrapper(env, greyscale=True, difference=True, scale=True):
     """
     if greyscale:
         env = Pixels(env)
-        env= FrameStack(env)
+        #env= FrameStack(env)
     return env

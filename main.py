@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-#from pyvirtualdisplay import Display
-#
-#display = Display(visible=0, size=(80, 60))
-#display.start()
+from pyvirtualdisplay import Display
+
+display = Display(visible=0, size=(80, 60))
+display.start()
 
 
 import os
@@ -32,15 +32,18 @@ FRAMES_PER_EPOCH = 10000
 EPOCH_SAVE_FREQ = 300
 SEED = 42
 
-ACTION_BUFFER_SIZE = 10_000
+ACTION_BUFFER_SIZE = 100_000
 K = 5
-DISCOUNT = 0.5
+DISCOUNT = 1
 EPSILON = 0.005
 
 FRAMESKIP = 4  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0.0  # Default gym-setting is .25
 
-STATE_DIMENSION = 640
+SCALE_HEIGHT = 84
+SCALE_WIDTH = 84
+STATE_DIMENSION = 64
+
 
 
 def main():
@@ -56,9 +59,6 @@ def main():
     env = gym.make(ENVIRONMENT)
     from cartpole_wrapper import pixel_state_wrapper
     env = pixel_state_wrapper(env)
-
-    print(env.observation_space.shape)
-    SCALE_HEIGHT, SCALE_WIDTH = env.observation_space.shape
 
     try:
         if AGENT_PATH:
