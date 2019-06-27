@@ -27,7 +27,7 @@ class MFECAgent:
         self.actions = actions
         self.qec = QEC(self.actions, buffer_size, k)
         self.projection = self.rs.randn(
-            state_dimension, height * width
+            state_dimension, 4
         ).astype(np.float32)
         self.discount = discount
         self.epsilon = epsilon
@@ -40,8 +40,7 @@ class MFECAgent:
         self.time += 1
 
         # Preprocess and project observation to state
-        obs_processed = imresize(observation, size=self.size)
-        self.state = np.dot(self.projection, obs_processed.flatten())
+        self.state = np.dot(self.projection, observation)
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:

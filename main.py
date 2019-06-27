@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-from pyvirtualdisplay import Display
-
-display = Display(visible=0, size=(80, 60))
-display.start()
+#from pyvirtualdisplay import Display
+#
+#display = Display(visible=0, size=(80, 60))
+#display.start()
 
 
 import os
@@ -57,8 +57,7 @@ def main():
     # Initialize utils, environment and agent
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
     env = gym.make(ENVIRONMENT)
-    from cartpole_wrapper import pixel_state_wrapper
-    env = pixel_state_wrapper(env)
+
 
     try:
         if AGENT_PATH:
