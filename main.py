@@ -14,9 +14,11 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("environment")
 parser.add_argument("seed", type=int)
+parser.add_argument("dim", type=int)
 args = parser.parse_args()
 print(args.environment)
-print("SEED: ",args.seed)
+print("SEED: ", args.seed)
+print("DIM: ", args.dim)
 
 ENVIRONMENT = args.environment  # More games at: https://gym.openai.com/envs/#atari
 AGENT_PATH = ""
@@ -38,7 +40,7 @@ REPEAT_ACTION_PROB = 0.0  # Default gym-setting is .25
 
 SCALE_HEIGHT = 84
 SCALE_WIDTH = 84
-STATE_DIMENSION = 16
+STATE_DIMENSION = args.dim
 
 
 def main():
@@ -46,7 +48,7 @@ def main():
 
     # Create agent-directory
     execution_time = strftime("%Y-%m-%d-%H%M%S", gmtime())
-    agent_dir = os.path.join("agents", ENVIRONMENT + "_" + execution_time+"_SEED_"+str(SEED))
+    agent_dir = os.path.join("agents", ENVIRONMENT + "_" + execution_time + "_SEED_" + str(SEED)+ "_DIM_" + str(STATE_DIMENSION))
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent

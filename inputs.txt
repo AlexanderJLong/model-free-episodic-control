@@ -1,12 +1,48 @@
-Qbert-v0  1
-MsPacman-v0 1
-SpaceInvaders-v0 1
-Frostbite-v0 1
-Qbert-v0 2
-MsPacman-v0 2
-SpaceInvaders-v0 2
-Frostbite-v0 2
-Qbert-v0 3
-MsPacman-v0 3
-SpaceInvaders-v0 3
-Frostbite-v0 3
+Qbert-v0  1 16
+MsPacman-v0 1 16
+SpaceInvaders-v0 1 16
+Frostbite-v0 1 16
+Qbert-v0 2 16
+MsPacman-v0 2 16
+SpaceInvaders-v0 2 16
+Frostbite-v0 2 16
+Qbert-v0 3 16
+MsPacman-v0 3 16
+SpaceInvaders-v0 3 16
+Frostbite-v0 3 16
+Qbert-v0  1 32
+MsPacman-v0 1 32
+SpaceInvaders-v0 1 32
+Frostbite-v0 1 32
+Qbert-v0 2 32
+MsPacman-v0 2 32
+SpaceInvaders-v0 2 32
+Frostbite-v0 2 32
+Qbert-v0 3 32
+MsPacman-v0 3 32
+SpaceInvaders-v0 3 32
+Frostbite-v0 3 32
+Qbert-v0  1 64
+MsPacman-v0 1 64
+SpaceInvaders-v0 1 64
+Frostbite-v0 1 64
+Qbert-v0 2 64
+MsPacman-v0 2 64
+SpaceInvaders-v0 2 64
+Frostbite-v0 2 64
+Qbert-v0 3 64
+MsPacman-v0 3 64
+SpaceInvaders-v0 3 64
+Frostbite-v0 3 64
+Qbert-v0  1 128
+MsPacman-v0 1 128
+SpaceInvaders-v0 1 128
+Frostbite-v0 1 128
+Qbert-v0 2 128
+MsPacman-v0 2 128
+SpaceInvaders-v0 2 128
+Frostbite-v0 2 128
+Qbert-v0 3 128
+MsPacman-v0 3 128
+SpaceInvaders-v0 3 128
+Frostbite-v0 3 128
