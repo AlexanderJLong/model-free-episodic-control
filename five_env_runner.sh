@@ -5,7 +5,7 @@
 #PBS -q normalbw
 #PBS -l ncpus=252
 #PBS -l walltime=48:00:00
-#PBS -l mem=132gb
+#PBS -l mem=128gb
 #PBS -l wd
 
 module load parallel/20150322
