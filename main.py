@@ -13,8 +13,10 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("environment")
+parser.add_argument("seed", type=int)
 args = parser.parse_args()
 print(args.environment)
+print("SEED: ",args.seed)
 
 ENVIRONMENT = args.environment  # More games at: https://gym.openai.com/envs/#atari
 AGENT_PATH = ""
@@ -24,7 +26,7 @@ RENDER_SPEED = 0.04
 EPOCHS = 10000000
 FRAMES_PER_EPOCH = 10000
 EPOCH_SAVE_FREQ = 300
-SEED = 42
+SEED = args.seed
 
 ACTION_BUFFER_SIZE = 100000
 K = 11
@@ -44,7 +46,7 @@ def main():
 
     # Create agent-directory
     execution_time = strftime("%Y-%m-%d-%H%M%S", gmtime())
-    agent_dir = os.path.join("agents", ENVIRONMENT + "_" + execution_time)
+    agent_dir = os.path.join("agents", ENVIRONMENT + "_" + execution_time+"_SEED_"+str(SEED))
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent

@@ -1,4 +1,12 @@
-Qbert-v0
-MsPacman-v0
-SpaceInvaders-v0
-Frostbite-v0
+Qbert-v0  1
+MsPacman-v0 1
+SpaceInvaders-v0 1
+Frostbite-v0 1
+Qbert-v0 2
+MsPacman-v0 2
+SpaceInvaders-v0 2
+Frostbite-v0 2
+Qbert-v0 3
+MsPacman-v0 3
+SpaceInvaders-v0 3
+Frostbite-v0 3
