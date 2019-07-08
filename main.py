@@ -48,7 +48,7 @@ STATE_DIMENSION = 64
 def main(SEED):
     # Create agent-directory
     execution_time = strftime("%Y-%m-%d-%H%M%S", gmtime())
-    agent_dir = os.path.join("agents", ENVIRONMENT + "_" + str(SEED) + execution_time)
+    agent_dir = os.path.join("agents", f"{ENVIRONMENT}_{execution_time}_SEED_{SEED}")
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent
