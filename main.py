@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-#from pyvirtualdisplay import Display
+# from pyvirtualdisplay import Display
 #
-#display = Display(visible=0, size=(80, 60))
-#display.start()
+# display = Display(visible=0, size=(80, 60))
+# display.start()
 
 
 import os
@@ -16,6 +16,7 @@ from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
 import argparse
+from multiprocessing import Pool
 
 parser = argparse.ArgumentParser()
 parser.add_argument("environment")
@@ -30,7 +31,6 @@ RENDER_SPEED = 0.04
 EPOCHS = 10000000
 FRAMES_PER_EPOCH = 10000
 EPOCH_SAVE_FREQ = 300
-SEED = 42
 
 ACTION_BUFFER_SIZE = 100_000
 K = 5
@@ -45,19 +45,15 @@ SCALE_WIDTH = 84
 STATE_DIMENSION = 64
 
 
-
-def main():
-    random.seed(SEED)
-
+def main(SEED):
     # Create agent-directory
     execution_time = strftime("%Y-%m-%d-%H%M%S", gmtime())
-    agent_dir = os.path.join("agents", ENVIRONMENT + "_" + execution_time)
+    agent_dir = os.path.join("agents", ENVIRONMENT + "_" + str(SEED) + execution_time)
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
     env = gym.make(ENVIRONMENT)
-
 
     try:
         if AGENT_PATH:
@@ -114,4 +110,5 @@ def run_episode(agent, env):
 
 
 if __name__ == "__main__":
-    main()
+    with Pool(3) as p:
+        p.map(main, [1, 2, 3])
