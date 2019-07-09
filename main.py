@@ -5,6 +5,14 @@
 # display = Display(visible=0, size=(80, 60))
 # display.start()
 
+"""
+HOW TO RUN:
+This file will run with the command args provided, or will use thier
+defaults if not provided, over 3 random seeds, with one thread per run
+
+To do a grid search, you can write a run script that calls this fn
+with different arugments. k
+"""
 
 import os
 import random
@@ -28,11 +36,11 @@ AGENT_PATH = ""
 RENDER = False
 RENDER_SPEED = 0.04
 
-EPOCHS = 10000000
-FRAMES_PER_EPOCH = 1000
+EPOCHS = 35
+FRAMES_PER_EPOCH = 400
 
 ACTION_BUFFER_SIZE = 100_000
-K = 5
+K = 17
 DISCOUNT = 1
 EPSILON = 0.005
 
@@ -47,7 +55,10 @@ STATE_DIMENSION = 64
 def main(SEED):
     # Create agent-directory
     execution_time = strftime("%Y-%m-%d-%H%M%S", gmtime())
-    agent_dir = os.path.join("agents", f"{ENVIRONMENT}_{execution_time}_SEED_{SEED}")
+    agent_dir = os.path.join(
+        "agents",
+        f"{ENVIRONMENT}_{execution_time}_K={K}_SEED={SEED}"
+    )
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent

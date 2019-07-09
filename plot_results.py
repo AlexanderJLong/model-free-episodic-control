@@ -3,15 +3,16 @@ from glob import glob
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import re
 
-base_dir = glob("./agents/*SEED_1*/")
-base_dir = base_dir[-1][:-2] #get last run and strip off the seed
 """
 structure is:
 time, frames, episodes, reward_avg, reward_max
 
-filenames are: ..._SEED_1
+filenames are: ..._K=1_SEED=1
  """
+
+
 def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condition1", smooth=1, **kwargs):
     if smooth > 1:
         """
@@ -24,20 +25,27 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
         for datum in data:
             x = np.asarray(datum[value])
             z = np.ones(len(x))
-            smoothed_x = np.convolve(x,y,'same') / np.convolve(z,y,'same')
+            smoothed_x = np.convolve(x, y, 'same') / np.convolve(z, y, 'same')
             datum[value] = smoothed_x
 
     if isinstance(data, list):
         data = pd.concat(data, ignore_index=True)
     print(data)
     sns.set(style="darkgrid", font_scale=1.5)
-    sns.lineplot(data=data, x=xaxis, y=value, ci='sd', estimator=np.mean, **kwargs)
+    plot = sns.lineplot(data=data,
+                 x=xaxis,
+                 y=value,
+                 ci='sd',
+                 estimator=np.mean,
+                 hue="K",
+                 palette=sns.color_palette("Set1", 5),
+                 **kwargs)
     """
     If you upgrade to any version of Seaborn greater than 0.8.1, switch from 
     tsplot to lineplot replacing L29 with:
     Changes the colorscheme and the default legend style, though.
     """
-    #plt.legend(loc='best').set_draggable(True)
+    # plt.legend(loc='best').set_draggable(True)
 
     """
     For the version of the legend used in the Spinning Up benchmarking page, 
@@ -45,49 +53,27 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
     plt.legend(loc='upper center', ncol=6, handlelength=1,
                mode="expand", borderaxespad=0., prop={'size': 13})
     """
-
+    axes = plot.axes
+    axes.set_xlim(0, )
+    plt.tight_layout(pad=0.5)
+    plt.xlim(0, None)
     xscale = np.max(np.asarray(data[xaxis])) > 5e3
-    if xscale:
-        # Just some formatting niceness: x-axis scale in scientific notation if max x is large
-        plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-    plt.show()
-plt.tight_layout(pad=0.5)
-
-data = []
-
-files = glob(base_dir+"*/results.csv")
-print(files)
-
-
-for f in files:
-    data.append(pd.read_csv(f, sep=',', header=0))
-
-
-plot_data(data, smooth=1)
-exit()
-for smooth in [1, 10]:
-    if smooth > 1:
-        y = np.ones(smooth)
-        x = np.asarray(data["reward_avg"])
-        z = np.ones(len(x))
-        smoothed_x = np.convolve(x, y, 'same') / np.convolve(z, y, 'same')
-        try:
-            data["reward_avg"] = smoothed_x
-        except ValueError:
-            continue
-    sns.set(style="darkgrid", font_scale=1.5)
-    sns.lineplot(data=data, x="frames", y="reward_avg", ci='sd')
-    xscale = np.max(np.asarray(data['episodes'])) > 5e3
     if xscale:
         # Just some formatting niceness: x-axis scale in scientific notation if max x is large
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 
-    plt.tight_layout(pad=0.5)
-    title = base_dir.split("/")[2]+"-smoothed"+str(smooth)
-    plt.title(title)
-    plt.savefig("plots/" + title)
-    print(base_dir)
-    plt.show()
 
+data = []
+base_dirs = glob("./agents/*SEED=1*/")
+for i in range(0, len(base_dirs)):
+    base_dir = base_dirs[i][:-2]  # get current run and strip off the seed
+    files = glob(base_dir + "*/results.csv")
+    print(files)
 
-exit()
+    for f in files:
+        table = pd.read_csv(f, sep=',', header=0)
+        table.insert(len(table.columns), 'K', re.findall(r'\d+', f)[-2])
+        table.insert(len(table.columns), 'SEED', re.findall(r'\d+', f)[-1])
+        data.append(table)
+plot_data(data, smooth=10)
+plt.show()
