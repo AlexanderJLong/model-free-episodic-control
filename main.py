@@ -29,15 +29,14 @@ RENDER = False
 RENDER_SPEED = 0.04
 
 EPOCHS = 10000000
-FRAMES_PER_EPOCH = 10000
-EPOCH_SAVE_FREQ = 300
+FRAMES_PER_EPOCH = 1000
 
 ACTION_BUFFER_SIZE = 100_000
 K = 5
 DISCOUNT = 1
 EPSILON = 0.005
 
-FRAMESKIP = 4  # Default gym-setting is (2, 5)
+FRAMESKIP = 1  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0.0  # Default gym-setting is .25
 
 SCALE_HEIGHT = 84
@@ -79,14 +78,14 @@ def main(SEED):
 
 def run_algorithm(agent, agent_dir, env, utils):
     frames_left = 0
-    for epoch in range(EPOCHS):
+    for _ in range(EPOCHS):
         frames_left += FRAMES_PER_EPOCH
         while frames_left > 0:
             episode_frames, episode_reward = run_episode(agent, env)
             frames_left -= episode_frames
             utils.end_episode(episode_frames, episode_reward)
-        if epoch % EPOCHS is 0:
-            agent.save(agent_dir)
+        utils.end_epoch()
+        #agent.save(agent_dir)
 
 
 def run_episode(agent, env):

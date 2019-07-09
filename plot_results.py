@@ -12,7 +12,7 @@ time, frames, episodes, reward_avg, reward_max
 
 filenames are: ..._SEED_1
  """
-def plot_data(data, xaxis='episodes', value="reward_avg", condition="Condition1", smooth=1, **kwargs):
+def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condition1", smooth=1, **kwargs):
     if smooth > 1:
         """
         smooth data with moving window average.

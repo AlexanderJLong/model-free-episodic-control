@@ -8,18 +8,19 @@ from scipy.misc.pilutil import imresize
 
 from mfec.qec import QEC
 
+
 class MFECAgent:
     def __init__(
-            self,
-            buffer_size,
-            k,
-            discount,
-            epsilon,
-            height,
-            width,
-            state_dimension,
-            actions,
-            seed,
+        self,
+        buffer_size,
+        k,
+        discount,
+        epsilon,
+        height,
+        width,
+        state_dimension,
+        actions,
+        seed,
     ):
         self.rs = np.random.RandomState(seed)
         self.size = (height, width)
