@@ -13,7 +13,7 @@ filenames are: ..._K=1_SEED=1
  """
 
 
-def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condition1", smooth=1, **kwargs):
+def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condition1", smooth=1, n=1, **kwargs):
     if smooth > 1:
         """
         smooth data with moving window average.
@@ -30,15 +30,14 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
 
     if isinstance(data, list):
         data = pd.concat(data, ignore_index=True)
-    print(data)
     sns.set(style="darkgrid", font_scale=1.5)
     plot = sns.lineplot(data=data,
                  x=xaxis,
                  y=value,
                  ci='sd',
                  estimator=np.mean,
-                 hue="K",
-                 palette=sns.color_palette("Set1", 5),
+                 hue="DIM",
+                 palette=sns.color_palette("Set1", n),
                  **kwargs)
     """
     If you upgrade to any version of Seaborn greater than 0.8.1, switch from 
@@ -54,6 +53,7 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
                mode="expand", borderaxespad=0., prop={'size': 13})
     """
     axes = plot.axes
+    plot.set_title(TITLE)
     axes.set_xlim(0, )
     plt.tight_layout(pad=0.5)
     plt.xlim(0, None)
@@ -64,7 +64,11 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
 
 
 data = []
-base_dirs = glob("./agents/*SEED=1*/")
+TITLE = "underlying"
+if TITLE:
+    base_dirs = glob("./agents/*" + TITLE + "*SEED=1*/")
+else:
+    base_dirs = glob("./agents/*SEED=1*/")
 for i in range(0, len(base_dirs)):
     base_dir = base_dirs[i][:-2]  # get current run and strip off the seed
     files = glob(base_dir + "*/results.csv")
@@ -74,6 +78,7 @@ for i in range(0, len(base_dirs)):
         table = pd.read_csv(f, sep=',', header=0)
         table.insert(len(table.columns), 'K', re.findall(r'\d+', f)[-2])
         table.insert(len(table.columns), 'SEED', re.findall(r'\d+', f)[-1])
+        table.insert(len(table.columns), 'DIM', re.findall(r'\d+', f)[-3])
         data.append(table)
-plot_data(data, smooth=10)
+plot_data(data, smooth=10, n=len(base_dirs))
 plt.show()

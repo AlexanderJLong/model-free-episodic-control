@@ -19,6 +19,7 @@ import random
 from time import gmtime, strftime
 
 import gym
+import itertools
 
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
@@ -31,16 +32,17 @@ parser.add_argument("environment")
 args = parser.parse_args()
 print(args.environment)
 
+TITLE = "underlying_state_projected"
 ENVIRONMENT = "CartPole-v0"
 AGENT_PATH = ""
 RENDER = False
 RENDER_SPEED = 0.04
 
-EPOCHS = 35
+EPOCHS = 300
 FRAMES_PER_EPOCH = 400
 
 ACTION_BUFFER_SIZE = 100_000
-K = 17
+K = 15
 DISCOUNT = 1
 EPSILON = 0.005
 
@@ -49,16 +51,24 @@ REPEAT_ACTION_PROB = 0.0  # Default gym-setting is .25
 
 SCALE_HEIGHT = 84
 SCALE_WIDTH = 84
-STATE_DIMENSION = 64
 
 
-def main(SEED):
+# STATE_DIMENSION = 4
+
+
+def main(STATE_DIMENSION, SEED):
     # Create agent-directory
     execution_time = strftime("%Y-%m-%d-%H%M%S", gmtime())
-    agent_dir = os.path.join(
-        "agents",
-        f"{ENVIRONMENT}_{execution_time}_K={K}_SEED={SEED}"
-    )
+    if TITLE:
+        agent_dir = os.path.join(
+            "agents",
+            TITLE + f"_DIM={STATE_DIMENSION}_K={K}_SEED={SEED}"
+        )
+    else:
+        agent_dir = os.path.join(
+            "agents",
+            f"{ENVIRONMENT}_{execution_time}_DIM={STATE_DIMENSION}_K={K}_SEED={SEED}"
+        )
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent
@@ -96,7 +106,7 @@ def run_algorithm(agent, agent_dir, env, utils):
             frames_left -= episode_frames
             utils.end_episode(episode_frames, episode_reward)
         utils.end_epoch()
-        #agent.save(agent_dir)
+        # agent.save(agent_dir)
 
 
 def run_episode(agent, env):
@@ -120,5 +130,7 @@ def run_episode(agent, env):
 
 
 if __name__ == "__main__":
-    with Pool(3) as p:
-        p.map(main, [1, 2, 3])
+    ARG1 = [2, 4, 8, 32, 64]
+    ARG2 = [1, 2, 3]
+    with Pool(20) as p:
+        p.starmap(main, itertools.product(ARG1, ARG2))

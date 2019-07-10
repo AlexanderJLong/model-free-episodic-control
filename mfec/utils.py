@@ -28,7 +28,7 @@ class Utils:
             self.epoch_reward_max = episode_reward
         self.total_frames += episode_frames
 
-        message = "Epoch:{}\tEpisode: {}\tReward: {}\tEpoch-Frames: {}/{}"
+        message = "Epoch: {}\tEpisode: {}\tReward: {}\tEpoch-Frames: {}/{}"
         results = [
             self.epoch,
             self.epoch_episodes,

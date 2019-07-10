@@ -5,7 +5,7 @@
       <paths name="alex@alexlong-gpu.cse.unsw.edu.au:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/alex/Code/model-free-episodic-control" local="$PROJECT_DIR$" />
+            <mapping deploy="Code/model-free-episodic-control" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
