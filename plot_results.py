@@ -64,7 +64,7 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
 
 
 data = []
-TITLE = "singe"
+TITLE = "and_diff"
 if TITLE:
     base_dirs = glob("./agents/*" + TITLE + "*SEED=1*/")
 else:

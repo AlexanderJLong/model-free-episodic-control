@@ -43,6 +43,37 @@ class Pixels(gym.ObservationWrapper):
         screen = screen[::self.ds, ::self.ds]
         return screen
 
+class OrigionalPlusDiff(gym.Wrapper):
+    def __init__(self, env):
+        """Stack k last frames.
+
+        Returns lazy array, which is much more memory efficient.
+
+        See Also
+        --------
+        baselines.common.atari_wrappers.LazyFrames
+        """
+        gym.Wrapper.__init__(self, env)
+        self.frames = deque([], maxlen=2)
+        shp = env.observation_space.shape
+        self.observation_space = spaces.Box(low=0, high=1, shape=(shp[0]*2, shp[1]), dtype=np.float16)
+
+    def reset(self):
+        ob = self.env.reset()
+        for _ in range(2):
+            self.frames.append(ob)
+        return self._get_ob()
+
+    def step(self, action):
+        ob, reward, done, info = self.env.step(action)
+        self.frames.append(ob)
+        return self._get_ob(), reward, done, info
+
+    def _get_ob(self):
+        assert len(self.frames) == 2
+        diff = self.frames[-1]-self.frames[-2]
+        out = np.concatenate([diff, self.frames[-1]])
+        return out
 
 class FrameStack(gym.Wrapper):
     def __init__(self, env, k=2):
@@ -113,5 +144,5 @@ def pixel_state_wrapper(env, greyscale=True, difference=True, scale=True):
     """
     if greyscale:
         env = Pixels(env)
-        #env= FrameStack(env)
+        env= OrigionalPlusDiff(env)
     return env
