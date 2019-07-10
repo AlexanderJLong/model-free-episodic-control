@@ -64,7 +64,7 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
 
 
 data = []
-TITLE = "underlying"
+TITLE = "singe"
 if TITLE:
     base_dirs = glob("./agents/*" + TITLE + "*SEED=1*/")
 else:
@@ -80,5 +80,9 @@ for i in range(0, len(base_dirs)):
         table.insert(len(table.columns), 'SEED', re.findall(r'\d+', f)[-1])
         table.insert(len(table.columns), 'DIM', re.findall(r'\d+', f)[-3])
         data.append(table)
+
+print(data)
 plot_data(data, smooth=10, n=len(base_dirs))
 plt.show()
+plt.gcf()
+plt.savefig("./plots/"+TITLE+".png")

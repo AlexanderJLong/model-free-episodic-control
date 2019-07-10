@@ -4,7 +4,7 @@ from gym import spaces
 from collections import deque
 
 class Pixels(gym.ObservationWrapper):
-    def __init__(self, env, downsize=1):
+    def __init__(self, env, downsize=2):
         """
         Origional: 160x600
         """

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-# from pyvirtualdisplay import Display
+from pyvirtualdisplay import Display
 #
-# display = Display(visible=0, size=(80, 60))
-# display.start()
+display = Display(visible=0, size=(80, 60))
+display.start()
 
 """
 HOW TO RUN:
@@ -32,7 +32,7 @@ parser.add_argument("environment")
 args = parser.parse_args()
 print(args.environment)
 
-TITLE = "underlying_state_projected"
+TITLE = "singe_param_pixels-ds=2-centered-nostack"
 ENVIRONMENT = "CartPole-v0"
 AGENT_PATH = ""
 RENDER = False
@@ -49,8 +49,6 @@ EPSILON = 0.005
 FRAMESKIP = 1  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0.0  # Default gym-setting is .25
 
-SCALE_HEIGHT = 84
-SCALE_WIDTH = 84
 
 
 # STATE_DIMENSION = 4
@@ -74,6 +72,11 @@ def main(STATE_DIMENSION, SEED):
     # Initialize utils, environment and agent
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
     env = gym.make(ENVIRONMENT)
+    from cartpole_wrapper import pixel_state_wrapper
+    env = pixel_state_wrapper(env)
+
+    print(env.observation_space.shape)
+    SCALE_HEIGHT, SCALE_WIDTH = env.observation_space.shape
 
     try:
         if AGENT_PATH:
@@ -130,7 +133,7 @@ def run_episode(agent, env):
 
 
 if __name__ == "__main__":
-    ARG1 = [2, 4, 8, 32, 64]
+    ARG1 = [32]
     ARG2 = [1, 2, 3]
     with Pool(20) as p:
         p.starmap(main, itertools.product(ARG1, ARG2))
