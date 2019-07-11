@@ -32,7 +32,7 @@ parser.add_argument("environment")
 args = parser.parse_args()
 print(args.environment)
 
-TITLE = "singe_param_pixels_and_diff-ds=4-centered-nostack"
+TITLE = "no_centering_pixels _and_diff-ds=8"
 ENVIRONMENT = "CartPole-v0"
 AGENT_PATH = ""
 RENDER = False

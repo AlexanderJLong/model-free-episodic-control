@@ -4,13 +4,17 @@ from gym import spaces
 from collections import deque
 
 class Pixels(gym.ObservationWrapper):
-    def __init__(self, env, downsize):
+    def __init__(self, env, downsize, centering):
         """
         Origional: 160x600
         """
         gym.ObservationWrapper.__init__(self, env)
         self.ds = downsize
-        self.observation_space = spaces.Box(low=0, high=255, shape=(160//self.ds, 360//self.ds), dtype=np.uint16)
+        self.centering = centering
+        if centering:
+            self.observation_space = spaces.Box(low=0, high=255, shape=(160//self.ds, 360//self.ds), dtype=np.uint16)
+        else:
+            self.observation_space = spaces.Box(low=0, high=255, shape=(160//self.ds, 600//self.ds), dtype=np.uint16)
 
     def get_cart_location(self, screen_width):
         world_width = self.env.x_threshold * 2
@@ -24,20 +28,22 @@ class Pixels(gym.ObservationWrapper):
         # Cart is in the lower half, so strip off the top and bottom of the screen
         screen_height, screen_width = screen.shape
         screen = screen[int(screen_height * 0.4):int(screen_height * 0.8):, ::]
-        # Convert to float, rescale, convert to torch tensor
-        # (this doesn't require a copy)
 
-        view_width = int(screen_width * 0.6)
-        cart_location = self.get_cart_location(screen_width)
-        if cart_location < view_width // 2:
-            slice_range = slice(view_width)
-        elif cart_location > (screen_width - view_width // 2):
-            slice_range = slice(-view_width, None)
-        else:
-            slice_range = slice(cart_location - view_width // 2,
-                                cart_location + view_width // 2)
-        # Strip off the edges, so that we have a square image centered on a cart
-        screen = screen[:, slice_range]
+        if self.centering:
+            # Convert to float, rescale, convert to torch tensor
+            # (this doesn't require a copy)
+
+            view_width = int(screen_width * 0.6)
+            cart_location = self.get_cart_location(screen_width)
+            if cart_location < view_width // 2:
+                slice_range = slice(view_width)
+            elif cart_location > (screen_width - view_width // 2):
+                slice_range = slice(-view_width, None)
+            else:
+                slice_range = slice(cart_location - view_width // 2,
+                                    cart_location + view_width // 2)
+            # Strip off the edges, so that we have a square image centered on a cart
+            screen = screen[:, slice_range]
 
         #downsize
         screen = screen[::self.ds, ::self.ds]
@@ -74,37 +80,6 @@ class OrigionalPlusDiff(gym.Wrapper):
         diff = self.frames[-1]-self.frames[-2]
         out = np.concatenate([diff, self.frames[-1]])
         return out
-
-class FrameStack(gym.Wrapper):
-    def __init__(self, env, k=2):
-        """Stack k last frames.
-
-        Returns lazy array, which is much more memory efficient.
-
-        See Also
-        --------
-        baselines.common.atari_wrappers.LazyFrames
-        """
-        gym.Wrapper.__init__(self, env)
-        self.k = k
-        self.frames = deque([], maxlen=k)
-        shp = env.observation_space.shape
-        self.observation_space = spaces.Box(low=0, high=1, shape=(shp[0], shp[1]), dtype=np.float16)
-
-    def reset(self):
-        ob = self.env.reset()
-        for _ in range(self.k):
-            self.frames.append(ob)
-        return self._get_ob()
-
-    def step(self, action):
-        ob, reward, done, info = self.env.step(action)
-        self.frames.append(ob)
-        return self._get_ob(), reward, done, info
-
-    def _get_ob(self):
-        assert len(self.frames) == self.k
-        return self.frames[-1]-self.frames[-2]
 
 
 class LazyFrames(object):
@@ -143,6 +118,6 @@ def pixel_state_wrapper(env, greyscale=True, difference=True, scale=True):
     Configure Cartpole to show pixels as the state
     """
     if greyscale:
-        env = Pixels(env, downsize=4)
-        env= OrigionalPlusDiff(env)
+        env = Pixels(env, downsize=8, centering=False)
+        env = OrigionalPlusDiff(env)
     return env

@@ -64,7 +64,7 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
 
 
 data = []
-TITLE = "singe*_and_diff*ds=4"
+TITLE = "no_centering*ds=8"
 if TITLE:
     base_dirs = glob("./agents/*" + TITLE + "*SEED=1*/")
 else:
@@ -82,7 +82,8 @@ for i in range(0, len(base_dirs)):
         data.append(table)
 
 print(data)
-plot_data(data, smooth=1, n=len(base_dirs))
+plot_data(data, smooth=10, n=len(base_dirs))
 plt.show()
 plt.gcf()
+#Not working
 plt.savefig("./plots/"+TITLE+".png")

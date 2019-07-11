@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 #display.start()
 
 from cartpole_wrapper import pixel_state_wrapper
+from gym.utils.play import play
 
 
 env = gym.make("CartPole-v0")
@@ -18,24 +19,20 @@ print(f"original env: {env.observation_space}")
 env = pixel_state_wrapper(env)
 print(f"wrapped env: {env.observation_space}")
 
-from gym.utils.play import play
 #play(env, keys_to_action={(ord('a'),): 1, (ord('s'),): 0})
 
 obv1 = env.reset()
 plt.imshow(obv1)
+
 plt.show()
 
 obv = env.reset()
 plt.imshow(obv1-obv)
 plt.show()
 
-obv, *_ = env.step(0)
-obv, *_ = env.step(0)
-obv, *_ = env.step(0)
-obv, *_ = env.step(0)
-obv, *_ = env.step(0)
-obv, *_ = env.step(0)
-print(obv)
+for _ in range(10):
+    obv, *_ = env.step(0)
+
 plt.imshow(obv)
 plt.show()
 
