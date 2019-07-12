@@ -39,7 +39,7 @@ RENDER = False
 EPOCHS = 300
 FRAMES_PER_EPOCH = 400
 
-ACTION_BUFFER_SIZE = 100_000
+ACTION_BUFFER_SIZE = 1_000_000
 K = 50
 DISCOUNT = 1
 EPSILON = 0
@@ -112,8 +112,8 @@ def run_algorithm(agent, agent_dir, env, utils):
         utils.end_epoch()
         # agent.save(agent_dir)
 
-        if e>10:
-            agent.qec.plot()
+        if e>100:
+            agent.qec.plot(skip_factor=1)
 
 
 def run_episode(agent, env):
