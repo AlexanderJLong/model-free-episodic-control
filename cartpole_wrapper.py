@@ -3,6 +3,7 @@ import gym
 from gym import spaces
 from collections import deque
 
+
 class Pixels(gym.ObservationWrapper):
     def __init__(self, env, downsize, centering):
         """
@@ -12,9 +13,11 @@ class Pixels(gym.ObservationWrapper):
         self.ds = downsize
         self.centering = centering
         if centering:
-            self.observation_space = spaces.Box(low=0, high=255, shape=(160//self.ds, 360//self.ds), dtype=np.uint16)
+            self.observation_space = spaces.Box(low=0, high=255, shape=(160 // self.ds, 360 // self.ds),
+                                                dtype=np.uint16)
         else:
-            self.observation_space = spaces.Box(low=0, high=255, shape=(160//self.ds, 600//self.ds), dtype=np.uint16)
+            self.observation_space = spaces.Box(low=0, high=255, shape=(160 // self.ds, 600 // self.ds),
+                                                dtype=np.uint16)
 
     def get_cart_location(self, screen_width):
         world_width = self.env.x_threshold * 2
@@ -45,9 +48,10 @@ class Pixels(gym.ObservationWrapper):
             # Strip off the edges, so that we have a square image centered on a cart
             screen = screen[:, slice_range]
 
-        #downsize
+        # downsize
         screen = screen[::self.ds, ::self.ds]
         return screen
+
 
 class OrigionalPlusDiff(gym.Wrapper):
     def __init__(self, env):
@@ -62,7 +66,7 @@ class OrigionalPlusDiff(gym.Wrapper):
         gym.Wrapper.__init__(self, env)
         self.frames = deque([], maxlen=2)
         shp = env.observation_space.shape
-        self.observation_space = spaces.Box(low=0, high=1, shape=(shp[0]*2, shp[1]), dtype=np.float16)
+        self.observation_space = spaces.Box(low=0, high=1, shape=(shp[0] * 2, shp[1]), dtype=np.float16)
 
     def reset(self):
         ob = self.env.reset()
@@ -77,9 +81,20 @@ class OrigionalPlusDiff(gym.Wrapper):
 
     def _get_ob(self):
         assert len(self.frames) == 2
-        diff = self.frames[-1]-self.frames[-2]
+        diff = self.frames[-1] - self.frames[-2]
         out = np.concatenate([diff, self.frames[-1]])
         return out
+
+
+class DeterministicStart(gym.Wrapper):
+    def __init__(self, env):
+        gym.Wrapper.__init__(self, env)
+
+    def reset(self):
+        self.env.reset()
+        self.env.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
+        self.env.steps_beyond_done = None
+        return np.array(self.env.state)
 
 
 class LazyFrames(object):
@@ -121,3 +136,10 @@ def pixel_state_wrapper(env, greyscale=True, difference=True, scale=True):
         env = Pixels(env, downsize=8, centering=False)
         env = OrigionalPlusDiff(env)
     return env
+
+
+def det_wrapper(env):
+    """
+    Configure Cartpole to show pixels as the state
+    """
+    return DeterministicStart(env)

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-from pyvirtualdisplay import Display
-#
-display = Display(visible=0, size=(80, 60))
-display.start()
+#from pyvirtualdisplay import Display
+##
+#display = Display(visible=0, size=(80, 60))
+#display.start()
 
 """
 HOW TO RUN:
@@ -17,7 +17,7 @@ with different arugments. k
 import os
 import random
 from time import gmtime, strftime
-
+import shutil
 import gym
 import itertools
 
@@ -32,19 +32,17 @@ parser.add_argument("environment")
 args = parser.parse_args()
 print(args.environment)
 
-TITLE = "no_centering_pixels _and_diff-ds=8"
+TITLE = "eis0"
 ENVIRONMENT = "CartPole-v0"
 AGENT_PATH = ""
 RENDER = False
-RENDER_SPEED = 0.04
-
 EPOCHS = 300
 FRAMES_PER_EPOCH = 400
 
 ACTION_BUFFER_SIZE = 100_000
-K = 15
+K = 50
 DISCOUNT = 1
-EPSILON = 0.005
+EPSILON = 0
 
 FRAMESKIP = 1  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0.0  # Default gym-setting is .25
@@ -67,16 +65,19 @@ def main(STATE_DIMENSION, SEED):
             "agents",
             f"{ENVIRONMENT}_{execution_time}_DIM={STATE_DIMENSION}_K={K}_SEED={SEED}"
         )
+
+    if os.path.isdir(agent_dir):
+        shutil.rmtree(agent_dir)
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
     env = gym.make(ENVIRONMENT)
-    from cartpole_wrapper import pixel_state_wrapper
-    env = pixel_state_wrapper(env)
+    #from cartpole_wrapper import pixel_state_wrapper, det_wrapper
+    #env = det_wrapper(env)
 
     print(env.observation_space.shape)
-    SCALE_HEIGHT, SCALE_WIDTH = env.observation_space.shape
+    SCALE_HEIGHT, SCALE_WIDTH = (1,4)
 
     try:
         if AGENT_PATH:
@@ -102,7 +103,7 @@ def main(STATE_DIMENSION, SEED):
 
 def run_algorithm(agent, agent_dir, env, utils):
     frames_left = 0
-    for _ in range(EPOCHS):
+    for e in range(EPOCHS):
         frames_left += FRAMES_PER_EPOCH
         while frames_left > 0:
             episode_frames, episode_reward = run_episode(agent, env)
@@ -110,6 +111,9 @@ def run_algorithm(agent, agent_dir, env, utils):
             utils.end_episode(episode_frames, episode_reward)
         utils.end_epoch()
         # agent.save(agent_dir)
+
+        if e>10:
+            agent.qec.plot()
 
 
 def run_episode(agent, env):
@@ -120,19 +124,24 @@ def run_episode(agent, env):
     observation = env.reset()
 
     done = False
+    steps = 0
     while not done:
         action = agent.choose_action(observation)
         observation, reward, done, _ = env.step(action)
-        agent.receive_reward(reward)
+        agent.receive_reward(reward, steps)
 
         episode_reward += reward
         episode_frames += FRAMESKIP
-
+        steps+=1
     agent.train()
+
     return episode_frames, episode_reward
 
 
 if __name__ == "__main__":
+    main(32, 1)
+    exit()
+
     ARG1 = [32]
     ARG2 = [1, 2, 3]
     with Pool(20) as p:

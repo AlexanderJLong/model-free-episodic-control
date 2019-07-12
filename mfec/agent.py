@@ -11,16 +11,16 @@ from mfec.qec import QEC
 
 class MFECAgent:
     def __init__(
-        self,
-        buffer_size,
-        k,
-        discount,
-        epsilon,
-        height,
-        width,
-        state_dimension,
-        actions,
-        seed,
+            self,
+            buffer_size,
+            k,
+            discount,
+            epsilon,
+            height,
+            width,
+            state_dimension,
+            actions,
+            seed,
     ):
         self.rs = np.random.RandomState(seed)
         self.size = (height, width)
@@ -41,7 +41,13 @@ class MFECAgent:
         self.time += 1
 
         # Preprocess and project observation to state
-        self.state = np.dot(self.projection, np.asarray(observation).flatten())
+        # self.state = np.dot(self.projection, np.asarray(observation).flatten())
+        self.state = observation
+
+        # Random action for 1000 frames
+        #if self.time < 100:
+        #    self.action = self.rs.choice(self.actions)
+        #    return self.action
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:
@@ -58,13 +64,14 @@ class MFECAgent:
 
         return self.action
 
-    def receive_reward(self, reward):
+    def receive_reward(self, reward, step):
         self.memory.append(
             {
                 "state": self.state,
                 "action": self.action,
                 "reward": reward,
                 "time": self.time,
+                "steps": step,
             }
         )
 
@@ -78,6 +85,7 @@ class MFECAgent:
                 experience["action"],
                 value,
                 experience["time"],
+                experience["steps"],
             )
 
     def save(self, results_dir):

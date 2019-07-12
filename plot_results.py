@@ -36,7 +36,7 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
                  y=value,
                  ci='sd',
                  estimator=np.mean,
-                 hue="DIM",
+                 hue="K",
                  palette=sns.color_palette("Set1", n),
                  **kwargs)
     """
@@ -64,7 +64,7 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
 
 
 data = []
-TITLE = "no_centering*ds=8"
+TITLE = "*"
 if TITLE:
     base_dirs = glob("./agents/*" + TITLE + "*SEED=1*/")
 else:
@@ -82,7 +82,7 @@ for i in range(0, len(base_dirs)):
         data.append(table)
 
 print(data)
-plot_data(data, smooth=10, n=len(base_dirs))
+plot_data(data, smooth=1, n=len(base_dirs))
 plt.show()
 plt.gcf()
 #Not working

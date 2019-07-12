@@ -2,6 +2,7 @@
 
 import numpy as np
 from sklearn.neighbors.kd_tree import KDTree
+import matplotlib.pyplot as plt
 
 
 class QEC:
@@ -23,7 +24,7 @@ class QEC:
                 value += buffer.values[neighbor]
             return value / self.k
 
-    def update(self, state, action, value, time):
+    def update(self, state, action, value, time, step):
         buffer = self.buffers[action]
         state_index = buffer.find_state(state)
         if state_index:
@@ -31,7 +32,21 @@ class QEC:
             max_time = max(buffer.times[state_index], time)
             buffer.replace(state, max_value, max_time, state_index)
         else:
-            buffer.add(state, value, time)
+            buffer.add(state, value, time, step)
+
+    def plot(self):
+        if len(self.buffers[0].states) < 2:
+            return
+        fig, axes = plt.subplots(4,3)
+        for i in range(2):
+            buffer = self.buffers[i]
+            for j in range(4):
+                states = np.asarray(buffer.states)
+                vals = np.asarray(buffer.values)
+                steps = np.asarray(buffer.steps)
+                axes[j,i].scatter(states[::2, j], vals[::2], c=steps[::2], alpha=0.5)
+        # Run a regressor over 1st dim grid and then also show the dif between the two
+        plt.show()
 
 
 class ActionBuffer:
@@ -41,6 +56,7 @@ class ActionBuffer:
         self.states = []
         self.values = []
         self.times = []
+        self.steps = []
 
     def find_state(self, state):
         if self._tree:
@@ -52,11 +68,12 @@ class ActionBuffer:
     def find_neighbors(self, state, k):
         return self._tree.query([state], k)[1][0] if self._tree else []
 
-    def add(self, state, value, time):
+    def add(self, state, value, time, step):
         if len(self) < self.capacity:
             self.states.append(state)
             self.values.append(value)
             self.times.append(time)
+            self.steps.append(step)
         else:
             min_time_idx = int(np.argmin(self.times))
             if time > self.times[min_time_idx]:
@@ -70,3 +87,5 @@ class ActionBuffer:
 
     def __len__(self):
         return len(self.states)
+
+
