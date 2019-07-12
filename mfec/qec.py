@@ -38,15 +38,28 @@ class QEC:
         if len(self.buffers[0].states) < 2:
             return
         fig, axes = plt.subplots(4,3)
-        for i in range(2):
-            buffer = self.buffers[i]
-            for j in range(4):
+        for j in range(4):
+            Ks = []
+            for i in range(2):
+                buffer = self.buffers[i]
                 states = np.asarray(buffer.states)
                 vals = np.asarray(buffer.values)
                 steps = np.asarray(buffer.steps)
                 axes[j,i].scatter(states[::2, j], vals[::2], c=steps[::2], alpha=0.5)
+                T = np.linspace(-2.5, 2.5, 1000)
+                k = []
+                for t in T:
+                    state = [0,0,0,0]
+                    state[j] = t
+                    k.append(self.estimate(state, i))
+                Ks.append(np.asarray(k))
+                axes[j, i].plot(T, k, c="r")
+            axes[j, 2].plot(T, Ks[0]-Ks[1])
+
+
         # Run a regressor over 1st dim grid and then also show the dif between the two
         plt.show()
+
 
 
 class ActionBuffer:
