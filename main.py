@@ -111,7 +111,7 @@ def run_algorithm(agent, agent_dir, env, utils):
         utils.end_epoch()
         # agent.save(agent_dir)
 
-        if e > 5:
+        if e > 10:
             agent.qec.plot(skip_factor=1)
 
 

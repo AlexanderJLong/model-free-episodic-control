@@ -36,6 +36,7 @@ class MFECAgent:
         self.state = np.empty(state_dimension, self.projection.dtype)
         self.action = int
         self.time = 0
+        self.rewards_received = 0
 
     def choose_action(self, observation):
         self.time += 1
@@ -65,14 +66,17 @@ class MFECAgent:
         return self.action
 
     def receive_reward(self, reward, step):
-        self.memory.append(
-            {
-                "state": self.state,
-                "action": self.action,
-                "reward": reward,
-                "time": self.time,
-                "steps": step,
-            }
+        self.rewards_received+=1
+        if self.rewards_received % 1 == 0:
+
+            self.memory.append(
+                {
+                    "state": self.state,
+                    "action": self.action,
+                    "reward": reward,
+                    "time": self.time,
+                    "steps": step,
+                }
         )
 
     def train(self):

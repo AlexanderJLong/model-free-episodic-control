@@ -15,12 +15,12 @@ class QEC:
         if len(buffer) <= self.k:
             return float("inf")
 
-        neighbors, dists = buffer.find_neighbors(state, self.k)
+        neighbors, dists = buffer.find_neighbors(state, self.k, ball=False)
 
         dists = dists[0]
         neighbors = neighbors[0]
         if len(neighbors) == 0:
-            return 0
+            return float("inf")
 
         #if np.allclose(buffer.states[neighbors[0]], state):
         #    print("Exact Match")
@@ -32,7 +32,7 @@ class QEC:
                 value += w[i] * buffer.values[neighbor]
 
             if sum(w) == 0:
-                return 0
+                return float("inf")
             return value / sum(w)
 
     def update(self, state, action, value, time, step):
@@ -97,8 +97,13 @@ class ActionBuffer:
                 return neighbor_idx
         return None
 
-    def find_neighbors(self, state, k):
-        return self._tree.query_radius([state], r=0.3, return_distance=True) if self._tree else []
+    def find_neighbors(self, state, k, ball):
+        """Return idx, dists"""
+        if ball:
+            return self._tree.query_radius([state], r=0.3, return_distance=True) if self._tree else []
+        else:
+            result = self._tree.query([state], k=k, return_distance=True) if self._tree else []
+            return result[1], result[0]
 
     def add(self, state, value, time, step):
         if len(self) < self.capacity:
