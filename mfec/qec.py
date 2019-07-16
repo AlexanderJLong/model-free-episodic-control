@@ -15,19 +15,25 @@ class QEC:
         if len(buffer) <= self.k:
             return float("inf")
 
-        value = 0.0
-        dists, neighbors = buffer.find_neighbors(state, self.k)
+        neighbors, dists = buffer.find_neighbors(state, self.k)
+
         dists = dists[0]
         neighbors = neighbors[0]
-        #print(dists)
-        #print(neighbors)
-        if np.allclose(buffer.states[neighbors[0]], state):
-            return buffer.values[neighbors[0]]
+        if len(neighbors) == 0:
+            return 0
+
+        #if np.allclose(buffer.states[neighbors[0]], state):
+        #    print("Exact Match")
+        #    return buffer.values[neighbors[0]]
         else:
-            w = [1 / d for d in dists]
+            w = [1 for d in dists]
+            value = 0
             for i, neighbor in enumerate(neighbors):
-                value += w[i]*buffer.values[neighbor]
-            return value/sum(w)
+                value += w[i] * buffer.values[neighbor]
+
+            if sum(w) == 0:
+                return 0
+            return value / sum(w)
 
     def update(self, state, action, value, time, step):
         buffer = self.buffers[action]
@@ -51,6 +57,8 @@ class QEC:
                 vals = np.asarray(buffer.values)
                 steps = np.asarray(buffer.steps)
                 axes[j, i].scatter(states[::skip_factor, j], vals[::skip_factor], c=steps[::skip_factor], alpha=0.5)
+
+                # Do the interpolation
                 T = np.linspace(-2.5, 2.5, 4000)
                 k = []
                 for t in T:
@@ -62,6 +70,14 @@ class QEC:
             axes[j, 2].plot(T, Ks[0] - Ks[1])
 
         # Run a regressor over 1st dim grid and then also show the dif between the two
+        axes[0, 0].set(title='Q(a0)')
+        axes[0, 1].set(title='Q(a1)')
+        axes[0, 2].set(title='Advantage(a0-a1)')
+
+        axes[0, 0].set(ylabel='Position')
+        axes[1, 0].set(ylabel='Velocity')
+        axes[2, 0].set(ylabel='Angle')
+        axes[3, 0].set(ylabel='Vel. at tip.')
         plt.show()
 
 
@@ -82,7 +98,7 @@ class ActionBuffer:
         return None
 
     def find_neighbors(self, state, k):
-        return self._tree.query([state], k, return_distance=True) if self._tree else []
+        return self._tree.query_radius([state], r=0.3, return_distance=True) if self._tree else []
 
     def add(self, state, value, time, step):
         if len(self) < self.capacity:

@@ -53,8 +53,8 @@ class Utils:
         self.results_file.flush()
 
         message = (
-            "\nEpoch: {}\tEpisodes: {}\tFrames: {}\tReward-Sum: {}\t"
-            "Reward-Avg: {}\tReward-Max: {}\tTotal-Frames: {}/{}\n"
+            "\nEpoch: {}\tEpisodes: {}\tFrames: {}\tRound Frames: {}\t"
+            "Reward Sum: {}\tReward Avg: {}\tReward Max: {}\n"
         )
         results = results + [self.total_frames, self.max_frames]
         print(message.format(*results))

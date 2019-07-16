@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-#from pyvirtualdisplay import Display
+# from pyvirtualdisplay import Display
 ##
-#display = Display(visible=0, size=(80, 60))
-#display.start()
+# display = Display(visible=0, size=(80, 60))
+# display.start()
 
 """
 HOW TO RUN:
@@ -40,13 +40,12 @@ EPOCHS = 300
 FRAMES_PER_EPOCH = 400
 
 ACTION_BUFFER_SIZE = 1_000_000
-K = 50
+K = 100
 DISCOUNT = 1
 EPSILON = 0
 
 FRAMESKIP = 1  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0.0  # Default gym-setting is .25
-
 
 
 # STATE_DIMENSION = 4
@@ -73,11 +72,11 @@ def main(STATE_DIMENSION, SEED):
     # Initialize utils, environment and agent
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
     env = gym.make(ENVIRONMENT)
-    #from cartpole_wrapper import pixel_state_wrapper, det_wrapper
-    #env = det_wrapper(env)
+    # from cartpole_wrapper import pixel_state_wrapper, det_wrapper
+    # env = det_wrapper(env)
 
     print(env.observation_space.shape)
-    SCALE_HEIGHT, SCALE_WIDTH = (1,4)
+    SCALE_HEIGHT, SCALE_WIDTH = (1, 4)
 
     try:
         if AGENT_PATH:
@@ -112,7 +111,7 @@ def run_algorithm(agent, agent_dir, env, utils):
         utils.end_epoch()
         # agent.save(agent_dir)
 
-        if e>100:
+        if e > 5:
             agent.qec.plot(skip_factor=1)
 
 
@@ -122,17 +121,19 @@ def run_episode(agent, env):
 
     env.seed(random.randint(0, 1000000))
     observation = env.reset()
+    observation[2] = observation[2] * 8
 
     done = False
     steps = 0
     while not done:
         action = agent.choose_action(observation)
         observation, reward, done, _ = env.step(action)
+        observation[2] = observation[2]*8
         agent.receive_reward(reward, steps)
 
         episode_reward += reward
         episode_frames += FRAMESKIP
-        steps+=1
+        steps += 1
     agent.train()
 
     return episode_frames, episode_reward
