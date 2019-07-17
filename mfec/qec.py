@@ -17,7 +17,7 @@ class QEC:
         if len(buffer) <= self.k:
             return float("inf")
 
-        neighbors, dists = buffer.find_neighbors(state, self.k, ball=False)
+        neighbors, dists = buffer.find_neighbors(state, self.k, ball=True)
 
         dists = dists[0]
         neighbors = neighbors[0]
@@ -33,18 +33,17 @@ class QEC:
             a = 0
             for i, neighbor in enumerate(neighbors):
                 # only look at states forward in time
-
-                #print(f"{step} -> {buffer.steps[neighbor]}")
-
-                if buffer.steps[neighbor] >= step:
-                    a+=1
-                    value += w[i] * buffer.values[neighbor]
+                # print(f"{step} -> {buffer.steps[neighbor]}")
+                amount_ahead = buffer.steps[neighbor] - step
+                if amount_ahead >= 0:
+                    a += 1
+                value += w[i] * buffer.values[neighbor]
             #print(f"% ahead in NN search: {a/len(neighbors)*100}")
             if value == 0:
                 return float("inf")
             if sum(w) == 0:
                 return float("inf")
-            return value / a
+            return value / sum(w)
 
     def update(self, state, action, value, time, step):
         buffer = self.buffers[action]
@@ -102,10 +101,11 @@ class QEC:
             data = self.buffers[i]
             states = np.asarray(data.states)
             vals = np.asarray(data.values)
-            ax.scatter(states[:, 0], states[:, 1], states[:,2], c=vals)
-            ax.set(xlabel="Position")
-            ax.set(ylabel="Vel")
-            ax.set(zlabel="Angle")
+            ax.scatter(states[:, 1], states[:, 2], states[:, 3], c=vals)
+
+            ax.set(xlabel="Vel")
+            ax.set(ylabel="Angle")
+            ax.set(xlabel="Vel. at tip")
         plt.show()
 
 
