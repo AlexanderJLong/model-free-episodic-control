@@ -85,15 +85,18 @@ class QEC:
     def plot3d(self):
         """start with just position and angle"""
         fig = plt.figure()
+
+        ax1 = fig.add_subplot(121, projection='3d')
+        ax2 = fig.add_subplot(122, projection='3d')
         fig.set_tight_layout(True)
-        ax = fig.add_subplot(111, projection='3d')
-        data = self.buffers[0]
-        states = np.asarray(data.states)
-        vals = np.asarray(data.values)
-        ax.scatter(states[:, 0], states[:, 1], states[:,2], c=vals)
-        ax.set(xlabel="Position")
-        ax.set(ylabel="Vel")
-        ax.set(zlabel="Angle")
+        for i, ax in enumerate([ax1, ax2]):
+            data = self.buffers[i]
+            states = np.asarray(data.states)
+            vals = np.asarray(data.values)
+            ax.scatter(states[:, 0], states[:, 1], states[:,2], c=vals)
+            ax.set(xlabel="Position")
+            ax.set(ylabel="Vel")
+            ax.set(zlabel="Angle")
         plt.show()
 
 
