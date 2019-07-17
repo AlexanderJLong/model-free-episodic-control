@@ -21,6 +21,7 @@ class MFECAgent:
             state_dimension,
             actions,
             seed,
+            exp_skip,
     ):
         self.rs = np.random.RandomState(seed)
         self.size = (height, width)
@@ -37,6 +38,7 @@ class MFECAgent:
         self.action = int
         self.time = 0
         self.rewards_received = 0
+        self.exp_skip = exp_skip
 
     def choose_action(self, observation):
         self.time += 1
@@ -66,31 +68,30 @@ class MFECAgent:
         return self.action
 
     def receive_reward(self, reward, step):
-        self.rewards_received+=1
-        if self.rewards_received % 1 == 0:
-
-            self.memory.append(
-                {
-                    "state": self.state,
-                    "action": self.action,
-                    "reward": reward,
-                    "time": self.time,
-                    "steps": step,
-                }
+        self.memory.append(
+            {
+                "state": self.state,
+                "action": self.action,
+                "reward": reward,
+                "time": self.time,
+                "steps": step,
+            }
         )
 
     def train(self):
+        self.rewards_received +=1
         value = 0.0
         for _ in range(len(self.memory)):
             experience = self.memory.pop()
             value = value * self.discount + experience["reward"]
-            self.qec.update(
-                experience["state"],
-                experience["action"],
-                value,
-                experience["time"],
-                experience["steps"],
-            )
+            if self.rewards_received % self.exp_skip == 0:
+                self.qec.update(
+                    experience["state"],
+                    experience["action"],
+                    value,
+                    experience["time"],
+                    experience["steps"],
+                )
 
     def save(self, results_dir):
         with open(os.path.join(results_dir, "agent.pkl"), "wb") as file:

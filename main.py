@@ -32,15 +32,17 @@ parser.add_argument("environment")
 args = parser.parse_args()
 print(args.environment)
 
-TITLE = "eis0"
+TITLE = "local"
 ENVIRONMENT = "CartPole-v0"
 AGENT_PATH = ""
 RENDER = False
 EPOCHS = 300
 FRAMES_PER_EPOCH = 400
+EXP_SKIP = 1
+EPOCHS_TILL_VIS = 30
 
 ACTION_BUFFER_SIZE = 1_000_000
-K = 100
+K = 15
 DISCOUNT = 1
 EPSILON = 0
 
@@ -92,6 +94,7 @@ def main(STATE_DIMENSION, SEED):
                 STATE_DIMENSION,
                 range(env.action_space.n),
                 SEED,
+                EXP_SKIP,
             )
         run_algorithm(agent, agent_dir, env, utils)
 
@@ -111,8 +114,8 @@ def run_algorithm(agent, agent_dir, env, utils):
         utils.end_epoch()
         # agent.save(agent_dir)
 
-        if e > 10:
-            agent.qec.plot(skip_factor=1)
+        if e > EPOCHS_TILL_VIS:
+            agent.qec.plot3d()
 
 
 def run_episode(agent, env):

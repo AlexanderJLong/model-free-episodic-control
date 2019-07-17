@@ -3,6 +3,8 @@
 import numpy as np
 from sklearn.neighbors.kd_tree import KDTree
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 
 
 class QEC:
@@ -22,7 +24,7 @@ class QEC:
         if len(neighbors) == 0:
             return float("inf")
 
-        #if np.allclose(buffer.states[neighbors[0]], state):
+        # if np.allclose(buffer.states[neighbors[0]], state):
         #    print("Exact Match")
         #    return buffer.values[neighbors[0]]
         else:
@@ -78,6 +80,20 @@ class QEC:
         axes[1, 0].set(ylabel='Velocity')
         axes[2, 0].set(ylabel='Angle')
         axes[3, 0].set(ylabel='Vel. at tip.')
+        plt.show()
+
+    def plot3d(self):
+        """start with just position and angle"""
+        fig = plt.figure()
+        fig.set_tight_layout(True)
+        ax = fig.add_subplot(111, projection='3d')
+        data = self.buffers[0]
+        states = np.asarray(data.states)
+        vals = np.asarray(data.values)
+        ax.scatter(states[:, 0], states[:, 1], states[:,2], c=vals)
+        ax.set(xlabel="Position")
+        ax.set(ylabel="Vel")
+        ax.set(zlabel="Angle")
         plt.show()
 
 
