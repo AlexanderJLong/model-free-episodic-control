@@ -39,8 +39,9 @@ class MFECAgent:
         self.time = 0
         self.rewards_received = 0
         self.exp_skip = exp_skip
+        self.t = 0 #keep track of episode step
 
-    def choose_action(self, observation):
+    def choose_action(self, observation, step):
         self.time += 1
 
         # Preprocess and project observation to state
@@ -59,7 +60,7 @@ class MFECAgent:
         # Exploitation
         else:
             values = [
-                self.qec.estimate(self.state, action)
+                self.qec.estimate(self.state, action, step)
                 for action in self.actions
             ]
             best_actions = np.argwhere(values == np.max(values)).flatten()

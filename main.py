@@ -127,16 +127,16 @@ def run_episode(agent, env):
     observation[2] = observation[2] * 8
 
     done = False
-    steps = 0
+    step = 0
     while not done:
-        action = agent.choose_action(observation)
+        action = agent.choose_action(observation, step)
         observation, reward, done, _ = env.step(action)
         observation[2] = observation[2]*8
-        agent.receive_reward(reward, steps)
+        agent.receive_reward(reward, step)
 
         episode_reward += reward
         episode_frames += FRAMESKIP
-        steps += 1
+        step += 1
     agent.train()
 
     return episode_frames, episode_reward

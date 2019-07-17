@@ -12,7 +12,7 @@ class QEC:
         self.buffers = tuple([ActionBuffer(buffer_size) for _ in actions])
         self.k = k
 
-    def estimate(self, state, action):
+    def estimate(self, state, action, step):
         buffer = self.buffers[action]
         if len(buffer) <= self.k:
             return float("inf")
@@ -30,12 +30,21 @@ class QEC:
         else:
             w = [1 for d in dists]
             value = 0
+            a = 0
             for i, neighbor in enumerate(neighbors):
-                value += w[i] * buffer.values[neighbor]
+                # only look at states forward in time
 
+                #print(f"{step} -> {buffer.steps[neighbor]}")
+
+                if buffer.steps[neighbor] >= step:
+                    a+=1
+                    value += w[i] * buffer.values[neighbor]
+            #print(f"% ahead in NN search: {a/len(neighbors)*100}")
+            if value == 0:
+                return float("inf")
             if sum(w) == 0:
                 return float("inf")
-            return value / sum(w)
+            return value / a
 
     def update(self, state, action, value, time, step):
         buffer = self.buffers[action]
