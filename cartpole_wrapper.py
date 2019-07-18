@@ -92,9 +92,8 @@ class DeterministicStart(gym.Wrapper):
 
     def reset(self):
         self.env.reset()
-        self.env.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
-        self.env.steps_beyond_done = None
-        return np.array(self.env.state)
+        self.env.state = np.asarray([0, 0, 0, 0])
+        return self.env.state
 
 
 class LazyFrames(object):

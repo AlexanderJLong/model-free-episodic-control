@@ -23,6 +23,7 @@ import itertools
 
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
+import numpy as np
 
 import argparse
 from multiprocessing import Pool
@@ -39,11 +40,11 @@ RENDER = False
 EPOCHS = 300
 FRAMES_PER_EPOCH = 400
 EXP_SKIP = 1
-EPOCHS_TILL_VIS = 20
+EPOCHS_TILL_VIS = 10
 
 ACTION_BUFFER_SIZE = 1_000_000
 K = 15
-DISCOUNT = 0.999
+DISCOUNT = 1
 EPSILON = 0
 
 FRAMESKIP = 1  # Default gym-setting is (2, 5)
@@ -74,8 +75,9 @@ def main(STATE_DIMENSION, SEED):
     # Initialize utils, environment and agent
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
     env = gym.make(ENVIRONMENT)
-    # from cartpole_wrapper import pixel_state_wrapper, det_wrapper
-    # env = det_wrapper(env)
+    from cartpole_wrapper import pixel_state_wrapper, det_wrapper
+    env = det_wrapper(env)
+
 
     print(env.observation_space.shape)
     SCALE_HEIGHT, SCALE_WIDTH = (1, 4)
@@ -114,8 +116,8 @@ def run_algorithm(agent, agent_dir, env, utils):
         utils.end_epoch()
         # agent.save(agent_dir)
 
-        if e > EPOCHS_TILL_VIS:
-            agent.qec.plot3d()
+        #if e > EPOCHS_TILL_VIS:
+            #agent.qec.plot3d(both=False, diff=False)
 
 
 def run_episode(agent, env):
@@ -124,20 +126,21 @@ def run_episode(agent, env):
 
     env.seed(random.randint(0, 1000000))
     observation = env.reset()
-    observation[2] = observation[2] * 8
-
+    print(observation)
     done = False
     step = 0
     while not done:
         action = agent.choose_action(observation, step)
         observation, reward, done, _ = env.step(action)
-        observation[2] = observation[2]*8
+        print(action)
+        print(observation)
         agent.receive_reward(reward, step)
 
         episode_reward += reward
         episode_frames += FRAMESKIP
         step += 1
     agent.train()
+    agent.qec.plot3d(both=True, diff=False)
 
     return episode_frames, episode_reward
 

@@ -15,35 +15,31 @@ class QEC:
     def estimate(self, state, action, step):
         buffer = self.buffers[action]
         if len(buffer) <= self.k:
-            return float("inf")
+            return 0
 
-        neighbors, dists = buffer.find_neighbors(state, self.k, ball=True)
+        neighbors, dists = buffer.find_neighbors(state, self.k, ball=False)
 
         dists = dists[0]
         neighbors = neighbors[0]
-        if len(neighbors) == 0:
-            return float("inf")
 
         # if np.allclose(buffer.states[neighbors[0]], state):
         #    print("Exact Match")
         #    return buffer.values[neighbors[0]]
-        else:
-            w = [1 for d in dists]
-            value = 0
-            a = 0
-            for i, neighbor in enumerate(neighbors):
-                # only look at states forward in time
-                # print(f"{step} -> {buffer.steps[neighbor]}")
-                amount_ahead = buffer.steps[neighbor] - step
-                if amount_ahead >= 0:
-                    a += 1
-                value += w[i] * buffer.values[neighbor]
-            #print(f"% ahead in NN search: {a/len(neighbors)*100}")
-            if value == 0:
-                return float("inf")
-            if sum(w) == 0:
-                return float("inf")
-            return value / sum(w)
+
+        w = [1 for d in dists]
+        value = 0
+        # a = 0
+        for i, neighbor in enumerate(neighbors):
+            # only look at states forward in time
+            # print(f"{step} -> {buffer.steps[neighbor]}")
+            # amount_ahead = buffer.steps[neighbor] - step
+            # if amount_ahead >= 0:
+            #     a += 1
+            value += w[i] * buffer.values[neighbor]
+        # print(f"% ahead in NN search: {a/len(neighbors)*100}")
+        if sum(w) == 0:
+            return 0
+        return value / sum(w)
 
     def update(self, state, action, value, time, step):
         buffer = self.buffers[action]
@@ -90,22 +86,44 @@ class QEC:
         axes[3, 0].set(ylabel='Vel. at tip.')
         plt.show()
 
-    def plot3d(self):
-        """start with just position and angle"""
-        fig = plt.figure()
-
-        ax1 = fig.add_subplot(121, projection='3d')
-        ax2 = fig.add_subplot(122, projection='3d')
-        fig.set_tight_layout(True)
-        for i, ax in enumerate([ax1, ax2]):
-            data = self.buffers[i]
-            states = np.asarray(data.states)
-            vals = np.asarray(data.values)
-            ax.scatter(states[:, 1], states[:, 2], states[:, 3], c=vals)
+    def plot3d(self, both, diff):
+        assert(not(both is True and diff is True))
+        if diff:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            fig.set_tight_layout(True)
+            states = np.random.rand(5000, 4) * 5 - 2
+            vals = []
+            for s in states:
+                vals.append(self.estimate(s, 1, 0) - self.estimate(s, 0, 0))
+            ax.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals)
 
             ax.set(xlabel="Vel")
             ax.set(ylabel="Angle")
-            ax.set(xlabel="Vel. at tip")
+            ax.set(zlabel="Position")
+            plt.show()
+            return
+        """start with just position and angle"""
+        fig = plt.figure()
+        if both:
+            ax1 = fig.add_subplot(121, projection='3d')
+            ax2 = fig.add_subplot(122, projection='3d')
+            axes = [ax1, ax2]
+        else:
+            ax1 = fig.add_subplot(111, projection='3d')
+            axes = [ax1]
+        fig.set_tight_layout(True)
+        for i, ax in enumerate(axes):
+            data = self.buffers[i]
+            states = np.asarray(data.states)
+            vals = np.asarray(data.values)
+            print(states)
+            print(vals)
+            ax.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals)
+
+            ax.set(xlabel="Vel")
+            ax.set(ylabel="Angle")
+            ax.set(zlabel="Position")
         plt.show()
 
 
