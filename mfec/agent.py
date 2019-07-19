@@ -65,6 +65,7 @@ class MFECAgent:
             ]
             best_actions = np.argwhere(values == np.max(values)).flatten()
             self.action = self.rs.choice(best_actions)
+            #print(f"In {observation}, got values {values} and picked {self.action}")
 
         return self.action
 

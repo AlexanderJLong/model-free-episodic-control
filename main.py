@@ -43,7 +43,7 @@ EXP_SKIP = 1
 EPOCHS_TILL_VIS = 10
 
 ACTION_BUFFER_SIZE = 1_000_000
-K = 15
+K = 50
 DISCOUNT = 1
 EPSILON = 0
 
@@ -126,21 +126,21 @@ def run_episode(agent, env):
 
     env.seed(random.randint(0, 1000000))
     observation = env.reset()
-    print(observation)
+    observation[3] = 0
+
     done = False
     step = 0
     while not done:
         action = agent.choose_action(observation, step)
         observation, reward, done, _ = env.step(action)
-        print(action)
-        print(observation)
+        observation[3] = 0
         agent.receive_reward(reward, step)
 
         episode_reward += reward
         episode_frames += FRAMESKIP
         step += 1
     agent.train()
-    agent.qec.plot3d(both=True, diff=False)
+    agent.qec.plot3d(both=True, diff=True)
 
     return episode_frames, episode_reward
 

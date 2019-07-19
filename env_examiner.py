@@ -31,8 +31,8 @@ plt.imshow(obv1-obv)
 plt.show()
 
 for _ in range(10):
-    obv, *_ = env.step(0)
-
+    obv, *_ = env.step(1)
+print(env.env.state)
 plt.imshow(obv)
 plt.show()
 

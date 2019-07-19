@@ -13,18 +13,16 @@ class QEC:
         self.k = k
 
     def estimate(self, state, action, step):
+        """Changes:
+        - No exact matching"""
         buffer = self.buffers[action]
         if len(buffer) <= self.k:
-            return 0
+            return float("inf")
 
         neighbors, dists = buffer.find_neighbors(state, self.k, ball=False)
-
         dists = dists[0]
         neighbors = neighbors[0]
-
-        # if np.allclose(buffer.states[neighbors[0]], state):
-        #    print("Exact Match")
-        #    return buffer.values[neighbors[0]]
+        #print(f"In {state} --> {buffer.states[neighbors[0]]} = {buffer.values[neighbors[0]]} ")
 
         w = [1 for d in dists]
         value = 0
@@ -87,15 +85,46 @@ class QEC:
         plt.show()
 
     def plot3d(self, both, diff):
-        assert(not(both is True and diff is True))
-        if diff:
-            fig = plt.figure()
+        fig = plt.figure()
+        fig.set_tight_layout(True)
+        if diff and both:
+            ax1 = fig.add_subplot(131, projection='3d')
+            ax2 = fig.add_subplot(132, projection='3d')
+            ax3 = fig.add_subplot(133, projection='3d')
+            axes = [ax1, ax2]
+            for i, ax in enumerate(axes):
+                data = self.buffers[i]
+                states = np.asarray(data.states)
+                vals = np.asarray(data.values)
+                ax.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals)
+                ax.set(xlabel="Vel")
+                ax.set(ylabel="Angle")
+                ax.set(zlabel="Position")
+                ax.set(title=f"max r={max(vals)}")
+
+            states = np.random.rand(1000, 4) * 5 - 2
+            states[:, -1] = 0
+            vals = []
+            for s in states:
+                vals.append(self.estimate(s, 1, 0)- self.estimate(s, 0, 0))
+
+            # force normalization between certain range and make sure its symetric
+            vals[0] = max(max(vals), -min(vals))
+            vals[1] = min(-max(vals), min(vals))
+            ax3.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals, cmap="bwr")
+            ax3.set(xlabel="Vel")
+            ax3.set(ylabel="Angle")
+            ax3.set(zlabel="Position")
+            ax3.set(title=f"max={max(vals):.2f}, min={min(vals):.2f}")
+            plt.show()
+            return
+
+        elif diff:
             ax = fig.add_subplot(111, projection='3d')
-            fig.set_tight_layout(True)
             states = np.random.rand(5000, 4) * 5 - 2
             vals = []
             for s in states:
-                vals.append(self.estimate(s, 1, 0) - self.estimate(s, 0, 0))
+                vals.append(self.estimate(s, 1, 0))
             ax.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals)
 
             ax.set(xlabel="Vel")
@@ -103,9 +132,8 @@ class QEC:
             ax.set(zlabel="Position")
             plt.show()
             return
-        """start with just position and angle"""
-        fig = plt.figure()
-        if both:
+
+        elif both:
             ax1 = fig.add_subplot(121, projection='3d')
             ax2 = fig.add_subplot(122, projection='3d')
             axes = [ax1, ax2]
@@ -117,8 +145,6 @@ class QEC:
             data = self.buffers[i]
             states = np.asarray(data.states)
             vals = np.asarray(data.values)
-            print(states)
-            print(vals)
             ax.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals)
 
             ax.set(xlabel="Vel")
