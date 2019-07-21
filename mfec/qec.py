@@ -153,6 +153,27 @@ class QEC:
             ax.set(zlabel="Position")
         plt.show()
 
+    def plot_scatter(self):
+        fig = plt.figure()
+        fig.set_tight_layout(True)
+        ax1 = fig.add_subplot(111)
+        states = np.random.rand(5000, 4) * 5 - 2
+        states[:, 3] = 0
+        states[:, 0] = 0
+        vals = []
+        for s in states:
+            vals.append(self.estimate(s, 1, 0) - self.estimate(s, 0, 0))
+
+        # force normalization between certain range and make sure its symetric
+        vals[0] = max(max(vals), -min(vals))
+        vals[1] = min(-max(vals), min(vals))
+        ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap="bwr")
+        ax1.set(xlabel="Vel")
+        ax1.set(ylabel="Angle")
+        ax1.set(title=f"max={max(vals):.2f}, min={min(vals):.2f}")
+        plt.show()
+        return
+
 
 class ActionBuffer:
     def __init__(self, capacity):

@@ -126,6 +126,8 @@ def run_episode(agent, env):
     env.seed(random.randint(0, 1000000))
     observation = env.reset()
     observation[3] = 0
+    observation[0] = 0
+
 
     done = False
     step = 0
@@ -133,12 +135,15 @@ def run_episode(agent, env):
         action = agent.choose_action(observation, step)
         observation, reward, done, _ = env.step(action)
         observation[3] = 0
+        observation[0] = 0
+
         agent.receive_reward(reward, step)
 
         episode_reward += reward
         episode_frames += FRAMESKIP
         step += 1
     agent.train()
+    agent.qec.plot_scatter()
     #agent.qec.plot3d(both=True, diff=True)
 
     return episode_frames, episode_reward
