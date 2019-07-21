@@ -24,7 +24,7 @@ class QEC:
         neighbors = neighbors[0]
         #print(f"In {state} --> {buffer.states[neighbors[0]]} = {buffer.values[neighbors[0]]} ")
 
-        w = [1 for d in dists]
+        w = [1/d for d in dists]
         value = 0
         # a = 0
         for i, neighbor in enumerate(neighbors):
@@ -100,13 +100,14 @@ class QEC:
                 ax.set(xlabel="Vel")
                 ax.set(ylabel="Angle")
                 ax.set(zlabel="Position")
+
                 ax.set(title=f"max r={max(vals)}")
 
-            states = np.random.rand(1000, 4) * 5 - 2
+            states = np.random.rand(5000, 4) * 5 - 2
             states[:, -1] = 0
             vals = []
             for s in states:
-                vals.append(self.estimate(s, 1, 0)- self.estimate(s, 0, 0))
+                vals.append(self.estimate(s, 1, 0) - self.estimate(s, 0, 0))
 
             # force normalization between certain range and make sure its symetric
             vals[0] = max(max(vals), -min(vals))
