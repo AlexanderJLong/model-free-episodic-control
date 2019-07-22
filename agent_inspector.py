@@ -33,10 +33,12 @@ agent = MFECAgent(
     1,
 )
 
-agent.qec.buffers[0].add([0, -0.5, 0.5, 0], 100, 0, 0)
-agent.qec.buffers[0].add([0, 0.5, -0.5, 0], 100, 0, 0)
+agent.qec.buffers[0].add([0, -0.5, 0.5, 0], 11, 0, 0)
+agent.qec.buffers[0].add([0, 0.5, -0.5, 0], 200, 0, 0)
+agent.qec.buffers[0].add([0, 0, 0, 0], 1, 0, 0)
 
-agent.qec.buffers[1].add([0, 0.5, 0.5, 0], 1, 0, 0)
-agent.qec.buffers[1].add([0, -0.5, -0.5, 0], 1, 0, 0)
+
+agent.qec.buffers[1].add([0, 0.5, 0.5, 0], 100, 0, 0)
+agent.qec.buffers[1].add([0, -0.5, -0.5, 0], 100, 0, 0)
 
 agent.qec.plot_scatter()

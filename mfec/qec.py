@@ -23,8 +23,8 @@ class QEC:
         dists = dists[0]
         neighbors = neighbors[0]
         # print(f"In {state} --> {buffer.states[neighbors[0]]} = {buffer.values[neighbors[0]]} ")
-
-        w = [1/d for d in dists]
+        #print(dists)
+        w = [1 / (d) if d > 0 else d for d in dists]
         value = 0
         # a = 0
         for i, neighbor in enumerate(neighbors):
@@ -37,7 +37,8 @@ class QEC:
         # print(f"% ahead in NN search: {a/len(neighbors)*100}")
         if sum(w) == 0:
             return 0
-        return value
+        #print(value)
+        return value/sum(w)
 
     def update(self, state, action, value, time, step):
         buffer = self.buffers[action]
@@ -177,8 +178,8 @@ class QEC:
             ax.set(xlabel="Vel")
             ax.set(ylabel="Angle")
             ax.set(title=f"max r={max(vals)}")
-            ax.set(ylim=[-1, 1])
-            ax.set(xlim=[-1, 1])
+            ax.set(ylim=[-1.5, 1.5])
+            ax.set(xlim=[-1.5, 1.5])
 
         states = np.random.rand(5000, 4) * 2 - 1
         states[:, 3] = 0
@@ -193,8 +194,8 @@ class QEC:
         ax3.scatter(states[:, 1], states[:, 2], c=vals, cmap="bwr")
         turn_on_grid(ax3)
         ax3.set(xlabel="Vel")
-        ax3.set(ylim=[-1, 1])
-        ax3.set(xlim=[-1, 1])
+        ax3.set(ylim=[-1.5, 1.5])
+        ax3.set(xlim=[-1.5, 1.5])
         ax3.set(ylabel="Angle")
         ax3.set(title=f"max={max(vals):.2f}, min={min(vals):.2f}")
         plt.show()
