@@ -42,9 +42,9 @@ EXP_SKIP = 1
 EPOCHS_TILL_VIS = 100
 
 ACTION_BUFFER_SIZE = 1_000_000
-K = 15
+K = 1
 DISCOUNT = 1
-EPSILON = 0
+EPSILON = 0.0
 
 FRAMESKIP = 1  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0
@@ -146,7 +146,7 @@ def run_episode(agent, env):
         episode_frames += FRAMESKIP
         step += 1
     agent.train()
-    #agent.qec.plot_scatter()
+    agent.qec.plot_scatter()
     #agent.qec.plot3d(both=True, diff=True)
 
     return episode_frames, episode_reward

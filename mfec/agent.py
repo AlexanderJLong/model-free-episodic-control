@@ -55,6 +55,7 @@ class MFECAgent:
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:
+            print("Exp")
             self.action = self.rs.choice(self.actions)
 
         # Exploitation

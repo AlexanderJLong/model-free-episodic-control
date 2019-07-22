@@ -82,7 +82,7 @@ for i in range(0, len(base_dirs)):
         data.append(table)
 
 print(data)
-plot_data(data, smooth=1, n=len(base_dirs))
+plot_data(data, smooth=10, n=len(base_dirs))
 plt.show()
 plt.gcf()
 #Not working

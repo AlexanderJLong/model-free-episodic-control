@@ -24,7 +24,7 @@ class QEC:
         neighbors = neighbors[0]
         # print(f"In {state} --> {buffer.states[neighbors[0]]} = {buffer.values[neighbors[0]]} ")
         #print(dists)
-        w = [1 / (d) if d > 0 else d for d in dists]
+        w = [1 for d in dists]
         value = 0
         # a = 0
         for i, neighbor in enumerate(neighbors):
@@ -38,7 +38,7 @@ class QEC:
         if sum(w) == 0:
             return 0
         #print(value)
-        return value/sum(w)
+        return value
 
     def update(self, state, action, value, time, step):
         buffer = self.buffers[action]
@@ -164,22 +164,27 @@ class QEC:
 
         fig = plt.figure()
         fig.set_tight_layout(True)
-        ax1 = fig.add_subplot(131)
-        ax2 = fig.add_subplot(132)
-        ax3 = fig.add_subplot(133)
-        axes = [ax1, ax2]
-        for i, ax in enumerate(axes):
+        ax1 = fig.add_subplot(121)
+        ax3 = fig.add_subplot(122)
+
+        for i in range(2):
             data = self.buffers[i]
             states = np.asarray(data.states)
             vals = np.asarray(data.values)
-            ax.scatter(states[:, 1], states[:, 2], c=vals)
-            turn_on_grid(ax)
+            maps = ["Blues", "Reds"]
+            ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap=maps[i])
+            turn_on_grid(ax1)
 
-            ax.set(xlabel="Vel")
-            ax.set(ylabel="Angle")
-            ax.set(title=f"max r={max(vals)}")
-            ax.set(ylim=[-1.5, 1.5])
-            ax.set(xlim=[-1.5, 1.5])
+            ax1.set(xlabel="Vel")
+            ax1.set(ylabel="Angle")
+            ax1.set(title=f"max r={max(vals)}")
+            ax1.set(ylim=[-1.5, 1.5])
+            ax1.set(xlim=[-1.5, 1.5])
+        ax1.set(xlabel="Vel")
+        ax1.set(ylabel="Angle")
+        ax1.set(title=f"max r={max(vals)}")
+        ax1.set(ylim=[-1.5, 1.5])
+        ax1.set(xlim=[-1.5, 1.5])
 
         states = np.random.rand(5000, 4) * 2 - 1
         states[:, 3] = 0
