@@ -22,7 +22,7 @@ class QEC:
         neighbors, dists = buffer.find_neighbors(state, self.k, ball=False)
         dists = dists[0]
         neighbors = neighbors[0]
-        #print(f"In {state} --> {buffer.states[neighbors[0]]} = {buffer.values[neighbors[0]]} ")
+        # print(f"In {state} --> {buffer.states[neighbors[0]]} = {buffer.values[neighbors[0]]} ")
 
         w = [1/d for d in dists]
         value = 0
@@ -37,7 +37,7 @@ class QEC:
         # print(f"% ahead in NN search: {a/len(neighbors)*100}")
         if sum(w) == 0:
             return 0
-        return value / sum(w)
+        return value
 
     def update(self, state, action, value, time, step):
         buffer = self.buffers[action]
@@ -154,10 +154,33 @@ class QEC:
         plt.show()
 
     def plot_scatter(self):
+
+        def turn_on_grid(ax):
+            ax.grid(b=True, which='major', color='#666666', linestyle='-')
+            # Show the minor grid lines with very faint and almost transparent grey lines
+            ax.minorticks_on()
+            ax.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+
         fig = plt.figure()
         fig.set_tight_layout(True)
-        ax1 = fig.add_subplot(111)
-        states = np.random.rand(5000, 4) * 5 - 2
+        ax1 = fig.add_subplot(131)
+        ax2 = fig.add_subplot(132)
+        ax3 = fig.add_subplot(133)
+        axes = [ax1, ax2]
+        for i, ax in enumerate(axes):
+            data = self.buffers[i]
+            states = np.asarray(data.states)
+            vals = np.asarray(data.values)
+            ax.scatter(states[:, 1], states[:, 2], c=vals)
+            turn_on_grid(ax)
+
+            ax.set(xlabel="Vel")
+            ax.set(ylabel="Angle")
+            ax.set(title=f"max r={max(vals)}")
+            ax.set(ylim=[-1, 1])
+            ax.set(xlim=[-1, 1])
+
+        states = np.random.rand(5000, 4) * 2 - 1
         states[:, 3] = 0
         states[:, 0] = 0
         vals = []
@@ -167,10 +190,13 @@ class QEC:
         # force normalization between certain range and make sure its symetric
         vals[0] = max(max(vals), -min(vals))
         vals[1] = min(-max(vals), min(vals))
-        ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap="bwr")
-        ax1.set(xlabel="Vel")
-        ax1.set(ylabel="Angle")
-        ax1.set(title=f"max={max(vals):.2f}, min={min(vals):.2f}")
+        ax3.scatter(states[:, 1], states[:, 2], c=vals, cmap="bwr")
+        turn_on_grid(ax3)
+        ax3.set(xlabel="Vel")
+        ax3.set(ylim=[-1, 1])
+        ax3.set(xlim=[-1, 1])
+        ax3.set(ylabel="Angle")
+        ax3.set(title=f"max={max(vals):.2f}, min={min(vals):.2f}")
         plt.show()
         return
 
