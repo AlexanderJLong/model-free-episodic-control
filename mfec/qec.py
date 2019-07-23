@@ -24,7 +24,11 @@ class QEC:
         neighbors = neighbors[0]
         # print(f"In {state} --> {buffer.states[neighbors[0]]} = {buffer.values[neighbors[0]]} ")
         # print(dists)
-        w = [1 for d in dists]
+        def gaus(x, mu, sig):
+            return 1./(np.sqrt(2.*np.pi)*sig)*np.exp(-np.power((x - mu)/sig, 2.)/2)
+
+        w = gaus(dists, 0, 0.3)
+        assert(len(w) == len(dists))
         value = 0
         # a = 0
         for i, neighbor in enumerate(neighbors):
@@ -38,7 +42,7 @@ class QEC:
         if sum(w) == 0:
             return 0
         # print(value)
-        return value
+        return value/sum(w)
 
     def update(self, state, action, value, time, step):
         buffer = self.buffers[action]
@@ -177,7 +181,7 @@ class QEC:
             im1 = ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap=maps[i])
 
 
-        states = np.random.rand(5000, 4) * 2 - 1
+        states = np.random.rand(5000, 4) * 3 - 1.5
         states[:, 3] = 0
         states[:, 0] = 0
         e0 = []

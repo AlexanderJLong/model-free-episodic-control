@@ -2,7 +2,7 @@ from mfec.agent import MFECAgent
 
 agent = MFECAgent(
     buffer_size=1_000,
-    k=1,
+    k=2,
     discount=1,
     epsilon=0,
     height=1,
