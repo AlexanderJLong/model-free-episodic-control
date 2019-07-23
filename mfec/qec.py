@@ -16,14 +16,14 @@ class QEC:
         """Changes:
         - No exact matching"""
         buffer = self.buffers[action]
-        if len(buffer) <= self.k:
+        if len(buffer) < self.k:
             return float("inf")
 
         neighbors, dists = buffer.find_neighbors(state, self.k, ball=False)
         dists = dists[0]
         neighbors = neighbors[0]
         # print(f"In {state} --> {buffer.states[neighbors[0]]} = {buffer.values[neighbors[0]]} ")
-        #print(dists)
+        # print(dists)
         w = [1 for d in dists]
         value = 0
         # a = 0
@@ -37,7 +37,7 @@ class QEC:
         # print(f"% ahead in NN search: {a/len(neighbors)*100}")
         if sum(w) == 0:
             return 0
-        #print(value)
+        # print(value)
         return value
 
     def update(self, state, action, value, time, step):
@@ -46,7 +46,7 @@ class QEC:
         if state_index:
             max_value = max(buffer.values[state_index], value)
             max_time = max(buffer.times[state_index], time)
-            buffer.replace(state, max_value, max_time, state_index)
+            buffer.replace(state, max_value, max_time, state_index, step)
         else:
             buffer.add(state, value, time, step)
 
@@ -164,45 +164,43 @@ class QEC:
 
         fig = plt.figure()
         fig.set_tight_layout(True)
-        ax1 = fig.add_subplot(121)
-        ax3 = fig.add_subplot(122)
+        ax1 = fig.add_subplot(221)
+        ax2 = fig.add_subplot(222)
+        ax3 = fig.add_subplot(223)
+        ax4 = fig.add_subplot(224)
 
         for i in range(2):
             data = self.buffers[i]
             states = np.asarray(data.states)
             vals = np.asarray(data.values)
-            maps = ["Blues", "Reds"]
-            ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap=maps[i])
-            turn_on_grid(ax1)
+            maps = ["Reds", "Blues"]
+            im1 = ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap=maps[i])
 
-            ax1.set(xlabel="Vel")
-            ax1.set(ylabel="Angle")
-            ax1.set(title=f"max r={max(vals)}")
-            ax1.set(ylim=[-1.5, 1.5])
-            ax1.set(xlim=[-1.5, 1.5])
-        ax1.set(xlabel="Vel")
-        ax1.set(ylabel="Angle")
-        ax1.set(title=f"max r={max(vals)}")
-        ax1.set(ylim=[-1.5, 1.5])
-        ax1.set(xlim=[-1.5, 1.5])
 
         states = np.random.rand(5000, 4) * 2 - 1
         states[:, 3] = 0
         states[:, 0] = 0
-        vals = []
+        e0 = []
+        e1 = []
         for s in states:
-            vals.append(self.estimate(s, 1, 0) - self.estimate(s, 0, 0))
-
+            e0.append(self.estimate(s, 0, 0))
+            e1.append(self.estimate(s, 1, 0))
+        diff = np.asarray(e0) - np.asarray(e1)
         # force normalization between certain range and make sure its symetric
-        vals[0] = max(max(vals), -min(vals))
-        vals[1] = min(-max(vals), min(vals))
-        ax3.scatter(states[:, 1], states[:, 2], c=vals, cmap="bwr")
-        turn_on_grid(ax3)
-        ax3.set(xlabel="Vel")
-        ax3.set(ylim=[-1.5, 1.5])
-        ax3.set(xlim=[-1.5, 1.5])
-        ax3.set(ylabel="Angle")
-        ax3.set(title=f"max={max(vals):.2f}, min={min(vals):.2f}")
+        diff[0] = max(max(diff), -min(diff))
+        diff[1] = min(-max(diff), min(diff))
+        im2 = ax2.scatter(states[:, 1], states[:, 2], c=diff, cmap="bwr")
+        im3 = ax3.scatter(states[:, 1], states[:, 2], c=e0, cmap="Reds")
+        im4 = ax4.scatter(states[:, 1], states[:, 2], c=e1, cmap="Blues")
+
+        for im, ax in [(im1, ax1), (im2, ax2), (im3, ax3), (im4, ax4)]:
+            turn_on_grid(ax)
+            ax.set(xlabel="Vel")
+            ax.set(ylim=[-1.5, 1.5])
+            ax.set(xlim=[-1.5, 1.5])
+            ax.set(ylabel="Angle")
+            fig.colorbar(im, ax=ax)
+            ax.set(title=f"max={max(vals):.2f}, min={min(vals):.2f}")
         plt.show()
         return
 

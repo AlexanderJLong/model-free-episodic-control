@@ -77,7 +77,7 @@ class MFECAgent:
                 "action": self.action,
                 "reward": reward,
                 "time": self.time,
-                "steps": step,
+                "step": step,
             }
         )
 
@@ -93,7 +93,7 @@ class MFECAgent:
                     experience["action"],
                     value,
                     experience["time"],
-                    experience["steps"],
+                    experience["step"],
                 )
 
     def save(self, results_dir):
