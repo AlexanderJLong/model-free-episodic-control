@@ -39,12 +39,12 @@ RENDER = False
 EPOCHS = 300
 FRAMES_PER_EPOCH = 400
 EXP_SKIP = 1
-EPOCHS_TILL_VIS = 100
+EPOCHS_TILL_VIS = 50
 
 ACTION_BUFFER_SIZE = 1_000_000
-K = 15
+K = 2
 DISCOUNT = 1
-EPSILON = 1
+EPSILON = 0.01
 
 FRAMESKIP = 1  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0
@@ -113,21 +113,24 @@ def run_algorithm(agent, agent_dir, env, utils):
             frames_left -= episode_frames
             utils.end_episode(episode_frames, episode_reward)
         utils.end_epoch()
+
         # agent.save(agent_dir)
 
         if e > EPOCHS_TILL_VIS:
+            agent.qec.plot_scatter()
             agent.qec.plot3d(both=False, diff=False)
 
 
 def run_episode(agent, env):
-    agent.epsilon /= 1.1
+    #agent.epsilon -= 0.007
+    #print(agent.epsilon)
     episode_frames = 0
     episode_reward = 0
 
     env.seed(random.randint(0, 1000000))
     observation = env.reset()
     observation[3] = 0
-    observation[2] = observation[2]*4
+    observation[2] = observation[2]*5
 
     observation[0] = 0
 
@@ -138,7 +141,7 @@ def run_episode(agent, env):
         action = agent.choose_action(observation, step)
         observation, reward, done, _ = env.step(action)
         observation[3] = 0
-        observation[2] = observation[2] * 4
+        observation[2] = observation[2] * 5
         observation[0] = 0
 
         agent.receive_reward(reward, step)
@@ -147,17 +150,18 @@ def run_episode(agent, env):
         episode_frames += FRAMESKIP
         step += 1
     agent.train()
-    #agent.qec.plot_scatter()
+    agent.qec.autonormalize()
+    agent.qec.plot_scatter()
     #agent.qec.plot3d(both=True, diff=True)
 
     return episode_frames, episode_reward
 
 
 if __name__ == "__main__":
-    main(32, 1)
+    main(4, 1)
     exit()
 
-    ARG1 = [32]
+    ARG1 = [4]
     ARG2 = [1, 2, 3]
     with Pool(20) as p:
         p.starmap(main, itertools.product(ARG1, ARG2))

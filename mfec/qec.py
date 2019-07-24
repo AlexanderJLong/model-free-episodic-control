@@ -11,8 +11,31 @@ class QEC:
     def __init__(self, actions, buffer_size, k):
         self.buffers = tuple([ActionBuffer(buffer_size) for _ in actions])
         self.k = k
+        self.m = np.ones(4)  # scale
+        self.b = np.zeros(4)  # offset
+
+    def get_range(self):
+        """array of max and min of state vars across all buffers"""
+        a = np.full(4, float("-inf"))
+        b = np.full(4, float("inf"))
+        for buff in self.buffers:
+            a = np.maximum(np.max(buff.states, axis=0), a)
+            b = np.minimum(np.min(buff.states, axis=0), b)
+        return a, b
+
+    def autonormalize(self):
+        """change all states, in all buffers, to refect the changes in scaling factors"""
+        a, b = self.get_range()
+
+        m = np.divide(1, (a - b), out=np.zeros_like(a), where=(a-b) != 0)
+        for buff in self.buffers:
+            buff.states = ((buff.states-b)*m).tolist()
+        self.m = m*self.m
+        self.b = b+self.b
+        return
 
     def estimate(self, state, action, step):
+        state = (state-self.b)*self.m
         """Changes:
         - No exact matching"""
         buffer = self.buffers[action]
@@ -22,13 +45,14 @@ class QEC:
         neighbors, dists = buffer.find_neighbors(state, self.k, ball=False)
         dists = dists[0]
         neighbors = neighbors[0]
+
         # print(f"In {state} --> {buffer.states[neighbors[0]]} = {buffer.values[neighbors[0]]} ")
         # print(dists)
         def gaus(x, mu, sig):
-            return 1./(np.sqrt(2.*np.pi)*sig)*np.exp(-np.power((x - mu)/sig, 2.)/2)
+            return 1. / (np.sqrt(2. * np.pi) * sig) * np.exp(-np.power((x - mu) / sig, 2.) / 2)
 
-        w = gaus(dists, 0, 0.3)
-        assert(len(w) == len(dists))
+        w = gaus(dists, 0, 0.5)
+        assert (len(w) == len(dists))
         value = 0
         # a = 0
         for i, neighbor in enumerate(neighbors):
@@ -42,7 +66,7 @@ class QEC:
         if sum(w) == 0:
             return 0
         # print(value)
-        return value/sum(w)
+        return value / sum(w)
 
     def update(self, state, action, value, time, step):
         buffer = self.buffers[action]
@@ -180,13 +204,13 @@ class QEC:
             maps = ["Reds", "Blues"]
             im1 = ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap=maps[i])
 
-
-        states = np.random.rand(5000, 4) * 3 - 1.5
-        states[:, 3] = 0
-        states[:, 0] = 0
+        states = np.random.rand(5000, 4)
+        states_to_feed = states/self.m - self.b
+        states_to_feed[:, 3] = 0
+        states_to_feed[:, 0] = 0
         e0 = []
         e1 = []
-        for s in states:
+        for s in states_to_feed:
             e0.append(self.estimate(s, 0, 0))
             e1.append(self.estimate(s, 1, 0))
         diff = np.asarray(e0) - np.asarray(e1)
@@ -200,8 +224,8 @@ class QEC:
         for im, ax in [(im1, ax1), (im2, ax2), (im3, ax3), (im4, ax4)]:
             turn_on_grid(ax)
             ax.set(xlabel="Vel")
-            ax.set(ylim=[-1.5, 1.5])
-            ax.set(xlim=[-1.5, 1.5])
+            ax.set(ylim=[0, 1])
+            ax.set(xlim=[0, 1])
             ax.set(ylabel="Angle")
             fig.colorbar(im, ax=ax)
             ax.set(title=f"max={max(vals):.2f}, min={min(vals):.2f}")

@@ -39,7 +39,8 @@ class MFECAgent:
         self.time = 0
         self.rewards_received = 0
         self.exp_skip = exp_skip
-        self.t = 0 #keep track of episode step
+        self.t = 0  # keep track of episode step
+
 
     def choose_action(self, observation, step):
         self.time += 1
@@ -47,11 +48,6 @@ class MFECAgent:
         # Preprocess and project observation to state
         # self.state = np.dot(self.projection, np.asarray(observation).flatten())
         self.state = observation
-
-        # Random action for 1000 frames
-        #if self.time < 100:
-        #    self.action = self.rs.choice(self.actions)
-        #    return self.action
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:
@@ -66,7 +62,7 @@ class MFECAgent:
             ]
             best_actions = np.argwhere(values == np.max(values)).flatten()
             self.action = self.rs.choice(best_actions)
-            #print(f"In {observation}, got values {values} and picked {self.action}")
+            # print(f"In {observation}, got values {values} and picked {self.action}")
 
         return self.action
 
@@ -82,7 +78,7 @@ class MFECAgent:
         )
 
     def train(self):
-        self.rewards_received +=1
+        self.rewards_received += 1
         value = 0.0
         for _ in range(len(self.memory)):
             experience = self.memory.pop()
