@@ -22,6 +22,8 @@ class MFECAgent:
             actions,
             seed,
             exp_skip,
+            autonormalization_frequency,
+            epsilon_decay,
     ):
         self.rs = np.random.RandomState(seed)
         self.size = (height, width)
@@ -33,6 +35,8 @@ class MFECAgent:
         ).astype(np.float32)
         self.discount = discount
         self.epsilon = epsilon
+        self.epsilon_decay = epsilon_decay
+        self.autonormalization_frequency = autonormalization_frequency
 
         self.state = np.empty(state_dimension, self.projection.dtype)
         self.action = int
@@ -40,7 +44,6 @@ class MFECAgent:
         self.rewards_received = 0
         self.exp_skip = exp_skip
         self.t = 0  # keep track of episode step
-
 
     def choose_action(self, observation, step):
         self.time += 1
@@ -91,6 +94,11 @@ class MFECAgent:
                     experience["time"],
                     experience["step"],
                 )
+            if not self.rewards_received % self.autonormalization_frequency:
+                self.qec.autonormalize()
+
+        # Decay e linearly
+        self.epsilon -= self.epsilon_decay
 
     def save(self, results_dir):
         with open(os.path.join(results_dir, "agent.pkl"), "wb") as file:

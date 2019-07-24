@@ -35,19 +35,9 @@ print(args.environment)
 TITLE = "local"
 ENVIRONMENT = "CartPole-v0"
 AGENT_PATH = ""
-RENDER = False
 EPOCHS = 300
 FRAMES_PER_EPOCH = 400
-EXP_SKIP = 1
 EPOCHS_TILL_VIS = 50
-
-ACTION_BUFFER_SIZE = 1_000_000
-K = 20
-DISCOUNT = 1
-EPSILON = 1
-
-FRAMESKIP = 1  # Default gym-setting is (2, 5)
-REPEAT_ACTION_PROB = 0
 
 
 # STATE_DIMENSION = 4
@@ -74,28 +64,26 @@ def main(STATE_DIMENSION, SEED):
     # Initialize utils, environment and agent
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
     env = gym.make(ENVIRONMENT)
-    from cartpole_wrapper import pixel_state_wrapper, det_wrapper
-    #env = det_wrapper(env)
-
 
     print(env.observation_space.shape)
-    SCALE_HEIGHT, SCALE_WIDTH = (1, 4)
 
     try:
         if AGENT_PATH:
             agent = MFECAgent.load(AGENT_PATH)
         else:
             agent = MFECAgent(
-                ACTION_BUFFER_SIZE,
-                K,
-                DISCOUNT,
-                EPSILON,
-                SCALE_HEIGHT,
-                SCALE_WIDTH,
-                STATE_DIMENSION,
-                range(env.action_space.n),
-                SEED,
-                EXP_SKIP,
+                buffer_size=1_000_000,
+                k=20,
+                discount=1,
+                epsilon=1,
+                height=1,
+                width=4,
+                state_dimension=STATE_DIMENSION,
+                actions=range(env.action_space.n),
+                seed=SEED,
+                exp_skip=1,
+                autonormalization_frequency=5,
+                epsilon_decay=0.01,
             )
         run_algorithm(agent, agent_dir, env, utils)
 
@@ -123,17 +111,12 @@ def run_algorithm(agent, agent_dir, env, utils):
 
 
 def run_episode(agent, env):
-    agent.epsilon -= 0.01
     print(agent.epsilon)
     episode_frames = 0
     episode_reward = 0
 
     env.seed(random.randint(0, 1000000))
     observation = env.reset()
-    #observation[3] = 0
-    #observation[2] = observation[2]*5
-#
-    #observation[0] = 0
 
 
     done = False
@@ -141,14 +124,11 @@ def run_episode(agent, env):
     while not done:
         action = agent.choose_action(observation, step)
         observation, reward, done, _ = env.step(action)
-        #observation[3] = 0
-        #observation[2] = observation[2] * 5
-        #observation[0] = 0
 
         agent.receive_reward(reward, step)
 
         episode_reward += reward
-        episode_frames += FRAMESKIP
+        episode_frames += 1
         step += 1
     agent.train()
 
