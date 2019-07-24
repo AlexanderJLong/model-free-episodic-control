@@ -44,7 +44,7 @@ EPOCHS_TILL_VIS = 50
 ACTION_BUFFER_SIZE = 1_000_000
 K = 20
 DISCOUNT = 1
-EPSILON = 0.00
+EPSILON = 1
 
 FRAMESKIP = 1  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0
@@ -112,6 +112,7 @@ def run_algorithm(agent, agent_dir, env, utils):
             episode_frames, episode_reward = run_episode(agent, env)
             frames_left -= episode_frames
             utils.end_episode(episode_frames, episode_reward)
+        agent.qec.autonormalize()
         utils.end_epoch()
 
         # agent.save(agent_dir)
@@ -122,8 +123,8 @@ def run_algorithm(agent, agent_dir, env, utils):
 
 
 def run_episode(agent, env):
-    #agent.epsilon -= 0.007
-    #print(agent.epsilon)
+    agent.epsilon -= 0.01
+    print(agent.epsilon)
     episode_frames = 0
     episode_reward = 0
 
@@ -150,7 +151,7 @@ def run_episode(agent, env):
         episode_frames += FRAMESKIP
         step += 1
     agent.train()
-    agent.qec.autonormalize()
+
     #agent.qec.plot_scatter()
     #agent.qec.plot3d(both=True, diff=True)
 
@@ -158,9 +159,9 @@ def run_episode(agent, env):
 
 
 if __name__ == "__main__":
-    main(4, 1)
-    exit()
-
+    #main(4, 1)
+    #exit()
+#
     ARG1 = [4]
     ARG2 = [1, 2, 3]
     with Pool(20) as p:
