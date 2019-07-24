@@ -42,9 +42,9 @@ EXP_SKIP = 1
 EPOCHS_TILL_VIS = 50
 
 ACTION_BUFFER_SIZE = 1_000_000
-K = 2
+K = 20
 DISCOUNT = 1
-EPSILON = 0.01
+EPSILON = 0.00
 
 FRAMESKIP = 1  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0
@@ -129,10 +129,10 @@ def run_episode(agent, env):
 
     env.seed(random.randint(0, 1000000))
     observation = env.reset()
-    observation[3] = 0
-    observation[2] = observation[2]*5
-
-    observation[0] = 0
+    #observation[3] = 0
+    #observation[2] = observation[2]*5
+#
+    #observation[0] = 0
 
 
     done = False
@@ -140,9 +140,9 @@ def run_episode(agent, env):
     while not done:
         action = agent.choose_action(observation, step)
         observation, reward, done, _ = env.step(action)
-        observation[3] = 0
-        observation[2] = observation[2] * 5
-        observation[0] = 0
+        #observation[3] = 0
+        #observation[2] = observation[2] * 5
+        #observation[0] = 0
 
         agent.receive_reward(reward, step)
 
@@ -151,7 +151,7 @@ def run_episode(agent, env):
         step += 1
     agent.train()
     agent.qec.autonormalize()
-    agent.qec.plot_scatter()
+    #agent.qec.plot_scatter()
     #agent.qec.plot3d(both=True, diff=True)
 
     return episode_frames, episode_reward

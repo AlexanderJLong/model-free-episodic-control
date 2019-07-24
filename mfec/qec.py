@@ -30,22 +30,16 @@ class QEC:
         for buff in self.buffers:
             mus.append(np.mean(buff.states, axis=0))
             sigs.append(np.std(buff.states, axis=0))
-        print(mus)
-        print(sigs)
         return np.mean(mus, axis=0), np.mean(sigs, axis=0)
 
     def autonormalize(self):
         """change all states, in all buffers, to refect the changes in scaling factors"""
         mu, sig = self.get_mu_and_sig()
         sig[sig==0] = 1
-        print(sig)
-
         for buff in self.buffers:
             buff.states = np.nan_to_num((buff.states - mu) / sig).tolist()
         self.sig = sig*self.sig
         self.mu = mu + self.mu
-        print(self.sig, self.mu)
-        print(f"after norm: {self.get_mu_and_sig()}")
         return
 
     def estimate(self, state, action, step):
@@ -219,7 +213,7 @@ class QEC:
             vals = np.asarray(data.values)
             im1 = ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap=maps[i])
 
-        states = np.random.rand(5000, 4) *6 -3
+        states = np.random.rand(5000, 4) *8 -4
         states_to_feed = states * self.sig + self.mu
         states_to_feed[:, 3] = 0
         states_to_feed[:, 0] = 0
