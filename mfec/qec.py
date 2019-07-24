@@ -11,8 +11,8 @@ class QEC:
     def __init__(self, actions, buffer_size, k):
         self.buffers = tuple([ActionBuffer(buffer_size) for _ in actions])
         self.k = k
-        self.m = np.ones(4)  # scale
-        self.b = np.zeros(4)  # offset
+        self.mu = np.zeros(4)  # offset
+        self.sig = np.ones(4)  #scale
 
     def get_range(self):
         """array of max and min of state vars across all buffers"""
@@ -23,19 +23,33 @@ class QEC:
             b = np.minimum(np.min(buff.states, axis=0), b)
         return a, b
 
+    def get_mu_and_sig(self):
+        """get the average mean and std deviation of each dim over all buffers"""
+        mus = []
+        sigs = []
+        for buff in self.buffers:
+            mus.append(np.mean(buff.states, axis=0))
+            sigs.append(np.std(buff.states, axis=0))
+        print(mus)
+        print(sigs)
+        return np.mean(mus, axis=0), np.mean(sigs, axis=0)
+
     def autonormalize(self):
         """change all states, in all buffers, to refect the changes in scaling factors"""
-        a, b = self.get_range()
+        mu, sig = self.get_mu_and_sig()
+        sig[sig==0] = 1
+        print(sig)
 
-        m = np.divide(1, (a - b), out=np.zeros_like(a), where=(a-b) != 0)
         for buff in self.buffers:
-            buff.states = ((buff.states-b)*m).tolist()
-        self.m = m*self.m
-        self.b = b+self.b
+            buff.states = np.nan_to_num((buff.states - mu) / sig).tolist()
+        self.sig = sig*self.sig
+        self.mu = mu + self.mu
+        print(self.sig, self.mu)
+        print(f"after norm: {self.get_mu_and_sig()}")
         return
 
     def estimate(self, state, action, step):
-        state = (state-self.b)*self.m
+        state = np.nan_to_num((state - self.mu) / self.sig)
         """Changes:
         - No exact matching"""
         buffer = self.buffers[action]
@@ -69,6 +83,7 @@ class QEC:
         return value / sum(w)
 
     def update(self, state, action, value, time, step):
+        state = np.nan_to_num((state - self.mu) / self.sig)
         buffer = self.buffers[action]
         state_index = buffer.find_state(state)
         if state_index:
@@ -197,15 +212,15 @@ class QEC:
         ax3 = fig.add_subplot(223)
         ax4 = fig.add_subplot(224)
 
+        maps = ["Reds", "Blues"]
         for i in range(2):
             data = self.buffers[i]
             states = np.asarray(data.states)
             vals = np.asarray(data.values)
-            maps = ["Reds", "Blues"]
             im1 = ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap=maps[i])
 
-        states = np.random.rand(5000, 4)
-        states_to_feed = states/self.m - self.b
+        states = np.random.rand(5000, 4) *6 -3
+        states_to_feed = states * self.sig + self.mu
         states_to_feed[:, 3] = 0
         states_to_feed[:, 0] = 0
         e0 = []
@@ -224,8 +239,8 @@ class QEC:
         for im, ax in [(im1, ax1), (im2, ax2), (im3, ax3), (im4, ax4)]:
             turn_on_grid(ax)
             ax.set(xlabel="Vel")
-            ax.set(ylim=[0, 1])
-            ax.set(xlim=[0, 1])
+            ax.set(ylim=[-4, 4])
+            ax.set(xlim=[-4, 4])
             ax.set(ylabel="Angle")
             fig.colorbar(im, ax=ax)
             ax.set(title=f"max={max(vals):.2f}, min={min(vals):.2f}")
