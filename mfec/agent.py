@@ -54,7 +54,6 @@ class MFECAgent:
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:
-            print("Exp")
             self.action = self.rs.choice(self.actions)
 
         # Exploitation
@@ -94,11 +93,15 @@ class MFECAgent:
                     experience["time"],
                     experience["step"],
                 )
+
+        #Normalize
+        if self.autonormalization_frequency is not 0:
             if not self.rewards_received % self.autonormalization_frequency:
                 self.qec.autonormalize()
 
         # Decay e linearly
-        self.epsilon -= self.epsilon_decay
+        if self.epsilon > 0:
+            self.epsilon -= self.epsilon_decay
 
     def save(self, results_dir):
         with open(os.path.join(results_dir, "agent.pkl"), "wb") as file:

@@ -36,22 +36,9 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
                  y=value,
                  ci='sd',
                  estimator=np.mean,
-                 hue="K",
+                 hue="NORMALIZATION_FREQ",
                  palette=sns.color_palette("Set1", n),
                  **kwargs)
-    """
-    If you upgrade to any version of Seaborn greater than 0.8.1, switch from 
-    tsplot to lineplot replacing L29 with:
-    Changes the colorscheme and the default legend style, though.
-    """
-    # plt.legend(loc='best').set_draggable(True)
-
-    """
-    For the version of the legend used in the Spinning Up benchmarking page, 
-    swap L38 with:
-    plt.legend(loc='upper center', ncol=6, handlelength=1,
-               mode="expand", borderaxespad=0., prop={'size': 13})
-    """
     axes = plot.axes
     plot.set_title(TITLE)
     axes.set_xlim(0, )
@@ -64,7 +51,7 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
 
 
 data = []
-TITLE = "*"
+TITLE = "correct"
 if TITLE:
     base_dirs = glob("./agents/*" + TITLE + "*SEED=1*/")
 else:
@@ -79,6 +66,7 @@ for i in range(0, len(base_dirs)):
         table.insert(len(table.columns), 'K', re.findall(r'\d+', f)[-2])
         table.insert(len(table.columns), 'SEED', re.findall(r'\d+', f)[-1])
         table.insert(len(table.columns), 'DIM', re.findall(r'\d+', f)[-3])
+        table.insert(len(table.columns), 'NORMALIZATION_FREQ', re.findall(r'\d+', f)[-4])
         data.append(table)
 
 print(data)

@@ -12,7 +12,7 @@ class QEC:
         self.buffers = tuple([ActionBuffer(buffer_size) for _ in actions])
         self.k = k
         self.mu = np.zeros(4)  # offset
-        self.sig = np.ones(4)  #scale
+        self.sig = np.ones(4)  # scale
 
     def get_range(self):
         """array of max and min of state vars across all buffers"""
@@ -33,17 +33,21 @@ class QEC:
         return np.mean(mus, axis=0), np.mean(sigs, axis=0)
 
     def autonormalize(self):
+        """NOTE: NO MU - won't work if state vars arent centered"""
+        if len(self.buffers[0].states) is 0:
+            return
         """change all states, in all buffers, to refect the changes in scaling factors"""
         mu, sig = self.get_mu_and_sig()
-        sig[sig==0] = 1
+        sig[sig == 0] = 1
         for buff in self.buffers:
-            buff.states = np.nan_to_num((buff.states - mu) / sig).tolist()
-        self.sig = sig*self.sig
-        self.mu = mu + self.mu
+            buff.states = ((buff.states) / sig).tolist()
+        self.sig = sig * self.sig
+        self.mu = self.mu
+        #print(self.mu, self.sig)
         return
 
     def estimate(self, state, action, step):
-        state = np.nan_to_num((state - self.mu) / self.sig)
+        state = (state - self.mu) / self.sig
         """Changes:
         - No exact matching"""
         buffer = self.buffers[action]
@@ -54,8 +58,6 @@ class QEC:
         dists = dists[0]
         neighbors = neighbors[0]
 
-        # print(f"In {state} --> {buffer.states[neighbors[0]]} = {buffer.values[neighbors[0]]} ")
-        # print(dists)
         def gaus(x, mu, sig):
             return 1. / (np.sqrt(2. * np.pi) * sig) * np.exp(-np.power((x - mu) / sig, 2.) / 2)
 
@@ -77,7 +79,7 @@ class QEC:
         return value / sum(w)
 
     def update(self, state, action, value, time, step):
-        state = np.nan_to_num((state - self.mu) / self.sig)
+        state = (state - self.mu) / self.sig
         buffer = self.buffers[action]
         state_index = buffer.find_state(state)
         if state_index:
@@ -172,23 +174,19 @@ class QEC:
             plt.show()
             return
 
-        elif both:
-            ax1 = fig.add_subplot(121, projection='3d')
-            ax2 = fig.add_subplot(122, projection='3d')
-            axes = [ax1, ax2]
         else:
             ax1 = fig.add_subplot(111, projection='3d')
-            axes = [ax1]
-        fig.set_tight_layout(True)
-        for i, ax in enumerate(axes):
-            data = self.buffers[i]
-            states = np.asarray(data.states)
-            vals = np.asarray(data.values)
-            ax.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals)
+            fig.set_tight_layout(True)
+            maps= ["Blues", "Reds"]
+            for i in range(2):
+                data = self.buffers[i]
+                states = np.asarray(data.states)
+                vals = np.asarray(data.values)
+                ax1.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals, cmap=maps[i])
 
-            ax.set(xlabel="Vel")
-            ax.set(ylabel="Angle")
-            ax.set(zlabel="Position")
+            ax1.set(xlabel="Vel")
+            ax1.set(ylabel="Angle")
+            ax1.set(zlabel="Position")
         plt.show()
 
     def plot_scatter(self):
@@ -213,7 +211,7 @@ class QEC:
             vals = np.asarray(data.values)
             im1 = ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap=maps[i])
 
-        states = np.random.rand(5000, 4) *8 -4
+        states = np.random.rand(5000, 4) * 8 - 4
         states_to_feed = states * self.sig + self.mu
         states_to_feed[:, 3] = 0
         states_to_feed[:, 0] = 0
