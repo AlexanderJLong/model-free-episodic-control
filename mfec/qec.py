@@ -8,11 +8,12 @@ from matplotlib import cm
 
 
 class QEC:
-    def __init__(self, actions, buffer_size, k):
+    def __init__(self, actions, buffer_size, k, kernel_width):
         self.buffers = tuple([ActionBuffer(buffer_size) for _ in actions])
         self.k = k
         self.mu = np.zeros(4)  # offset
         self.sig = np.ones(4)  # scale
+        self.kernel_width = kernel_width
 
     def get_range(self):
         """array of max and min of state vars across all buffers"""
@@ -33,8 +34,9 @@ class QEC:
         return np.mean(mus, axis=0), np.mean(sigs, axis=0)
 
     def autonormalize(self):
-        """NOTE: NO MU - won't work if state vars arent centered"""
-        if len(self.buffers[0].states) is 0:
+        """NOTE: NO MU - won't work if state vars arent centered
+        should really check all buffer sizes as well, but this might be slow"""
+        if len(self.buffers[0]) <= self.k:
             return
         """change all states, in all buffers, to refect the changes in scaling factors"""
         mu, sig = self.get_mu_and_sig()
@@ -58,10 +60,10 @@ class QEC:
         dists = dists[0]
         neighbors = neighbors[0]
 
-        def gaus(x, mu, sig):
-            return 1. / (np.sqrt(2. * np.pi) * sig) * np.exp(-np.power((x - mu) / sig, 2.) / 2)
+        def gaus(x, sig):
+            return 1. / (np.sqrt(2. * np.pi) * sig) * np.exp(-np.power(x / sig, 2.) / 2)
 
-        w = gaus(dists, 0, 0.5)
+        w = gaus(dists, self.kernel_width)
         assert (len(w) == len(dists))
         value = 0
         # a = 0

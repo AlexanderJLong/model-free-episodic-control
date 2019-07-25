@@ -24,12 +24,13 @@ class MFECAgent:
             exp_skip,
             autonormalization_frequency,
             epsilon_decay,
+            kernel_width
     ):
         self.rs = np.random.RandomState(seed)
         self.size = (height, width)
         self.memory = []
         self.actions = actions
-        self.qec = QEC(self.actions, buffer_size, k)
+        self.qec = QEC(self.actions, buffer_size, k, kernel_width)
         self.projection = self.rs.randn(
             state_dimension, height * width
         ).astype(np.float32)
@@ -37,7 +38,6 @@ class MFECAgent:
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.autonormalization_frequency = autonormalization_frequency
-
         self.state = np.empty(state_dimension, self.projection.dtype)
         self.action = int
         self.time = 0

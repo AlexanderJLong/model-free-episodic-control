@@ -32,7 +32,7 @@ parser.add_argument("environment")
 args = parser.parse_args()
 print(args.environment)
 
-TITLE = "correct"
+TITLE = "kernel"
 ENVIRONMENT = "CartPole-v0"
 AGENT_PATH = ""
 RENDER = False
@@ -42,11 +42,12 @@ EXP_SKIP = 1
 EPOCHS_TILL_VIS = 100
 
 ACTION_BUFFER_SIZE = 1_000_000
-K = 20
+K = 50
 DISCOUNT = 1
-EPSILON = 0
-EPS_DECAY = 0.01
-AUTONORM_FREQ = 0
+EPSILON = 1
+EPS_DECAY = 0.005
+AUTONORM_FREQ = 20
+KERNEL_WIDTH = 1
 
 FRAMESKIP = 1  # Default gym-setting is (2, 5)
 REPEAT_ACTION_PROB = 0
@@ -96,6 +97,7 @@ def main(STATE_DIMENSION, SEED, AUTONORM_FREQ):
                 exp_skip=EXP_SKIP,
                 autonormalization_frequency=AUTONORM_FREQ,
                 epsilon_decay=EPS_DECAY,
+                kernel_width=KERNEL_WIDTH,
             )
         run_algorithm(agent, agent_dir, env, utils)
 
@@ -154,6 +156,6 @@ if __name__ == "__main__":
 #
     ARG1 = [4]
     ARG2 = [1, 2, 3]
-    ARG3 = [0, 1, 5, 10]
+    ARG3 = [0, 1, 20, 50, 100]
     with Pool(20) as p:
         p.starmap(main, itertools.product(ARG1, ARG2, ARG3))
