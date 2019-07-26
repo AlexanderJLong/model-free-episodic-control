@@ -36,7 +36,7 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
                  y=value,
                  ci='sd',
                  estimator=np.mean,
-                 hue="NORMALIZATION_FREQ",
+                 hue="NORMFREQ",
                  palette=sns.color_palette("Set1", n),
                  **kwargs)
     axes = plot.axes
@@ -63,10 +63,12 @@ for i in range(0, len(base_dirs)):
 
     for f in files:
         table = pd.read_csv(f, sep=',', header=0)
-        table.insert(len(table.columns), 'K', re.findall(r'\d+', f)[-2])
-        table.insert(len(table.columns), 'SEED', re.findall(r'\d+', f)[-1])
-        table.insert(len(table.columns), 'DIM', re.findall(r'\d+', f)[-3])
-        table.insert(len(table.columns), 'NORMALIZATION_FREQ', re.findall(r'\d+', f)[-4])
+        f = f.split("/")[-2]
+
+        for param in f.split("_"):
+            if "=" in param:
+                p, v = param.split("=")
+                table.insert(len(table.columns), p, v)
         data.append(table)
 
 print(data)
