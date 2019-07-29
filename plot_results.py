@@ -73,7 +73,7 @@ for i in range(0, len(base_dirs)):
         data.append(table)
 
 print(data)
-plot_data(data, smooth=10, n=len(base_dirs), compare="EPSILON")
+plot_data(data, smooth=10, n=len(base_dirs), compare="EPS-DECAY")
 plt.show()
 plt.gcf()
 #Not working

@@ -35,17 +35,18 @@ args = parser.parse_args()
 print(args.environment)
 
 # GLOBAl VARS FIXED FOR EACH RUN
+TITLE = "ConfigExp"
 EPOCHS_TILL_VIS = 100
 EPOCHS = 300
 FRAMES_PER_EPOCH = 400
-TITLE= "ConfigExp"
+
 config = {
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
     "K": 50,
     "DISCOUNT": 1,
-    "EPSILON": [0.001, 0.01, 0.1, 0.2],
-    "EPS-DECAY": 0.000,
+    "EPSILON": 1,
+    "EPS-DECAY": [0.001, 0.01, 0.05, 0.1],
     "NORM-FREQ": 20,
     "KERNEL-WIDTH": 1,
     "SEED": [1, 2, 3]
@@ -156,7 +157,6 @@ if __name__ == "__main__":
     all_values = itertools.product(*config_vals)
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
-    print("ALL CGFGS", all_configs)
 
     with Pool(20) as p:
         p.map(main, all_configs)
