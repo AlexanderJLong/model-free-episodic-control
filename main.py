@@ -21,6 +21,8 @@ import shutil
 import gym
 import itertools
 
+from glob import glob
+
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
@@ -32,7 +34,7 @@ parser.add_argument("environment")
 args = parser.parse_args()
 print(args.environment)
 
-TITLE = "kernel"
+TITLE = "K"
 ENVIRONMENT = "CartPole-v0"
 AGENT_PATH = ""
 RENDER = False
@@ -44,7 +46,7 @@ EPOCHS_TILL_VIS = 100
 ACTION_BUFFER_SIZE = 1_000_000
 K = 50
 DISCOUNT = 1
-EPSILON = 1
+EPSILON = 0
 EPS_DECAY = 0.005
 AUTONORM_FREQ = 20
 KERNEL_WIDTH = 1
@@ -56,21 +58,33 @@ REPEAT_ACTION_PROB = 0
 # STATE_DIMENSION = 4
 
 
-def main(STATE_DIMENSION, SEED, AUTONORM_FREQ):
+def main(STATE_DIMENSION, SEED, NORM_FREQ, KERNEL_WIDTH, K):
     # Create agent-directory
     execution_time = strftime("%Y-%m-%d-%H%M%S", gmtime())
+    config = {
+        "NORMFREQ": NORM_FREQ,
+        "DIM": STATE_DIMENSION,
+        "K": K,
+        "EPS": EPSILON,
+        "KERNELWIDTH": KERNEL_WIDTH,
+        "SEED": SEED,
+    }
+    config_string = ""
+    for param in config:
+        config_string += "_" + param + "=" + str(config[param])
+
+    print(config_string)
     if TITLE:
         agent_dir = os.path.join(
             "agents",
-            TITLE + f"_NORMFREQ={AUTONORM_FREQ}_DIM={STATE_DIMENSION}_K={K}_SEED={SEED}"
+            TITLE + config_string
         )
+
     else:
         agent_dir = os.path.join(
             "agents",
-            f"{ENVIRONMENT}_{execution_time}_NORMFREQ={AUTONORM_FREQ}_DIM={STATE_DIMENSION}_K={K}_SEED={SEED}"
+            f"{ENVIRONMENT}_{execution_time}" + config_string
         )
-    if os.path.isdir(agent_dir):
-        shutil.rmtree(agent_dir)
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent
@@ -95,7 +109,7 @@ def main(STATE_DIMENSION, SEED, AUTONORM_FREQ):
                 actions=range(env.action_space.n),
                 seed=SEED,
                 exp_skip=EXP_SKIP,
-                autonormalization_frequency=AUTONORM_FREQ,
+                autonormalization_frequency=NORM_FREQ,
                 epsilon_decay=EPS_DECAY,
                 kernel_width=KERNEL_WIDTH,
             )
@@ -117,7 +131,7 @@ def run_algorithm(agent, agent_dir, env, utils):
         utils.end_epoch()
 
         # agent.save(agent_dir)
-        #agent.qec.plot3d(both=False, diff=False)
+        # agent.qec.plot3d(both=False, diff=False)
 
         if e > EPOCHS_TILL_VIS:
             agent.qec.plot_scatter()
@@ -129,7 +143,6 @@ def run_episode(agent, env):
 
     env.seed(random.randint(0, 1000000))
     observation = env.reset()
-
 
     done = False
     step = 0
@@ -144,18 +157,32 @@ def run_episode(agent, env):
         step += 1
     agent.train()
 
-    #agent.qec.plot_scatter()
-    #agent.qec.plot3d(both=False, diff=False)
+    # agent.qec.plot_scatter()
+    # agent.qec.plot3d(both=False, diff=False)
 
     return episode_frames, episode_reward
 
 
 if __name__ == "__main__":
-    #main(4, 1)
-    #exit()
-#
+    if TITLE:
+        # Clear all dirs with the same title before spawing subprocs.
+        base_dirs = glob("./agents/" + TITLE + "*")
+        print(base_dirs)
+        for d in base_dirs:
+            shutil.rmtree(d)
+    # main(4, 1)
+    # exit()
+    #
     ARG1 = [4]
     ARG2 = [1, 2, 3]
-    ARG3 = [0, 1, 20, 50, 100]
+    NORM_FREQ = [10]
+    KERNEL_WIDTHS = [3]
+    K = [1, 5, 10, 20, 50]
     with Pool(20) as p:
-        p.starmap(main, itertools.product(ARG1, ARG2, ARG3))
+        p.starmap(main, itertools.product(
+            ARG1,
+            ARG2,
+            NORM_FREQ,
+            KERNEL_WIDTHS,
+            K, )
+                  )

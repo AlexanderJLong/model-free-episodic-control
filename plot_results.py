@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
+import matplotlib
+#matplotlib.use('tgg')
 from glob import glob
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import re
 
 """
 structure is:
@@ -13,7 +14,7 @@ filenames are: ..._K=1_SEED=1
  """
 
 
-def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condition1", smooth=1, n=1, **kwargs):
+def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condition1", smooth=1, n=1, compare="k", **kwargs):
     if smooth > 1:
         """
         smooth data with moving window average.
@@ -36,7 +37,7 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
                  y=value,
                  ci='sd',
                  estimator=np.mean,
-                 hue="NORMFREQ",
+                 hue=compare,
                  palette=sns.color_palette("Set1", n),
                  **kwargs)
     axes = plot.axes
@@ -51,9 +52,9 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
 
 
 data = []
-TITLE = "kernel"
+TITLE = "K"
 if TITLE:
-    base_dirs = glob("./agents/*" + TITLE + "*SEED=1*/")
+    base_dirs = glob("./agents/" + TITLE + "*SEED=1*/")
 else:
     base_dirs = glob("./agents/*SEED=1*/")
 for i in range(0, len(base_dirs)):
@@ -72,7 +73,7 @@ for i in range(0, len(base_dirs)):
         data.append(table)
 
 print(data)
-plot_data(data, smooth=10, n=len(base_dirs))
+plot_data(data, smooth=10, n=len(base_dirs), compare=TITLE)
 plt.show()
 plt.gcf()
 #Not working
