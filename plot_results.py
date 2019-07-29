@@ -1,6 +1,6 @@
-import matplotlib.pyplot as plt
 import matplotlib
-#matplotlib.use('tgg')
+import matplotlib.pyplot as plt
+
 from glob import glob
 import numpy as np
 import pandas as pd
@@ -49,10 +49,10 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
     if xscale:
         # Just some formatting niceness: x-axis scale in scientific notation if max x is large
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
-
+    plt.show()
 
 data = []
-TITLE = "K"
+TITLE = "ConfigExp"
 if TITLE:
     base_dirs = glob("./agents/" + TITLE + "*SEED=1*/")
 else:
@@ -73,7 +73,7 @@ for i in range(0, len(base_dirs)):
         data.append(table)
 
 print(data)
-plot_data(data, smooth=10, n=len(base_dirs), compare=TITLE)
+plot_data(data, smooth=10, n=len(base_dirs), compare="EPSILON")
 plt.show()
 plt.gcf()
 #Not working

@@ -34,93 +34,66 @@ parser.add_argument("environment")
 args = parser.parse_args()
 print(args.environment)
 
-TITLE = "K"
-ENVIRONMENT = "CartPole-v0"
-AGENT_PATH = ""
-RENDER = False
+# GLOBAl VARS FIXED FOR EACH RUN
+EPOCHS_TILL_VIS = 100
 EPOCHS = 300
 FRAMES_PER_EPOCH = 400
-EXP_SKIP = 1
-EPOCHS_TILL_VIS = 100
-
-ACTION_BUFFER_SIZE = 1_000_000
-K = 50
-DISCOUNT = 1
-EPSILON = 0
-EPS_DECAY = 0.005
-AUTONORM_FREQ = 20
-KERNEL_WIDTH = 1
-
-FRAMESKIP = 1  # Default gym-setting is (2, 5)
-REPEAT_ACTION_PROB = 0
+TITLE= "ConfigExp"
+config = {
+    "EXP-SKIP": 1,
+    "ACTION-BUFFER-SIZE": 1_000_000,
+    "K": 50,
+    "DISCOUNT": 1,
+    "EPSILON": [0.001, 0.01, 0.1, 0.2],
+    "EPS-DECAY": 0.000,
+    "NORM-FREQ": 20,
+    "KERNEL-WIDTH": 1,
+    "SEED": [1, 2, 3]
+}
 
 
 # STATE_DIMENSION = 4
 
 
-def main(STATE_DIMENSION, SEED, NORM_FREQ, KERNEL_WIDTH, K):
+def main(cfg):
     # Create agent-directory
-    execution_time = strftime("%Y-%m-%d-%H%M%S", gmtime())
-    config = {
-        "NORMFREQ": NORM_FREQ,
-        "DIM": STATE_DIMENSION,
-        "K": K,
-        "EPS": EPSILON,
-        "KERNELWIDTH": KERNEL_WIDTH,
-        "SEED": SEED,
-    }
     config_string = ""
-    for param in config:
-        config_string += "_" + param + "=" + str(config[param])
+    for param in cfg:
+        config_string += "_" + param + "=" + str(cfg[param])
 
     print(config_string)
     if TITLE:
-        agent_dir = os.path.join(
-            "agents",
-            TITLE + config_string
-        )
-
+        agent_dir = os.path.join("agents", TITLE + config_string)
     else:
-        agent_dir = os.path.join(
-            "agents",
-            f"{ENVIRONMENT}_{execution_time}" + config_string
-        )
+        execution_time = strftime("%Y-%m-%d-%H%M%S", gmtime())
+        agent_dir = os.path.join("agents", f"{execution_time}" + config_string)
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
-    env = gym.make(ENVIRONMENT)
+    env = gym.make("CartPole-v0")
 
     print(env.observation_space.shape)
-    SCALE_HEIGHT, SCALE_WIDTH = (1, 4)
 
-    try:
-        if AGENT_PATH:
-            agent = MFECAgent.load(AGENT_PATH)
-        else:
-            agent = MFECAgent(
-                buffer_size=ACTION_BUFFER_SIZE,
-                k=K,
-                discount=DISCOUNT,
-                epsilon=EPSILON,
-                height=SCALE_HEIGHT,
-                width=SCALE_WIDTH,
-                state_dimension=STATE_DIMENSION,
-                actions=range(env.action_space.n),
-                seed=SEED,
-                exp_skip=EXP_SKIP,
-                autonormalization_frequency=NORM_FREQ,
-                epsilon_decay=EPS_DECAY,
-                kernel_width=KERNEL_WIDTH,
-            )
-        run_algorithm(agent, agent_dir, env, utils)
-
-    finally:
-        utils.close()
-        env.close()
+    agent = MFECAgent(
+        buffer_size=cfg["ACTION-BUFFER-SIZE"],
+        k=cfg["K"],
+        discount=cfg["DISCOUNT"],
+        epsilon=cfg["EPSILON"],
+        height=1,
+        width=4,
+        state_dimension=4,
+        actions=range(env.action_space.n),
+        seed=cfg["SEED"],
+        exp_skip=cfg["EXP-SKIP"],
+        autonormalization_frequency=cfg["NORM-FREQ"],
+        epsilon_decay=cfg["EPS-DECAY"],
+        kernel_width=cfg["KERNEL-WIDTH"],
+    )
+    run_algorithm(agent, env, utils)
 
 
-def run_algorithm(agent, agent_dir, env, utils):
+def run_algorithm(agent, env, utils):
     frames_left = 0
     for e in range(EPOCHS):
         frames_left += FRAMES_PER_EPOCH
@@ -153,7 +126,7 @@ def run_episode(agent, env):
         agent.receive_reward(reward, step)
 
         episode_reward += reward
-        episode_frames += FRAMESKIP
+        episode_frames += 1
         step += 1
     agent.train()
 
@@ -165,24 +138,25 @@ def run_episode(agent, env):
 
 if __name__ == "__main__":
     if TITLE:
-        # Clear all dirs with the same title before spawing subprocs.
+        # Clear all dirs with the same title before spawning subprocs.
         base_dirs = glob("./agents/" + TITLE + "*")
         print(base_dirs)
         for d in base_dirs:
             shutil.rmtree(d)
+
     # main(4, 1)
     # exit()
     #
-    ARG1 = [4]
-    ARG2 = [1, 2, 3]
-    NORM_FREQ = [10]
-    KERNEL_WIDTHS = [3]
-    K = [1, 5, 10, 20, 50]
+
+    config_vals = list(config.values())
+    for i, val in enumerate(config_vals):
+        if type(val) is not list:
+            config_vals[i] = [config_vals[i]]
+    all_configs = []
+    all_values = itertools.product(*config_vals)
+    for vals in all_values:
+        all_configs.append(dict(zip(config.keys(), vals)))
+    print("ALL CGFGS", all_configs)
+
     with Pool(20) as p:
-        p.starmap(main, itertools.product(
-            ARG1,
-            ARG2,
-            NORM_FREQ,
-            KERNEL_WIDTHS,
-            K, )
-                  )
+        p.map(main, all_configs)
