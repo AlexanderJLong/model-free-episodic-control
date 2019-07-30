@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-#from pyvirtualdisplay import Display
+# from pyvirtualdisplay import Display
 #
-#display = Display(visible=0, size=(80, 60))
-#display.start()
+# display = Display(visible=0, size=(80, 60))
+# display.start()
 
 """
 HOW TO RUN:
@@ -35,8 +35,8 @@ args = parser.parse_args()
 print(args.environment)
 
 # GLOBAl VARS FIXED FOR EACH RUN
-TITLE = "N1"
-EPOCHS_TILL_VIS = 50
+TITLE = "Noautonorm"
+EPOCHS_TILL_VIS = 300
 EPOCHS = 300
 FRAMES_PER_EPOCH = 400
 
@@ -47,11 +47,17 @@ config = {
     "DISCOUNT": 1,
     "EPSILON": 1,
     "EPS-DECAY": 0.005,
-    "NORM-FREQ": 20,
+    "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
-    "STATE-DIM": [4, 32],
-    "SEED": [1, 2, 3],
+    "STATE-DIM": 4,
+    "PROJECTION-TYPE": [0, 1, 2, 3],
+    "SEED": [1, 2, 3, 4],
 }
+"""Projection type:
+0: Identity
+1: Random gauss
+2: orthogonal random
+3: archoplas"""
 
 
 # STATE_DIMENSION = 4
@@ -76,9 +82,9 @@ def main(cfg):
     env = gym.make("CartPole-v0")
 
     from cartpole_wrapper import pixel_state_wrapper
-    #env = pixel_state_wrapper(env)
+    # env = pixel_state_wrapper(env)
 
-    height, width = (1,4)
+    height, width = (1, 4)
 
     agent = MFECAgent(
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
@@ -94,6 +100,7 @@ def main(cfg):
         autonormalization_frequency=cfg["NORM-FREQ"],
         epsilon_decay=cfg["EPS-DECAY"],
         kernel_width=cfg["KERNEL-WIDTH"],
+        projection_type=cfg["PROJECTION-TYPE"],
     )
     run_algorithm(agent, env, utils)
 
@@ -136,8 +143,8 @@ def run_episode(agent, env):
         step += 1
     agent.train()
 
-    #agent.qec.plot_scatter()
-    #agent.qec.plot3d(both=F alse, diff=False)
+    # agent.qec.plot_scatter()
+    # agent.qec.plot3d(both=F alse, diff=False)
 
     return episode_frames, episode_reward
 
