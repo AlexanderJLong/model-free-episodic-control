@@ -8,21 +8,12 @@ from matplotlib import cm
 
 
 class QEC:
-    def __init__(self, actions, buffer_size, k, kernel_width):
+    def __init__(self, actions, buffer_size, k, kernel_width, state_dim):
         self.buffers = tuple([ActionBuffer(buffer_size) for _ in actions])
         self.k = k
-        self.mu = np.zeros(4)  # offset
-        self.sig = np.ones(4)  # scale
+        self.mu = np.zeros(state_dim)  # offset
+        self.sig = np.ones(state_dim)  # scale
         self.kernel_width = kernel_width
-
-    def get_range(self):
-        """array of max and min of state vars across all buffers"""
-        a = np.full(4, float("-inf"))
-        b = np.full(4, float("inf"))
-        for buff in self.buffers:
-            a = np.maximum(np.max(buff.states, axis=0), a)
-            b = np.minimum(np.min(buff.states, axis=0), b)
-        return a, b
 
     def get_mu_and_sig(self):
         """get the average mean and std deviation of each dim over all buffers"""
@@ -42,9 +33,10 @@ class QEC:
         mu, sig = self.get_mu_and_sig()
         sig[sig == 0] = 1
         for buff in self.buffers:
-            buff.states = ((buff.states) / sig).tolist()
+            buff.states = ((buff.states - mu) / sig).tolist()
+        self.mu = self.mu + self.mu / self.sig
         self.sig = sig * self.sig
-        self.mu = self.mu
+        #print(self.get_mu_and_sig())
         #print(self.mu, self.sig)
         return
 
@@ -81,6 +73,8 @@ class QEC:
         return value / sum(w)
 
     def update(self, state, action, value, time, step):
+        #NOTE: in replace, the step will be replaced with the latest
+        # This might not be desired behaviour
         state = (state - self.mu) / self.sig
         buffer = self.buffers[action]
         state_index = buffer.find_state(state)
@@ -278,10 +272,11 @@ class ActionBuffer:
                 self.replace(state, value, time, min_time_idx)
         self._tree = KDTree(np.asarray(self.states))
 
-    def replace(self, state, value, time, index):
+    def replace(self, state, value, time, index, step):
         self.states[index] = state
         self.values[index] = value
         self.times[index] = time
+        self.steps[index] = step
 
     def __len__(self):
         return len(self.states)

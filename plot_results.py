@@ -52,7 +52,7 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
     plt.show()
 
 data = []
-TITLE = "ConfigExp"
+TITLE = "N1"
 if TITLE:
     base_dirs = glob("./agents/" + TITLE + "*SEED=1*/")
 else:
@@ -73,7 +73,7 @@ for i in range(0, len(base_dirs)):
         data.append(table)
 
 print(data)
-plot_data(data, smooth=10, n=len(base_dirs), compare="EPS-DECAY")
+plot_data(data, smooth=10, n=len(base_dirs), compare="NORM-FREQ")
 plt.show()
 plt.gcf()
 #Not working

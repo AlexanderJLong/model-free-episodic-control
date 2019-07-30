@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-# from pyvirtualdisplay import Display
-##
-# display = Display(visible=0, size=(80, 60))
-# display.start()
+#from pyvirtualdisplay import Display
+#
+#display = Display(visible=0, size=(80, 60))
+#display.start()
 
 """
 HOW TO RUN:
@@ -35,21 +35,22 @@ args = parser.parse_args()
 print(args.environment)
 
 # GLOBAl VARS FIXED FOR EACH RUN
-TITLE = "ConfigExp"
-EPOCHS_TILL_VIS = 100
+TITLE = "N1"
+EPOCHS_TILL_VIS = 50
 EPOCHS = 300
 FRAMES_PER_EPOCH = 400
 
 config = {
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
-    "K": 50,
+    "K": 20,
     "DISCOUNT": 1,
     "EPSILON": 1,
-    "EPS-DECAY": [0.001, 0.01, 0.05, 0.1],
+    "EPS-DECAY": 0.005,
     "NORM-FREQ": 20,
     "KERNEL-WIDTH": 1,
-    "SEED": [1, 2, 3]
+    "STATE-DIM": [4, 32],
+    "SEED": [1, 2, 3],
 }
 
 
@@ -74,16 +75,19 @@ def main(cfg):
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
     env = gym.make("CartPole-v0")
 
-    print(env.observation_space.shape)
+    from cartpole_wrapper import pixel_state_wrapper
+    #env = pixel_state_wrapper(env)
+
+    height, width = (1,4)
 
     agent = MFECAgent(
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
         k=cfg["K"],
         discount=cfg["DISCOUNT"],
         epsilon=cfg["EPSILON"],
-        height=1,
-        width=4,
-        state_dimension=4,
+        height=height,
+        width=width,
+        state_dimension=cfg["STATE-DIM"],
         actions=range(env.action_space.n),
         seed=cfg["SEED"],
         exp_skip=cfg["EXP-SKIP"],
@@ -109,6 +113,7 @@ def run_algorithm(agent, env, utils):
 
         if e > EPOCHS_TILL_VIS:
             agent.qec.plot_scatter()
+            agent.qec.plot3d(both=False, diff=False)
 
 
 def run_episode(agent, env):
@@ -131,8 +136,8 @@ def run_episode(agent, env):
         step += 1
     agent.train()
 
-    # agent.qec.plot_scatter()
-    # agent.qec.plot3d(both=False, diff=False)
+    #agent.qec.plot_scatter()
+    #agent.qec.plot3d(both=F alse, diff=False)
 
     return episode_frames, episode_reward
 
@@ -145,10 +150,6 @@ if __name__ == "__main__":
         for d in base_dirs:
             shutil.rmtree(d)
 
-    # main(4, 1)
-    # exit()
-    #
-
     config_vals = list(config.values())
     for i, val in enumerate(config_vals):
         if type(val) is not list:
@@ -157,6 +158,9 @@ if __name__ == "__main__":
     all_values = itertools.product(*config_vals)
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
+
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

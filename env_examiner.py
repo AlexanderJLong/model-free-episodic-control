@@ -19,6 +19,7 @@ print(f"original env: {env.observation_space}")
 env = pixel_state_wrapper(env)
 print(f"wrapped env: {env.observation_space}")
 
+print(env.observation_space)
 #play(env, keys_to_action={(ord('a'),): 1, (ord('s'),): 0})
 
 obv1 = env.reset()

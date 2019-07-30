@@ -30,10 +30,11 @@ class MFECAgent:
         self.size = (height, width)
         self.memory = []
         self.actions = actions
-        self.qec = QEC(self.actions, buffer_size, k, kernel_width)
+        self.qec = QEC(self.actions, buffer_size, k, kernel_width, state_dimension)
         self.projection = self.rs.randn(
             state_dimension, height * width
         ).astype(np.float32)
+        #self.projection = np.eye(state_dimension)
         self.discount = discount
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
@@ -49,8 +50,8 @@ class MFECAgent:
         self.time += 1
 
         # Preprocess and project observation to state
-        # self.state = np.dot(self.projection, np.asarray(observation).flatten())
-        self.state = observation
+        self.state = np.dot(self.projection, np.asarray(observation).flatten())
+        #self.state = observation
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:
