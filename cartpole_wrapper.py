@@ -132,7 +132,7 @@ def pixel_state_wrapper(env, greyscale=True, difference=True, scale=True):
     Configure Cartpole to show pixels as the state
     """
     if greyscale:
-        env = Pixels(env, downsize=8, centering=False)
+        env = Pixels(env, downsize=2, centering=False)
         env = OrigionalPlusDiff(env)
     return env
 

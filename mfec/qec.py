@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from sklearn.neighbors.dist_metrics import DistanceMetric
 from sklearn.neighbors.kd_tree import KDTree
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
-
 
 class QEC:
-    def __init__(self, actions, buffer_size, k, kernel_width, state_dim):
+    def __init__(self, actions, buffer_size, k, kernel_type, kernel_width, state_dim):
         self.buffers = tuple([ActionBuffer(buffer_size) for _ in actions])
         self.k = k
         self.mu = np.zeros(state_dim)  # offset
         self.sig = np.ones(state_dim)  # scale
         self.kernel_width = kernel_width
+        self.kernel_type = kernel_type
 
     def get_mu_and_sig(self):
         """get the average mean and std deviation of each dim over all buffers"""
@@ -52,10 +52,18 @@ class QEC:
         dists = dists[0]
         neighbors = neighbors[0]
 
+        if np.allclose(buffer.states[neighbors[0]], state):
+            print("same")
+            return buffer.values[neighbors[0]]
+
         def gaus(x, sig):
             return 1. / (np.sqrt(2. * np.pi) * sig) * np.exp(-np.power(x / sig, 2.) / 2)
 
-        w = gaus(dists, self.kernel_width)
+        if self.kernel_type == "AVG":
+            w = [1 for d in dists]
+        elif self.kernel_type == "GAUSSIAN":
+            w = gaus(dists, self.kernel_width)
+
         assert (len(w) == len(dists))
         value = 0
         # a = 0
@@ -207,7 +215,8 @@ class QEC:
             vals = np.asarray(data.values)
             im1 = ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap=maps[i])
 
-        states = np.random.rand(5000, 4) * 8 - 4
+        dim = len(self.buffers[0].states[0])
+        states = np.random.rand(5000, dim) * 8 - 4
         states_to_feed = states * self.sig + self.mu
         states_to_feed[:, 3] = 0
         states_to_feed[:, 0] = 0
@@ -255,9 +264,9 @@ class ActionBuffer:
     def find_neighbors(self, state, k, ball):
         """Return idx, dists"""
         if ball:
-            return self._tree.query_radius([state], r=0.3, return_distance=True) if self._tree else []
+            return self._tree.query_radius([state], r=0.3, return_distance=True, sort_results=True) if self._tree else []
         else:
-            result = self._tree.query([state], k=k, return_distance=True) if self._tree else []
+            result = self._tree.query([state], k=k, return_distance=True, sort_results=True) if self._tree else []
             return result[1], result[0]
 
     def add(self, state, value, time, step):
@@ -270,6 +279,7 @@ class ActionBuffer:
             min_time_idx = int(np.argmin(self.times))
             if time > self.times[min_time_idx]:
                 self.replace(state, value, time, min_time_idx)
+        #dist = DistanceMetric.get_metric('minkowski', p=1)
         self._tree = KDTree(np.asarray(self.states))
 
     def replace(self, state, value, time, index, step):

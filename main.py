@@ -20,7 +20,7 @@ from time import gmtime, strftime
 import shutil
 import gym
 import itertools
-
+import numpy as np
 from glob import glob
 
 from mfec.agent import MFECAgent
@@ -36,22 +36,23 @@ print(args.environment)
 
 # GLOBAl VARS FIXED FOR EACH RUN
 TITLE = "Noautonorm"
-EPOCHS_TILL_VIS = 300
-EPOCHS = 300
-FRAMES_PER_EPOCH = 400
+EPOCHS_TILL_VIS = 3000
+EPOCHS = 3000
+FRAMES_PER_EPOCH = 4000
 
 config = {
-    "EXP-SKIP": 1,
+    "EXP-SKIP": 4,
     "ACTION-BUFFER-SIZE": 1_000_000,
-    "K": 20,
+    "K": 50,
     "DISCOUNT": 1,
     "EPSILON": 1,
     "EPS-DECAY": 0.005,
-    "NORM-FREQ": 0,
+    "NORM-FREQ": 20,
     "KERNEL-WIDTH": 1,
-    "STATE-DIM": 4,
-    "PROJECTION-TYPE": [0, 1, 2, 3],
-    "SEED": [1, 2, 3, 4],
+    "KERNEL-TYPE": ["GAUSSIAN", "AVG"],
+    "STATE-DIM": 32,
+    "PROJECTION-TYPE": 0,
+    "SEED": [1, 2, 3],
 }
 """Projection type:
 0: Identity
@@ -79,26 +80,27 @@ def main(cfg):
 
     # Initialize utils, environment and agent
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
-    env = gym.make("CartPole-v0")
+    env = gym.make('CartPole-v1')
 
-    from cartpole_wrapper import pixel_state_wrapper
+    # from cartpole_wrapper import pixel_state_wrapper
     # env = pixel_state_wrapper(env)
 
-    height, width = (1, 4)
-
+    obv_dim = np.prod(env.observation_space.shape)
+    print(obv_dim)
+    print(env.reset())
     agent = MFECAgent(
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
         k=cfg["K"],
         discount=cfg["DISCOUNT"],
         epsilon=cfg["EPSILON"],
-        height=height,
-        width=width,
+        observation_dim=obv_dim,
         state_dimension=cfg["STATE-DIM"],
         actions=range(env.action_space.n),
         seed=cfg["SEED"],
         exp_skip=cfg["EXP-SKIP"],
         autonormalization_frequency=cfg["NORM-FREQ"],
         epsilon_decay=cfg["EPS-DECAY"],
+        kernel_type=cfg["KERNEL-TYPE"],
         kernel_width=cfg["KERNEL-WIDTH"],
         projection_type=cfg["PROJECTION-TYPE"],
     )
@@ -117,7 +119,7 @@ def run_algorithm(agent, env, utils):
 
         # agent.save(agent_dir)
         # agent.qec.plot3d(both=False, diff=False)
-
+        #agent.qec.plot_scatter()
         if e > EPOCHS_TILL_VIS:
             agent.qec.plot_scatter()
             agent.qec.plot3d(both=False, diff=False)
@@ -143,7 +145,7 @@ def run_episode(agent, env):
         step += 1
     agent.train()
 
-    # agent.qec.plot_scatter()
+    #agent.qec.plot_scatter()
     # agent.qec.plot3d(both=F alse, diff=False)
 
     return episode_frames, episode_reward

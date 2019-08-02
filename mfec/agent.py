@@ -16,38 +16,37 @@ class MFECAgent:
             k,
             discount,
             epsilon,
-            height,
-            width,
+            observation_dim,
             state_dimension,
             actions,
             seed,
             exp_skip,
             autonormalization_frequency,
             epsilon_decay,
+            kernel_type,
             kernel_width,
             projection_type,
     ):
         self.rs = np.random.RandomState(seed)
-        self.size = (height, width)
         self.memory = []
         self.actions = actions
-        self.qec = QEC(self.actions, buffer_size, k, kernel_width, state_dimension)
+        self.qec = QEC(self.actions, buffer_size, k, kernel_type, kernel_width, state_dimension)
 
         if projection_type == 0:
-            self.projection = np.eye(state_dimension)
+            self.projection = np.eye(state_dimension)[:, :observation_dim]
         elif projection_type == 1:
             self.projection = self.rs.randn(
-                state_dimension, height * width
+                state_dimension, observation_dim
             ).astype(np.float32)
         elif projection_type == 2:
             self.projection = np.linalg.qr(self.rs.randn(
-                state_dimension, height * width
+                state_dimension, observation_dim
             ).astype(np.float32))[0]
         elif projection_type == 3:
             m = []
             for i in range(state_dimension):
                 r = []
-                for j in range(height*width):
+                for j in range(observation_dim):
                     d = np.random.rand()
                     if d < 1/6:
                         r.append(1)

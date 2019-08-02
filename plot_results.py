@@ -73,7 +73,7 @@ for i in range(0, len(base_dirs)):
         data.append(table)
 
 print(data)
-plot_data(data, smooth=10, n=len(base_dirs), compare="PROJECTION-TYPE")
+plot_data(data, smooth=10, n=len(base_dirs), compare="KERNEL-TYPE")
 plt.show()
 plt.gcf()
 #Not working
