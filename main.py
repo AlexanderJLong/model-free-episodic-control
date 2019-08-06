@@ -36,41 +36,44 @@ print(args.environment)
 
 # GLOBAl VARS FIXED FOR EACH RUN
 TITLE = "Noautonorm"
-EPOCHS_TILL_VIS = 3000
+EPOCHS_TILL_VIS = 200
 EPOCHS = 3000
-FRAMES_PER_EPOCH = 4000
+FRAMES_PER_EPOCH = 400
 
 config = {
-    "EXP-SKIP": 4,
+    "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
-    "K": 50,
+    "K": 20,
     "DISCOUNT": 1,
     "EPSILON": 1,
     "EPS-DECAY": 0.005,
-    "NORM-FREQ": 20,
+    "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
-    "KERNEL-TYPE": ["GAUSSIAN", "AVG"],
-    "STATE-DIM": 32,
-    "PROJECTION-TYPE": 0,
+    "KERNEL-TYPE": "AVG",
+    "STATE-DIM": 4,
+    "PROJECTION-TYPE": [0, 2, 3, 4, 5],
     "SEED": [1, 2, 3],
 }
 """Projection type:
 0: Identity
-1: Random gauss
+1: Random gau
 2: orthogonal random
-3: archoplas"""
+3: archoplas
+4: scale one
+5: invert 1
+"""
 
 
 # STATE_DIMENSION = 4
 
 
 def main(cfg):
+    print(cfg)
     # Create agent-directory
     config_string = ""
     for param in cfg:
         config_string += "_" + param + "=" + str(cfg[param])
 
-    print(config_string)
     if TITLE:
         agent_dir = os.path.join("agents", TITLE + config_string)
     else:
@@ -79,15 +82,14 @@ def main(cfg):
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent
+
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
-    env = gym.make('CartPole-v1')
+    env = gym.make('CartPole-v0')
 
     # from cartpole_wrapper import pixel_state_wrapper
     # env = pixel_state_wrapper(env)
 
     obv_dim = np.prod(env.observation_space.shape)
-    print(obv_dim)
-    print(env.reset())
     agent = MFECAgent(
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
         k=cfg["K"],
@@ -119,7 +121,7 @@ def run_algorithm(agent, env, utils):
 
         # agent.save(agent_dir)
         # agent.qec.plot3d(both=False, diff=False)
-        #agent.qec.plot_scatter()
+        # agent.qec.plot_scatter()
         if e > EPOCHS_TILL_VIS:
             agent.qec.plot_scatter()
             agent.qec.plot3d(both=False, diff=False)
@@ -145,7 +147,7 @@ def run_episode(agent, env):
         step += 1
     agent.train()
 
-    #agent.qec.plot_scatter()
+    # agent.qec.plot_scatter()
     # agent.qec.plot3d(both=F alse, diff=False)
 
     return episode_frames, episode_reward
@@ -168,8 +170,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    # main(all_configs[0])
+    # exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

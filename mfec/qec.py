@@ -56,6 +56,7 @@ class QEC:
             print("same")
             return buffer.values[neighbors[0]]
 
+
         def gaus(x, sig):
             return 1. / (np.sqrt(2. * np.pi) * sig) * np.exp(-np.power(x / sig, 2.) / 2)
 
@@ -213,7 +214,7 @@ class QEC:
             data = self.buffers[i]
             states = np.asarray(data.states)
             vals = np.asarray(data.values)
-            im1 = ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap=maps[i])
+            im1 = ax1.scatter(states[:, 1], states[:, 2], c=vals, cmap=maps[i], alpha=0.5)
 
         dim = len(self.buffers[0].states[0])
         states = np.random.rand(5000, dim) * 8 - 4

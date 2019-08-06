@@ -48,15 +48,34 @@ class MFECAgent:
                 r = []
                 for j in range(observation_dim):
                     d = np.random.rand()
-                    if d < 1/6:
+                    if d < 1 / 6:
                         r.append(1)
-                    elif d < 5/6:
+                    elif d < 5 / 6:
                         r.append(0)
                     else:
                         r.append(-1)
                 m.append(r)
             self.projection = np.asarray(m)
+        elif projection_type == 4:
+            self.projection = np.asarray([
+                [1, 0, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 10, 0],
+                [0, 0, 0, 1]])
+        elif projection_type == 5:
+            self.projection = np.asarray([
+                [0.5, 0.5, 0, 0],
+                [0, 0.5, 0.5, 0],
+                [0, 0, 0.5, 0.5],
+                [0.5, 0, 0, 0.5]])
+        elif projection_type == 6:
+            self.projection = np.asarray([
+                [1, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 10, 0],
+                [0, 0, 0, 1]])
 
+        print(self.projection)
         self.discount = discount
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
@@ -73,7 +92,7 @@ class MFECAgent:
 
         # Preprocess and project observation to state
         self.state = np.dot(self.projection, np.asarray(observation).flatten())
-        #self.state = observation
+        # self.state = observation
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:
@@ -117,7 +136,7 @@ class MFECAgent:
                     experience["step"],
                 )
 
-        #Normalize
+        # Normalize
         if self.autonormalization_frequency is not 0:
             if not self.rewards_received % self.autonormalization_frequency:
                 self.qec.autonormalize()
