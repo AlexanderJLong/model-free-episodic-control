@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-# from pyvirtualdisplay import Display
-#
-# display = Display(visible=0, size=(80, 60))
-# display.start()
+from pyvirtualdisplay import Display
+
+display = Display(visible=0, size=(80, 60))
+display.start()
 
 """
 HOW TO RUN:
@@ -18,7 +18,10 @@ import os
 import random
 from time import gmtime, strftime
 import shutil
+
 import gym
+from gym.envs.box2d import CarRacing
+
 import itertools
 import numpy as np
 from glob import glob
@@ -36,9 +39,9 @@ print(args.environment)
 
 # GLOBAl VARS FIXED FOR EACH RUN
 TITLE = "Noautonorm"
-EPOCHS_TILL_VIS = 200
+EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
-FRAMES_PER_EPOCH = 400
+FRAMES_PER_EPOCH = 1000
 
 config = {
     "EXP-SKIP": 1,
@@ -47,12 +50,12 @@ config = {
     "DISCOUNT": 1,
     "EPSILON": 1,
     "EPS-DECAY": 0.005,
-    "NORM-FREQ": 0,
+    "NORM-FREQ": 20,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 4,
-    "PROJECTION-TYPE": [0, 2, 3, 4, 5],
-    "SEED": [1, 2, 3],
+    "STATE-DIM": 32,
+    "PROJECTION-TYPE": 3,
+    "SEED": 1,
 }
 """Projection type:
 0: Identity
@@ -85,6 +88,14 @@ def main(cfg):
 
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
     env = gym.make('CartPole-v0')
+    env = CarRacing(
+        grayscale=1,
+        show_info_panel=0,
+        discretize_actions="hard",
+        frames_per_state=4,
+        num_lanes=1,
+        num_tracks=1,
+    )
 
     # from cartpole_wrapper import pixel_state_wrapper
     # env = pixel_state_wrapper(env)
