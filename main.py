@@ -38,9 +38,10 @@ print(args.environment)
 TITLE = "Noautonorm"
 EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
-FRAMES_PER_EPOCH = 10_000
+FRAMES_PER_EPOCH = 500
 
 config = {
+    "ENV": "CartPoleLong",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
     "K": 16,
@@ -50,8 +51,8 @@ config = {
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 64,
-    "PROJECTION-TYPE": 3,
+    "STATE-DIM": 4,
+    "PROJECTION-TYPE": [0, 2, 4],
     "SEED": [1, 2, 3],
 }
 """Projection type:
@@ -59,7 +60,7 @@ config = {
 1: Random gau
 2: orthogonal random
 3: archoplas
-4: scale one
+4: good manual
 5: invert 1
 """
 
@@ -82,25 +83,29 @@ def main(cfg):
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent
-
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
-    env = gym.make("CartPole-v0")
-
-    from cartpole_wrapper import pixel_state_wrapper
-    env = pixel_state_wrapper(env)
-
-    from baselines.common.atari_wrappers import make_atari, wrap_deepmind
-    env = make_atari('BreakoutNoFrameskip-v4')
-    env = wrap_deepmind(env, frame_stack=True, scale=False)
+    if cfg["ENV"] == "CartPole":
+        env = gym.make("CartPole-v0")
+    elif cfg["ENV"] == "CartPoleLong":
+        env = gym.make("CartPole-v1")
+    elif cfg["ENV"] is "CartPolePixels":
+        from cartpole_wrapper import pixel_state_wrapper
+        env = gym.make("CartPole-v0")
+        env = pixel_state_wrapper(env)
+    elif cfg["ENV"] is "Breakout":
+        from baselines.common.atari_wrappers import make_atari, wrap_deepmind
+        env = make_atari('BreakoutNoFrameskip-v4')
+        env = wrap_deepmind(env, frame_stack=True, scale=False)
+    else:
+        raise Exception("Invalid env specified")
 
     print(env.observation_space.shape)
-    obv_dim = np.prod(env.observation_space.shape)
     agent = MFECAgent(
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
         k=cfg["K"],
         discount=cfg["DISCOUNT"],
         epsilon=cfg["EPSILON"],
-        observation_dim=obv_dim,
+        observation_dim=np.prod(env.observation_space.shape),
         state_dimension=cfg["STATE-DIM"],
         actions=range(env.action_space.n),
         seed=cfg["SEED"],
