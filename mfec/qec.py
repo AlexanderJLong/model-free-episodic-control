@@ -53,7 +53,7 @@ class QEC:
         neighbors = neighbors[0]
 
         if np.allclose(buffer.states[neighbors[0]], state):
-            print("same")
+            #print("same")
             return buffer.values[neighbors[0]]
 
 

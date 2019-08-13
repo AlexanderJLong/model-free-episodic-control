@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-# from pyvirtualdisplay import Display
-#
-# display = Display(visible=0, size=(80, 60))
-# display.start()
+from pyvirtualdisplay import Display
+
+display = Display(visible=0, size=(80, 60))
+display.start()
 
 """
 HOW TO RUN:
@@ -36,22 +36,22 @@ print(args.environment)
 
 # GLOBAl VARS FIXED FOR EACH RUN
 TITLE = "Noautonorm"
-EPOCHS_TILL_VIS = 200
+EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
-FRAMES_PER_EPOCH = 400
+FRAMES_PER_EPOCH = 10_000
 
 config = {
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
-    "K": 20,
+    "K": 16,
     "DISCOUNT": 1,
     "EPSILON": 1,
     "EPS-DECAY": 0.005,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 4,
-    "PROJECTION-TYPE": [0, 2, 3, 4, 5],
+    "STATE-DIM": 64,
+    "PROJECTION-TYPE": 3,
     "SEED": [1, 2, 3],
 }
 """Projection type:
@@ -84,11 +84,16 @@ def main(cfg):
     # Initialize utils, environment and agent
 
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
-    env = gym.make('CartPole-v0')
+    env = gym.make("CartPole-v0")
 
-    # from cartpole_wrapper import pixel_state_wrapper
-    # env = pixel_state_wrapper(env)
+    from cartpole_wrapper import pixel_state_wrapper
+    env = pixel_state_wrapper(env)
 
+    from baselines.common.atari_wrappers import make_atari, wrap_deepmind
+    env = make_atari('BreakoutNoFrameskip-v4')
+    env = wrap_deepmind(env, frame_stack=True, scale=False)
+
+    print(env.observation_space.shape)
     obv_dim = np.prod(env.observation_space.shape)
     agent = MFECAgent(
         buffer_size=cfg["ACTION-BUFFER-SIZE"],

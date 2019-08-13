@@ -4,7 +4,6 @@ import os.path
 import pickle
 
 import numpy as np
-from scipy.misc.pilutil import imresize
 
 from mfec.qec import QEC
 
@@ -75,7 +74,7 @@ class MFECAgent:
                 [0, 0, 10, 0],
                 [0, 0, 0, 1]])
 
-        print(self.projection)
+        print(self.projection.shape)
         self.discount = discount
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay

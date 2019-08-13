@@ -20,9 +20,9 @@ class Pixels(gym.ObservationWrapper):
                                                 dtype=np.uint16)
 
     def get_cart_location(self, screen_width):
-        world_width = self.env.x_threshold * 2
+        world_width = self.env.env.x_threshold * 2
         scale = screen_width / world_width
-        return int(self.env.state[0] * scale + screen_width / 2.0)  # MIDDLE OF CART
+        return int(self.env.env.state[0] * scale + screen_width / 2.0)  # MIDDLE OF CART
 
     def observation(self, observation=None):
         screen = self.env.render(mode='rgb_array')
@@ -99,7 +99,7 @@ class DeterministicStart(gym.Wrapper):
 class LazyFrames(object):
     def __init__(self, frames):
         """This object ensures that common frames between the observations are only stored once.
-        It exists purely to optimize memory usage which can be huge for DQN's 1M frames replay
+        It exists purely to optimize memory usage which can be huge for DQN.py's 1M frames replay
         buffers.
 
         This object should only be converted to numpy array before being passed to the model.
@@ -132,7 +132,7 @@ def pixel_state_wrapper(env, greyscale=True, difference=True, scale=True):
     Configure Cartpole to show pixels as the state
     """
     if greyscale:
-        env = Pixels(env, downsize=2, centering=False)
+        env = Pixels(env, downsize=4, centering=True)
         env = OrigionalPlusDiff(env)
     return env
 

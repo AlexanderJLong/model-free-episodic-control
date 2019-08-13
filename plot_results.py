@@ -55,6 +55,7 @@ data = []
 TITLE = "Noautonorm"
 if TITLE:
     base_dirs = glob("./agents/" + TITLE + "*SEED=1*/")
+    base_dirs = glob("./agents/" + TITLE + "*SEED=1*/")
 else:
     base_dirs = glob("./agents/*SEED=1*/")
 for i in range(0, len(base_dirs)):
@@ -73,7 +74,7 @@ for i in range(0, len(base_dirs)):
         data.append(table)
 
 print(data)
-plot_data(data, smooth=10, n=len(base_dirs), compare="PROJECTION-TYPE")
+plot_data(data, smooth=1, n=len(base_dirs), compare="KERNEL-TYPE")
 plt.show()
 plt.gcf()
 plt.savefig("./plots/"+TITLE+".png")
