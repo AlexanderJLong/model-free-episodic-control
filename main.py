@@ -2,7 +2,7 @@
 
 from pyvirtualdisplay import Display
 
-display = Display(visible=0, size=(80, 60))
+display = Display(visible=0, size=(1400, 900))
 display.start()
 
 """
@@ -41,7 +41,7 @@ EPOCHS = 3000
 FRAMES_PER_EPOCH = 500
 
 config = {
-    "ENV": "CartPoleLong",
+    "ENV": "CartPolePixels",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
     "K": 16,
@@ -51,8 +51,8 @@ config = {
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 4,
-    "PROJECTION-TYPE": [0, 2, 4],
+    "STATE-DIM": 64,
+    "PROJECTION-TYPE": 3,
     "SEED": [1, 2, 3],
 }
 """Projection type:
@@ -88,11 +88,11 @@ def main(cfg):
         env = gym.make("CartPole-v0")
     elif cfg["ENV"] == "CartPoleLong":
         env = gym.make("CartPole-v1")
-    elif cfg["ENV"] is "CartPolePixels":
+    elif cfg["ENV"] == "CartPolePixels":
         from cartpole_wrapper import pixel_state_wrapper
-        env = gym.make("CartPole-v0")
+        env = gym.make("CartPole-v1")
         env = pixel_state_wrapper(env)
-    elif cfg["ENV"] is "Breakout":
+    elif cfg["ENV"] == "Breakout":
         from baselines.common.atari_wrappers import make_atari, wrap_deepmind
         env = make_atari('BreakoutNoFrameskip-v4')
         env = wrap_deepmind(env, frame_stack=True, scale=False)
