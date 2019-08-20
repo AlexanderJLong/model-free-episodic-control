@@ -7,13 +7,13 @@ from stable_dqn import DQNExternalMem
 env = gym.make('CartPole-v1')
 env = DummyVecEnv([lambda: env])
 
-model = DQNExternalMem(MlpPolicy, env, verbose=1, tensorboard_log="./logs",)
+model = DQNExternalMem(MlpPolicy, env, verbose=1, tensorboard_log="./logs", exploration_fraction=1e-5, learning_rate=1e-10)
 
 
 from stable_baselines.gail import ExpertDataset
 dataset = ExpertDataset(expert_path='mfec_expert_cartpole.npz',
-                        traj_limitation=1000, batch_size=128)
-model.pretrain(dataset, n_epochs=1000)
+                        traj_limitation=-1, batch_size=50)
+model.pretrain(dataset, n_epochs=20)
 
 model.learn(total_timesteps=250000)
 model.save("deepq_cartpole")
