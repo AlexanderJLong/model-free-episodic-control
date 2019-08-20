@@ -27,6 +27,7 @@ from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
 import argparse
+from collections import deque
 from multiprocessing import Pool
 
 parser = argparse.ArgumentParser()
@@ -41,19 +42,19 @@ EPOCHS = 3000
 FRAMES_PER_EPOCH = 500
 
 config = {
-    "ENV": "CartPolePixels",
+    "ENV": "CartPoleLong",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
-    "K": 16,
+    "K": 5,
     "DISCOUNT": 1,
-    "EPSILON": 1,
+    "EPSILON": 0,
     "EPS-DECAY": 0.005,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 64,
-    "PROJECTION-TYPE": 3,
-    "SEED": [1, 2, 3],
+    "STATE-DIM": 4,
+    "PROJECTION-TYPE": 4,
+    "SEED": [1, 2, 3, 5, 6, 7, 8],
 }
 """Projection type:
 0: Identity
@@ -119,12 +120,28 @@ def main(cfg):
     run_algorithm(agent, env, utils)
 
 
+def gen_expert_dataset(agent, env):
+    from stable_baselines.gail import generate_expert_traj
+
+    def get_action(obv):
+        return agent.choose_action(obv, 0)
+
+    generate_expert_traj(get_action, 'mfec_expert_cartpole', env, n_episodes=1000)
+    print("All done")
+
+
 def run_algorithm(agent, env, utils):
     frames_left = 0
+    last_five_ep_rewards = deque([], maxlen=5)
     for e in range(EPOCHS):
         frames_left += FRAMES_PER_EPOCH
         while frames_left > 0:
             episode_frames, episode_reward = run_episode(agent, env)
+            last_five_ep_rewards.appendleft(episode_reward)
+            if all(e > 450 for e in last_five_ep_rewards):
+                print("GOOD ENOUGH")
+                gen_expert_dataset(agent, env)
+
             frames_left -= episode_frames
             utils.end_episode(episode_frames, episode_reward)
         utils.end_epoch()
@@ -180,8 +197,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    # main(all_configs[0])
-    # exit()
+    main(all_configs[0])
+    exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)
