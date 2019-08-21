@@ -143,7 +143,7 @@ class DQNExternalMem(OffPolicyRLModel):
                 self.summary = tf.summary.merge_all()
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="DQN",
-              reset_num_timesteps=True, replay_wrapper=None):
+              reset_num_timesteps=True, replay_wrapper=None, existing_buffer=None):
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -151,24 +151,27 @@ class DQNExternalMem(OffPolicyRLModel):
                 as writer:
             self._setup_learn(seed)
 
-            # Create the replay buffer
-            if self.prioritized_replay:
-                self.replay_buffer = PrioritizedReplayBuffer(self.buffer_size, alpha=self.prioritized_replay_alpha)
-                if self.prioritized_replay_beta_iters is None:
-                    prioritized_replay_beta_iters = total_timesteps
+            if existing_buffer is None:
+                # Create the replay buffer
+                if self.prioritized_replay:
+                    self.replay_buffer = PrioritizedReplayBuffer(self.buffer_size, alpha=self.prioritized_replay_alpha)
+                    if self.prioritized_replay_beta_iters is None:
+                        prioritized_replay_beta_iters = total_timesteps
+                    else:
+                        prioritized_replay_beta_iters = self.prioritized_replay_beta_iters
+                    self.beta_schedule = LinearSchedule(prioritized_replay_beta_iters,
+                                                        initial_p=self.prioritized_replay_beta0,
+                                                        final_p=1.0)
                 else:
-                    prioritized_replay_beta_iters = self.prioritized_replay_beta_iters
-                self.beta_schedule = LinearSchedule(prioritized_replay_beta_iters,
-                                                    initial_p=self.prioritized_replay_beta0,
-                                                    final_p=1.0)
+                    self.replay_buffer = ReplayBuffer(self.buffer_size)
+                    self.beta_schedule = None
+
+                if replay_wrapper is not None:
+                    assert not self.prioritized_replay, "Prioritized replay buffer is not supported by HER"
+                    self.replay_buffer = replay_wrapper(self.replay_buffer)
             else:
-                self.replay_buffer = ReplayBuffer(self.buffer_size)
-                self.beta_schedule = None
-
-            if replay_wrapper is not None:
-                assert not self.prioritized_replay, "Prioritized replay buffer is not supported by HER"
-                self.replay_buffer = replay_wrapper(self.replay_buffer)
-
+                print("replacing buffer")
+                self.replay_buffer = existing_buffer
 
             # Create the schedule for exploration starting from 1.
             self.exploration = LinearSchedule(schedule_timesteps=int(self.exploration_fraction * total_timesteps),
