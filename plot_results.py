@@ -35,8 +35,8 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
     plot = sns.lineplot(data=data,
                  x=xaxis,
                  y=value,
-                 ci='sd',
-                 estimator=np.mean,
+                 #ci='sd',
+                 #estimator=np.mean,
                  hue=compare,
                  palette=sns.color_palette("Set1", n),
                  **kwargs)

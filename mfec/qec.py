@@ -38,6 +38,18 @@ class QEC:
         self.sig = sig * self.sig
         #print(self.get_mu_and_sig())
         #print(self.mu, self.sig)
+
+        #Drop randomly once beyond certain size:
+        #for buff in self.buffers:
+        #    if len(buff) > 1e4:
+        #        print("dropping 20%")
+        #        import random
+        #        indxs = random.sample(range(0, len(buff)-1), int(len(buff)*0.5))
+        #        print(indxs)
+        #        buff.states = list(np.asarray(buff.states)[indxs])
+        #        buff.values = list(np.asarray(buff.values)[indxs])
+        #        buff._tree = KDTree(np.asarray(buff.states))
+
         return
 
     def estimate(self, state, action, step):
@@ -87,8 +99,11 @@ class QEC:
         state = (state - self.mu) / self.sig
         buffer = self.buffers[action]
         state_index = buffer.find_state(state)
+        lr = 0.01
         if state_index:
+            #print("update existing value")
             max_value = max(buffer.values[state_index], value)
+            #max_value = buffer.values[state_index] + lr*value
             max_time = max(buffer.times[state_index], time)
             buffer.replace(state, max_value, max_time, state_index, step)
         else:

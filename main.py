@@ -42,19 +42,19 @@ EPOCHS = 3000
 FRAMES_PER_EPOCH = 500
 
 config = {
-    "ENV": "CartPoleLong",
+    "ENV": "CartPolePixels",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
-    "K": 50,
-    "DISCOUNT": 1,
-    "EPSILON": 0,
+    "K": 15,
+    "DISCOUNT": 0.999,
+    "EPSILON": 1,
     "EPS-DECAY": 0.005,
     "NORM-FREQ": 20,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
     "STATE-DIM": 64,
-    "PROJECTION-TYPE": 4,
-    "SEED": [1, 2, 3, 5, 6, 7, 8],
+    "PROJECTION-TYPE": 3,
+    "SEED": [1, 2, 3],
 }
 """Projection type:
 0: Identity
@@ -64,10 +64,6 @@ config = {
 4: good manual
 5: invert 1
 """
-
-
-# STATE_DIMENSION = 4
-
 
 def main(cfg):
     print(cfg)
@@ -87,16 +83,22 @@ def main(cfg):
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
     if cfg["ENV"] == "CartPole":
         env = gym.make("CartPole-v0")
+
     elif cfg["ENV"] == "CartPoleLong":
         env = gym.make("CartPole-v1")
+
     elif cfg["ENV"] == "CartPolePixels":
         from cartpole_wrapper import pixel_state_wrapper
         env = gym.make("CartPole-v1")
-        env = pixel_state_wrapper(env)
+        env = pixel_state_wrapper(env, greyscale=False, difference=True)
+        env.reset()
+        print(env.step(0))
+
     elif cfg["ENV"] == "Breakout":
         from baselines.common.atari_wrappers import make_atari, wrap_deepmind
         env = make_atari('BreakoutNoFrameskip-v4')
         env = wrap_deepmind(env, frame_stack=True, scale=False)
+
     else:
         raise Exception("Invalid env specified")
 
@@ -138,9 +140,9 @@ def run_algorithm(agent, env, utils):
         while frames_left > 0:
             episode_frames, episode_reward = run_episode(agent, env)
             last_five_ep_rewards.appendleft(episode_reward)
-            if all(e > 450 for e in last_five_ep_rewards):
-                print("GOOD ENOUGH")
-                gen_expert_dataset(agent, env)
+            #if all(e > 450 for e in last_five_ep_rewards):
+            #    print("GOOD ENOUGH")
+            #    gen_expert_dataset(agent, env)
 
             frames_left -= episode_frames
             utils.end_episode(episode_frames, episode_reward)
@@ -197,8 +199,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    main(all_configs[0])
-    exit()
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

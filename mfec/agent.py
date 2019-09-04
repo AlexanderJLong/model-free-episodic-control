@@ -2,7 +2,7 @@
 
 import os.path
 import pickle
-
+from PIL import Image
 import numpy as np
 
 from mfec.qec import QEC
@@ -90,6 +90,12 @@ class MFECAgent:
         self.time += 1
 
         # Preprocess and project observation to state
+        #state = np.dot(observation[..., :3], [0.299, 0.587, 0.114])
+
+
+        #resized_screen = np.array(Image.fromarray(state).resize((84, 110)))
+        #state = resized_screen[18:102, :]
+
         self.state = np.dot(self.projection, np.asarray(observation).flatten())
         # self.state = observation
 

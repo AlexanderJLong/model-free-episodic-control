@@ -3,6 +3,7 @@ import gym
 from gym import spaces
 from collections import deque
 
+from PIL import Image
 
 class Pixels(gym.ObservationWrapper):
     def __init__(self, env, downsize, centering):
@@ -49,8 +50,11 @@ class Pixels(gym.ObservationWrapper):
             screen = screen[:, slice_range]
 
         # downsize
-        screen = screen[::self.ds, ::self.ds]
-        return screen
+        im = Image.fromarray(screen)
+        im = im.resize((im.size[0]//self.ds, im.size[1]//self.ds), Image.BICUBIC)
+        out = np.asarray(im)
+        out = out/300
+        return out
 
 
 class OrigionalPlusDiff(gym.Wrapper):
@@ -66,7 +70,7 @@ class OrigionalPlusDiff(gym.Wrapper):
         gym.Wrapper.__init__(self, env)
         self.frames = deque([], maxlen=2)
         shp = env.observation_space.shape
-        self.observation_space = spaces.Box(low=0, high=1, shape=(shp[0] * 2, shp[1]), dtype=np.float16)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(shp[0] * 2, shp[1]), dtype=np.int8)
 
     def reset(self):
         ob = self.env.reset()
@@ -84,16 +88,6 @@ class OrigionalPlusDiff(gym.Wrapper):
         diff = self.frames[-1] - self.frames[-2]
         out = np.concatenate([diff, self.frames[-1]])
         return out
-
-
-class DeterministicStart(gym.Wrapper):
-    def __init__(self, env):
-        gym.Wrapper.__init__(self, env)
-
-    def reset(self):
-        self.env.reset()
-        self.env.state = np.asarray([0, 0, 0, 0])
-        return self.env.state
 
 
 class LazyFrames(object):
@@ -127,18 +121,11 @@ class LazyFrames(object):
         return self._force()[i]
 
 
-def pixel_state_wrapper(env, greyscale=True, difference=True, scale=True):
+def pixel_state_wrapper(env, greyscale=False, difference=True, scale=False):
     """
     Configure Cartpole to show pixels as the state
     """
-    if greyscale:
-        env = Pixels(env, downsize=4, centering=True)
+    env = Pixels(env, downsize=4, centering=False)
+    if difference:
         env = OrigionalPlusDiff(env)
     return env
-
-
-def det_wrapper(env):
-    """
-    Configure Cartpole to show pixels as the state
-    """
-    return DeterministicStart(env)
