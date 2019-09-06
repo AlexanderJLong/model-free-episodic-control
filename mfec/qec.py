@@ -52,7 +52,7 @@ class QEC:
 
         return
 
-    def estimate(self, state, action, step):
+    def estimate(self, state, action):
         state = (state - self.mu) / self.sig
         """Changes:
         - No exact matching"""
@@ -77,37 +77,24 @@ class QEC:
         elif self.kernel_type == "GAUSSIAN":
             w = gaus(dists, self.kernel_width)
 
-        assert (len(w) == len(dists))
         value = 0
-        # a = 0
         for i, neighbor in enumerate(neighbors):
-            # only look at states forward in time
-            # print(f"{step} -> {buffer.steps[neighbor]}")
-            # amount_ahead = buffer.steps[neighbor] - step
-            # if amount_ahead >= 0:
-            #     a += 1
             value += w[i] * buffer.values[neighbor]
-        # print(f"% ahead in NN search: {a/len(neighbors)*100}")
         if sum(w) == 0:
             return 0
-        # print(value)
         return value / sum(w)
 
-    def update(self, state, action, value, time, step):
-        #NOTE: in replace, the step will be replaced with the latest
-        # This might not be desired behaviour
+    def update(self, state, action, value, time):
         state = (state - self.mu) / self.sig
         buffer = self.buffers[action]
         state_index = buffer.find_state(state)
         lr = 0.01
         if state_index:
-            #print("update existing value")
             max_value = max(buffer.values[state_index], value)
-            #max_value = buffer.values[state_index] + lr*value
             max_time = max(buffer.times[state_index], time)
-            buffer.replace(state, max_value, max_time, state_index, step)
+            buffer.replace(state, max_value, max_time, state_index)
         else:
-            buffer.add(state, value, time, step)
+            buffer.add(state, value, time)
 
     def plot(self, skip_factor):
         if len(self.buffers[0].states) < 2:
@@ -268,7 +255,6 @@ class ActionBuffer:
         self.states = []
         self.values = []
         self.times = []
-        self.steps = []
 
     def find_state(self, state):
         if self._tree:
@@ -285,12 +271,11 @@ class ActionBuffer:
             result = self._tree.query([state], k=k, return_distance=True, sort_results=True) if self._tree else []
             return result[1], result[0]
 
-    def add(self, state, value, time, step):
+    def add(self, state, value, time):
         if len(self) < self.capacity:
             self.states.append(state)
             self.values.append(value)
             self.times.append(time)
-            self.steps.append(step)
         else:
             min_time_idx = int(np.argmin(self.times))
             if time > self.times[min_time_idx]:
@@ -298,11 +283,10 @@ class ActionBuffer:
         #dist = DistanceMetric.get_metric('minkowski', p=1)
         self._tree = KDTree(np.asarray(self.states))
 
-    def replace(self, state, value, time, index, step):
+    def replace(self, state, value, time, index):
         self.states[index] = state
         self.values[index] = value
         self.times[index] = time
-        self.steps[index] = step
 
     def __len__(self):
         return len(self.states)

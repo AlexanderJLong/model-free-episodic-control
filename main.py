@@ -43,6 +43,7 @@ FRAMES_PER_EPOCH = 500
 
 config = {
     "ENV": "CartPolePixels",
+    "PREPRO": "GreyScaleNormalizeResize",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
     "K": 15,
@@ -64,6 +65,7 @@ config = {
 4: good manual
 5: invert 1
 """
+
 
 def main(cfg):
     print(cfg)
@@ -88,11 +90,9 @@ def main(cfg):
         env = gym.make("CartPole-v1")
 
     elif cfg["ENV"] == "CartPolePixels":
-        from cartpole_wrapper import pixel_state_wrapper
+        from cartpole_wrapper import pixels_cropped_wrapper
         env = gym.make("CartPole-v1")
-        env = pixel_state_wrapper(env, greyscale=False, difference=True)
-        env.reset()
-        print(env.step(0))
+        env = pixels_cropped_wrapper(env, diff=True)
 
     elif cfg["ENV"] == "Breakout":
         from baselines.common.atari_wrappers import make_atari, wrap_deepmind
@@ -103,10 +103,12 @@ def main(cfg):
         raise Exception("Invalid env specified")
 
     print(env.observation_space.shape)
+
     agent = MFECAgent(
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
         k=cfg["K"],
         discount=cfg["DISCOUNT"],
+        prepro=cfg["PREPRO"],
         epsilon=cfg["EPSILON"],
         observation_dim=np.prod(env.observation_space.shape),
         state_dimension=cfg["STATE-DIM"],
@@ -122,28 +124,12 @@ def main(cfg):
     run_algorithm(agent, env, utils)
 
 
-def gen_expert_dataset(agent, env):
-    from stable_baselines.gail import generate_expert_traj
-
-    def get_action(obv):
-        return agent.choose_action(obv, 0)
-
-    generate_expert_traj(get_action, 'mfec_expert_cartpole', env, n_episodes=1000)
-    print("All done")
-
-
 def run_algorithm(agent, env, utils):
     frames_left = 0
-    last_five_ep_rewards = deque([], maxlen=5)
     for e in range(EPOCHS):
         frames_left += FRAMES_PER_EPOCH
         while frames_left > 0:
             episode_frames, episode_reward = run_episode(agent, env)
-            last_five_ep_rewards.appendleft(episode_reward)
-            #if all(e > 450 for e in last_five_ep_rewards):
-            #    print("GOOD ENOUGH")
-            #    gen_expert_dataset(agent, env)
-
             frames_left -= episode_frames
             utils.end_episode(episode_frames, episode_reward)
         utils.end_epoch()
@@ -164,16 +150,14 @@ def run_episode(agent, env):
     observation = env.reset()
 
     done = False
-    step = 0
     while not done:
-        action = agent.choose_action(observation, step)
+        action = agent.choose_action(observation)
         observation, reward, done, _ = env.step(action)
 
-        agent.receive_reward(reward, step)
+        agent.receive_reward(reward)
 
         episode_reward += reward
         episode_frames += 1
-        step += 1
     agent.train()
 
     # agent.qec.plot_scatter()

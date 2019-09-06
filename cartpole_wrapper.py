@@ -5,7 +5,27 @@ from collections import deque
 
 from PIL import Image
 
-class Pixels(gym.ObservationWrapper):
+
+class PixelsCropped(gym.ObservationWrapper):
+    def __init__(self, env):
+        """
+        Origional: 160x600
+
+        Output: 3D array of unsigned ints.
+        """
+        gym.ObservationWrapper.__init__(self, env)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(130, 600, 3), dtype=np.uint8)
+        self.env = env.unwrapped
+        self.env.seed(1)
+
+    def observation(self, observation=None):
+        screen = self.env.render(mode='rgb_array')
+        screen = np.asarray(screen, dtype=np.uint8)
+        screen = screen[170:300, :, :]
+        return screen
+
+
+class OldPixels(gym.ObservationWrapper):
     def __init__(self, env, downsize, centering):
         """
         Origional: 160x600
@@ -51,21 +71,15 @@ class Pixels(gym.ObservationWrapper):
 
         # downsize
         im = Image.fromarray(screen)
-        im = im.resize((im.size[0]//self.ds, im.size[1]//self.ds), Image.BICUBIC)
+        im = im.resize((im.size[0] // self.ds, im.size[1] // self.ds), Image.BICUBIC)
         out = np.asarray(im)
-        out = out/300
+        out = out / 300
         return out
 
 
-class OrigionalPlusDiff(gym.Wrapper):
+class OriginalPlusDiff(gym.Wrapper):
     def __init__(self, env):
-        """Stack k last frames.
-
-        Returns lazy array, which is much more memory efficient.
-
-        See Also
-        --------
-        baselines.common.atari_wrappers.LazyFrames
+        """Concat origional and diff to pixels
         """
         gym.Wrapper.__init__(self, env)
         self.frames = deque([], maxlen=2)
@@ -127,5 +141,12 @@ def pixel_state_wrapper(env, greyscale=False, difference=True, scale=False):
     """
     env = Pixels(env, downsize=4, centering=False)
     if difference:
-        env = OrigionalPlusDiff(env)
+        env = OriginalPlusDiff(env)
+    return env
+
+
+def pixels_cropped_wrapper(env, diff):
+    env = PixelsCropped(env)
+    if diff:
+        env = OriginalPlusDiff(env)
     return env
