@@ -88,7 +88,6 @@ class QEC:
         state = (state - self.mu) / self.sig
         buffer = self.buffers[action]
         state_index = buffer.find_state(state)
-        lr = 0.01
         if state_index:
             max_value = max(buffer.values[state_index], value)
             max_time = max(buffer.times[state_index], time)
