@@ -84,7 +84,7 @@ class OriginalPlusDiff(gym.Wrapper):
         gym.Wrapper.__init__(self, env)
         self.frames = deque([], maxlen=2)
         shp = env.observation_space.shape
-        self.observation_space = spaces.Box(low=0, high=255, shape=(shp[0] * 2, shp[1]), dtype=np.int8)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(shp[0] * 2, shp[1], 3), dtype=np.uint8)
 
     def reset(self):
         ob = self.env.reset()
