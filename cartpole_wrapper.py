@@ -9,7 +9,7 @@ from PIL import Image
 class PixelsCropped(gym.ObservationWrapper):
     def __init__(self, env):
         """
-        Origional: 160x600
+        Returns: 130x600
 
         Output: 3D array of unsigned ints.
         """
