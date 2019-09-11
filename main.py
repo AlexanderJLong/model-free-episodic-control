@@ -30,6 +30,8 @@ import argparse
 from collections import deque
 from multiprocessing import Pool
 
+from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
+
 parser = argparse.ArgumentParser()
 parser.add_argument("environment")
 args = parser.parse_args()
@@ -42,7 +44,8 @@ EPOCHS = 3000
 FRAMES_PER_EPOCH = 500
 
 config = {
-    "ENV": "CartPolePixels",
+    "ENV": "VecCartPolePixels",
+    "NUMENVS": 4,
     "PREPRO": "GreyScaleNormalizeResize",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
@@ -55,7 +58,7 @@ config = {
     "KERNEL-TYPE": "AVG",
     "STATE-DIM": 64,
     "PROJECTION-TYPE": 3,
-    "SEED": [1, 2, 3],
+    "SEED": [100, 200, 300],
 }
 """Projection type:
 0: Identity
@@ -94,6 +97,19 @@ def main(cfg):
         env = gym.make("CartPole-v1")
         env = pixels_cropped_wrapper(env, diff=True)
 
+    elif cfg["ENV"] == "VecCartPolePixels":
+        def make_env(seed):
+            def _f():
+                env = gym.make("CartPole-v1")
+                env = pixels_cropped_wrapper(env, diff=True)
+                env.seed(seed)
+                return env
+
+            return _f
+
+        env = [make_env(cfg["SEED"] + n) for n in range(cfg["NUMENVS"])]
+        env = SubprocVecEnv(env)
+
     elif cfg["ENV"] == "Breakout":
         from baselines.common.atari_wrappers import make_atari, wrap_deepmind
         env = make_atari('BreakoutNoFrameskip-v4')
@@ -106,6 +122,7 @@ def main(cfg):
 
     agent = MFECAgent(
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
+        num_envs=cfg["NUMENVS"],
         k=cfg["K"],
         discount=cfg["DISCOUNT"],
         prepro=cfg["PREPRO"],
@@ -134,29 +151,26 @@ def run_algorithm(agent, env, utils):
             utils.end_episode(episode_frames, episode_reward)
         utils.end_epoch()
 
-        # agent.save(agent_dir)
-        # agent.qec.plot3d(both=False, diff=False)
-        # agent.qec.plot_scatter()
         if e > EPOCHS_TILL_VIS:
             agent.qec.plot_scatter()
             agent.qec.plot3d(both=False, diff=False)
 
 
-def run_episode(agent, env):
+def run_batch(agent, env, total_steps):
+    # Could throw away extras, or could train mid episode
     episode_frames = 0
     episode_reward = 0
 
-    env.seed(random.randint(0, 1000000))
     observation = env.reset()
 
-    done = False
-    while not done:
-        action = agent.choose_action(observation)
-        observation, reward, done, _ = env.step(action)
+    done = [False]
+    while _ in range(total_steps):
+        actions = agent.choose_action(observations)
+        observations, rewards, dones, _ = env.step(actions)
 
-        agent.receive_reward(reward)
+        agent.store_rewards(rewards, dones)
 
-        episode_reward += reward
+        #episode_reward += np.mean(reward)
         episode_frames += 1
     agent.train()
 
@@ -183,8 +197,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    # main(all_configs[0])
+    # exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

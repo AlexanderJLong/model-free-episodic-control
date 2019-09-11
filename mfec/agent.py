@@ -9,19 +9,21 @@ from mfec.qec import QEC
 
 
 # Different Preprocessors
-def cartpole_crop_grey_scale_normalize_resize(obv):
-    # Greyscale and normalize
-    state = obv[:, :, 0] * 0.001172549019607843 + obv[:, :, 1] * 0.0023019607843137255 + obv[:, :, 2] * 0.0004470588235294118
+def cartpole_crop_grey_scale_normalize_resize(obvs):
+    states = []
+    for obv in obvs:
+        state = obv[:, :, 0] * 0.001172549019607843 + obv[:, :, 1] * 0.0023019607843137255 + obv[:, :, 2] * 0.0004470588235294118
 
-    # resize
-    state = np.array(Image.fromarray(state).resize((64, 64)))
-
-    return state
+        # resize
+        state = np.array(Image.fromarray(state).resize((64, 64)))
+        states.append(state.flatten())
+    return np.asarray(states)
 
 
 class MFECAgent:
     def __init__(
             self,
+            num_envs,
             buffer_size,
             k,
             discount,
@@ -39,7 +41,7 @@ class MFECAgent:
             projection_type,
     ):
         self.rs = np.random.RandomState(seed)
-        self.memory = []
+        self.memory = [[] for _ in range(num_envs)]
         self.actions = actions
         self.qec = QEC(self.actions, buffer_size, k, kernel_type, kernel_width, state_dimension)
 
@@ -102,12 +104,12 @@ class MFECAgent:
         self.rewards_received = 0
         self.exp_skip = exp_skip
 
-    def choose_action(self, observation):
+    def choose_action(self, observations):
         self.time += 1
 
         # Preprocess and project observation to state
-        state = self.prepro(observation)
-        self.state = np.dot(self.projection, state.flatten())
+        obvs = self.prepro(observations)
+        self.states = np.dot(self.projection, obvs)
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:
@@ -125,15 +127,20 @@ class MFECAgent:
 
         return self.action
 
-    def receive_reward(self, reward):
-        self.memory.append(
-            {
-                "state": self.state,
-                "action": self.action,
-                "reward": reward,
-                "time": self.time,
-            }
-        )
+    def store_rewards(self, rewards, dones):
+        """batch setting, have list of everything, one for each env.
+        Want to append these separately"""
+
+        for i, env_mem in enumerate(self.memory):
+            env_mem.append(
+                {
+                    "state": self.states[i],
+                    "action": self.actions[i],
+                    "reward": rewards[i],
+                    "done": dones[i],
+                    "time": self.time,
+                }
+            )
 
     def train(self):
         self.rewards_received += 1

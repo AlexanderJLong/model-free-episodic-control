@@ -34,7 +34,7 @@ class OldPixels(gym.ObservationWrapper):
         self.ds = downsize
         self.centering = centering
         if centering:
-            self.observation_space = spaces.Box(low=0, high=255, shape=(160 // self.ds, 360 // self.ds),
+            self.observation_space = spaces.Box(low=0, high=255, shape=(42, 84, 3),
                                                 dtype=np.uint16)
         else:
             self.observation_space = spaces.Box(low=0, high=255, shape=(160 // self.ds, 600 // self.ds),
@@ -47,11 +47,11 @@ class OldPixels(gym.ObservationWrapper):
 
     def observation(self, observation=None):
         screen = self.env.render(mode='rgb_array')
-        screen = np.asarray(np.mean(screen, axis=2), dtype=np.int16)
+        #screen = np.asarray(np.mean(screen, axis=2), dtype=np.int16)
 
         # Cart is in the lower half, so strip off the top and bottom of the screen
-        screen_height, screen_width = screen.shape
-        screen = screen[int(screen_height * 0.4):int(screen_height * 0.8):, ::]
+        screen_height, screen_width, _ = screen.shape
+        screen = screen[int(screen_height * 0.4):int(screen_height * 0.8):, ::, ::]
 
         if self.centering:
             # Convert to float, rescale, convert to torch tensor
@@ -67,24 +67,24 @@ class OldPixels(gym.ObservationWrapper):
                 slice_range = slice(cart_location - view_width // 2,
                                     cart_location + view_width // 2)
             # Strip off the edges, so that we have a square image centered on a cart
-            screen = screen[:, slice_range]
+            screen = screen[:, slice_range, :]
 
         # downsize
         im = Image.fromarray(screen)
-        im = im.resize((im.size[0] // self.ds, im.size[1] // self.ds), Image.BICUBIC)
+        im = im.resize((84, 84), Image.BICUBIC)
         out = np.asarray(im)
-        out = out / 300
         return out
 
 
 class OriginalPlusDiff(gym.Wrapper):
-    def __init__(self, env):
+    def __init__(self, env, append):
         """Concat origional and diff to pixels
         """
         gym.Wrapper.__init__(self, env)
         self.frames = deque([], maxlen=2)
+        self.append = append
         shp = env.observation_space.shape
-        self.observation_space = spaces.Box(low=0, high=255, shape=(shp[0] * 2, shp[1]), dtype=np.int8)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(shp[0] * 2, shp[1], 3), dtype=np.int8)
 
     def reset(self):
         ob = self.env.reset()
@@ -100,7 +100,10 @@ class OriginalPlusDiff(gym.Wrapper):
     def _get_ob(self):
         assert len(self.frames) == 2
         diff = self.frames[-1] - self.frames[-2]
-        out = np.concatenate([diff, self.frames[-1]])
+        if self.append:
+            out = np.concatenate([diff, self.frames[-1]])
+        else:
+            out = diff
         return out
 
 
@@ -139,9 +142,9 @@ def pixel_state_wrapper(env, greyscale=False, difference=True, scale=False):
     """
     Configure Cartpole to show pixels as the state
     """
-    env = Pixels(env, downsize=4, centering=False)
+    env = OldPixels(env, downsize=4, centering=True)
     if difference:
-        env = OriginalPlusDiff(env)
+        env = OriginalPlusDiff(env, append=False)
     return env
 
 
