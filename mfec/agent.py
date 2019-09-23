@@ -14,7 +14,10 @@ def cartpole_crop_grey_scale_normalize_resize(obv):
     state = obv[:, :, 0] * 0.001172549019607843 + obv[:, :, 1] * 0.0023019607843137255 + obv[:, :, 2] * 0.0004470588235294118
 
     # resize
-    state = np.array(Image.fromarray(state).resize((64, 64)))
+    state = np.array(Image.fromarray(state).resize((64, 64), Image.BILINEAR), dtype=np.float)
+
+    # round
+    state = np.around(state, decimals=2)
 
     return state
 

@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
 
-from pyvirtualdisplay import Display
-
-display = Display(visible=0, size=(1400, 900))
-display.start()
-
 """
 HOW TO RUN:
-This file will run with the command args provided, or will use thier
+This file will run with the command args provided, or will use the
 defaults if not provided, over 3 random seeds, with one thread per run
 
 To do a grid search, you can write a run script that calls this fn
@@ -29,11 +24,6 @@ from mfec.utils import Utils
 import argparse
 from collections import deque
 from multiprocessing import Pool
-
-parser = argparse.ArgumentParser()
-parser.add_argument("environment")
-args = parser.parse_args()
-print(args.environment)
 
 # GLOBAl VARS FIXED FOR EACH RUN
 TITLE = "Noautonorm"
@@ -91,8 +81,8 @@ def main(cfg):
 
     elif cfg["ENV"] == "CartPolePixels":
         from cartpole_wrapper import pixels_cropped_wrapper
-        env = gym.make("CartPole-v1")
-        env = pixels_cropped_wrapper(env, diff=True)
+        env = gym.make("Pong-v0")
+        env = pixels_cropped_wrapper(env, crop=True, diff=False)
 
     elif cfg["ENV"] == "Breakout":
         from baselines.common.atari_wrappers import make_atari, wrap_deepmind
@@ -183,8 +173,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    main(all_configs[0])
+    exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)
