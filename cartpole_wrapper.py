@@ -7,28 +7,23 @@ from PIL import Image
 
 
 class PixelsCropped(gym.ObservationWrapper):
-    def __init__(self, env, crop):
+    def __init__(self, env):
         """
         Returns: 130x600
 
-        A 3-channel cropped (vertically) if crpo=True observation
+        A 3-channel cropped (vertically) observation
 
         Output: 3D array of unsigned ints.
         """
         gym.ObservationWrapper.__init__(self, env)
-        self.crop = crop
-        if self.crop:
-            #self.observation_space = spaces.Box(low=0, high=255, shape=(130, 600, 3), dtype=np.uint8)
-            self.observation_space = spaces.Box(low=0, high=255, shape=(155, 160, 3), dtype=np.uint8)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(130, 600, 3), dtype=np.uint8)
         self.env = env.unwrapped
         self.env.seed(1)
 
     def observation(self, observation=None):
         screen = self.env.render(mode='rgb_array')
         screen = np.asarray(screen, dtype=np.uint8)
-        if self.crop:
-            # screen = screen[170:300, :, :] # cartpole
-            screen = screen[35:190, :, :]
+        screen = screen[170:300, :, :]
         return screen
 
 
@@ -108,7 +103,7 @@ class OriginalPlusDiff(gym.Wrapper):
     def _get_ob(self):
         assert len(self.frames) == 2
         diff = self.frames[-1] - self.frames[-2]
-        out = np.concatenate([255 - diff, self.frames[-1]])
+        out = np.concatenate([255-diff, self.frames[-1]])
         return out
 
 
@@ -153,8 +148,8 @@ def pixel_state_wrapper(env, greyscale=False, difference=True, scale=False):
     return env
 
 
-def pixels_cropped_wrapper(env, crop, diff):
-    env = PixelsCropped(env, crop=crop)
+def pixels_cropped_wrapper(env, diff):
+    env = PixelsCropped(env)
     if diff:
         env = OriginalPlusDiff(env)
     return env

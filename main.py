@@ -10,6 +10,9 @@ with different arugments. k
 """
 
 import os
+os.putenv('SDL_VIDEODRIVER', 'fbcon')
+os.environ["SDL_VIDEODRIVER"] = "dummy"
+
 import random
 from time import gmtime, strftime
 import shutil
@@ -29,10 +32,10 @@ from multiprocessing import Pool
 TITLE = "Noautonorm"
 EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
-FRAMES_PER_EPOCH = 500
+FRAMES_PER_EPOCH = 5000
 
 config = {
-    "ENV": "CartPolePixels",
+    "ENV": "PixelCopter",
     "PREPRO": "GreyScaleNormalizeResize",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
@@ -81,13 +84,15 @@ def main(cfg):
 
     elif cfg["ENV"] == "CartPolePixels":
         from cartpole_wrapper import pixels_cropped_wrapper
-        env = gym.make("Pong-v0")
-        env = pixels_cropped_wrapper(env, crop=True, diff=False)
+        env = gym.make("CartPole-v1")
+        env = pixels_cropped_wrapper(env, diff=True)
 
     elif cfg["ENV"] == "Breakout":
         from baselines.common.atari_wrappers import make_atari, wrap_deepmind
         env = make_atari('BreakoutNoFrameskip-v4')
         env = wrap_deepmind(env, frame_stack=True, scale=False)
+    elif cfg["ENV"] == "Pong":
+        env = gym.make("Pong-v0")
 
     else:
         raise Exception("Invalid env specified")
@@ -173,8 +178,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    main(all_configs[0])
-    exit()
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

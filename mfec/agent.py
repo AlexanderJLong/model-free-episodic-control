@@ -21,6 +21,19 @@ def cartpole_crop_grey_scale_normalize_resize(obv):
 
     return state
 
+def pong_prepro(obv):
+    # Crop, Greyscale and normalize
+    state = obv[35:190, :, 0] * 0.001172549019607843 + obv[35:190, :, 1] * 0.0023019607843137255 + obv[35:190, :, 2] * 0.0004470588235294118
+
+    # resize
+    state = np.array(Image.fromarray(state).resize((64, 64), Image.BILINEAR), dtype=np.float)
+
+    # round
+    #state = np.around(state, decimals=1)
+
+    return state
+
+
 
 class MFECAgent:
     def __init__(
@@ -46,7 +59,10 @@ class MFECAgent:
         self.actions = actions
         self.qec = QEC(self.actions, buffer_size, k, kernel_type, kernel_width, state_dimension)
 
-        if prepro == "GreyScaleNormalizeResize":
+        if prepro == "Pong":
+            self.prepro = pong_prepro
+            obv_dim = 64*64
+        elif prepro == "GreyScaleNormalizeResize":
             self.prepro = cartpole_crop_grey_scale_normalize_resize
             obv_dim = 64 * 64
         else:
