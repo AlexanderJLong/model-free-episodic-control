@@ -14,10 +14,10 @@ def cartpole_crop_grey_scale_normalize_resize(obv):
     state = obv[:, :, 0] * 0.001172549019607843 + obv[:, :, 1] * 0.0023019607843137255 + obv[:, :, 2] * 0.0004470588235294118
 
     # resize
-    state = np.array(Image.fromarray(state).resize((64, 64), Image.BILINEAR), dtype=np.float)
+    state = np.array(Image.fromarray(state).resize((64, 64), Image.BILINEAR), dtype=np.float32)
 
     # round
-    state = np.around(state, decimals=2)
+    #state = np.around(state, decimals=2)
 
     return state
 
@@ -122,26 +122,16 @@ class MFECAgent:
         self.exp_skip = exp_skip
 
     def choose_action(self, observation):
-        self.time += 1
-
         # Preprocess and project observation to state
         state = self.prepro(observation)
-        #self.state = np.dot(self.projection, state.flatten())
         self.state = state.flatten()
 
-        # Exploration
-        if self.rs.random_sample() < self.epsilon:
-            self.action = self.rs.choice(self.actions)
-
-        # Exploitation
-        else:
-            values = [
-                self.qec.estimate(self.state, action)
-                for action in self.actions
-            ]
-            best_actions = np.argwhere(values == np.max(values)).flatten()
-            self.action = self.rs.choice(best_actions)
-            # print(f"In {observation}, got values {values} and picked {self.action}")
+        values = [
+            self.qec.estimate(self.state, action)
+            for action in self.actions
+        ]
+        best_actions = np.argwhere(values == np.max(values)).flatten()
+        self.action = self.rs.choice(best_actions)
 
         return self.action
 

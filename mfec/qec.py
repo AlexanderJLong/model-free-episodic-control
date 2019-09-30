@@ -52,20 +52,13 @@ class QEC:
         dists = dists[0]
         neighbors = neighbors[0]
 
-        def gaus(x, sig):
-            return 1. / (np.sqrt(2. * np.pi) * sig) * np.exp(-np.power(x / sig, 2.) / 2)
-
         if self.kernel_type == "AVG":
-            w = [1 for d in dists]
-        elif self.kernel_type == "GAUSSIAN":
-            w = gaus(dists, self.kernel_width)
+            w = [1 for _ in dists]
 
         value = 0
         for i, neighbor in enumerate(neighbors):
             value += w[i] * buffer.values[neighbor]
 
-        if sum(w) == 0:
-            return 0
         return value / sum(w)
 
     def update(self, state, action, value, time):

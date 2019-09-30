@@ -43,6 +43,7 @@ def plot_data(data, xaxis='rounded_frames', value="reward_avg", condition="Condi
     axes = plot.axes
     plot.set_title(TITLE)
     axes.set_xlim(0, )
+    axes.set_ylim(0, 500)
     plt.tight_layout(pad=0.5)
     plt.xlim(0, None)
     xscale = np.max(np.asarray(data[xaxis])) > 5e3
