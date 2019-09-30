@@ -34,21 +34,21 @@ from multiprocessing import Pool
 TITLE = "Noautonorm"
 EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
-FRAMES_PER_EPOCH = 500
+FRAMES_PER_EPOCH = 50000
 
 config = {
-    "ENV": "CartPolePixels",
-    "PREPRO": "GreyScaleNormalizeResize",
+    "ENV": "Pong",
+    "PREPRO": "Pong",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
     "K": 15,
-    "DISCOUNT": 0.999,
+    "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.005,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 4096,
+    "STATE-DIM": 64*64,
     "PROJECTION-TYPE": 3,
     "SEED": [1, 2, 3],
 }
@@ -94,7 +94,10 @@ def main(cfg):
         env = make_atari('BreakoutNoFrameskip-v4')
         env = wrap_deepmind(env, frame_stack=True, scale=False)
     elif cfg["ENV"] == "Pong":
-        env = gym.make("Pong-v0")
+        env = gym.make("PongNoFrameskip-v0")
+        from baselines.common.atari_wrappers import wrap_deepmind
+        env = wrap_deepmind(env, frame_stack=False, scale=False, episode_life=True)
+
 
     else:
         raise Exception("Invalid env specified")

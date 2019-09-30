@@ -10,14 +10,16 @@ from mfec.qec import QEC
 
 # Different Preprocessors
 def cartpole_crop_grey_scale_normalize_resize(obv):
-    # Greyscale and normalize
+    # Greyscale and normalize to [0, 1]
     state = obv[:, :, 0] * 0.001172549019607843 + obv[:, :, 1] * 0.0023019607843137255 + obv[:, :, 2] * 0.0004470588235294118
 
+    state = state - 0.5
     # resize
-    state = np.array(Image.fromarray(state).resize((64, 64), Image.BILINEAR), dtype=np.float32)
+    state = np.array(Image.fromarray(state).resize((84, 84), Image.BILINEAR), dtype=np.float32)
 
     # round
     #state = np.around(state, decimals=2)
+    #print(np.max(state), np.min(state))
 
     return state
 
@@ -26,7 +28,7 @@ def pong_prepro(obv):
     state = obv[35:190, :, 0] * 0.001172549019607843 + obv[35:190, :, 1] * 0.0023019607843137255 + obv[35:190, :, 2] * 0.0004470588235294118
 
     # resize
-    state = np.array(Image.fromarray(state).resize((64, 64), Image.BILINEAR), dtype=np.float)
+    state = np.array(Image.fromarray(state).resize((64, 64), Image.BILINEAR), dtype=np.float32)
 
     # round
     #state = np.around(state, decimals=1)
@@ -60,62 +62,16 @@ class MFECAgent:
         self.qec = QEC(self.actions, buffer_size, k, kernel_type, kernel_width, state_dimension)
 
         if prepro == "Pong":
-            self.prepro = pong_prepro
-            obv_dim = 64*64
+            self.prepro = lambda x:x
         elif prepro == "GreyScaleNormalizeResize":
             self.prepro = cartpole_crop_grey_scale_normalize_resize
-            obv_dim = 64 * 64
-        else:
-            obv_dim = observation_dim
 
-        if projection_type == 0:
-            self.projection = np.eye(state_dimension)[:, :obv_dim]
-        elif projection_type == 1:
-            self.projection = self.rs.randn(
-                state_dimension, obv_dim
-            ).astype(np.float32)
-        elif projection_type == 2:
-            self.projection = np.linalg.qr(self.rs.randn(
-                state_dimension, obv_dim
-            ).astype(np.float32))[0]
-        elif projection_type == 3:
-            m = []
-            for i in range(state_dimension):
-                r = []
-                for j in range(obv_dim):
-                    d = np.random.rand()
-                    if d < 1 / 6:
-                        r.append(1)
-                    elif d < 5 / 6:
-                        r.append(0)
-                    else:
-                        r.append(-1)
-                m.append(r)
-            self.projection = np.asarray(m)
-        elif projection_type == 4:
-            self.projection = np.asarray([
-                [1, 0, 0, 0],
-                [0, 1, 0, 0],
-                [0, 0, 10, 0],
-                [0, 0, 0, 1]])
-        elif projection_type == 5:
-            self.projection = np.asarray([
-                [0.5, 0.5, 0, 0],
-                [0, 0.5, 0.5, 0],
-                [0, 0, 0.5, 0.5],
-                [0.5, 0, 0, 0.5]])
-        elif projection_type == 6:
-            self.projection = np.asarray([
-                [1, 0, 0, 0],
-                [0, 1, 0, 0],
-                [0, 0, 10, 0],
-                [0, 0, 0, 1]])
 
         self.discount = discount
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.autonormalization_frequency = autonormalization_frequency
-        self.state = np.empty(state_dimension, self.projection.dtype)
+        self.state = np.empty(state_dimension)
         self.action = int
         self.time = 0
         self.rewards_received = 0
@@ -124,6 +80,7 @@ class MFECAgent:
     def choose_action(self, observation):
         # Preprocess and project observation to state
         state = self.prepro(observation)
+        #self.state = np.dot(self.projection, state.flatten())
         self.state = state.flatten()
 
         values = [
@@ -141,7 +98,6 @@ class MFECAgent:
                 "state": self.state,
                 "action": self.action,
                 "reward": reward,
-                "time": self.time,
             }
         )
 
@@ -156,7 +112,6 @@ class MFECAgent:
                     experience["state"],
                     experience["action"],
                     value,
-                    experience["time"],
                 )
 
         # Normalize

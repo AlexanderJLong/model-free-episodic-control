@@ -1,59 +1,28 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from sklearn.neighbors.dist_metrics import DistanceMetric
-from sklearn.neighbors.kd_tree import KDTree
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import hnswlib
 
 class QEC:
     def __init__(self, actions, buffer_size, k, kernel_type, kernel_width, state_dim):
         self.buffers = tuple([ActionBuffer(buffer_size) for _ in actions])
         self.k = k
-        self.mu = np.zeros(state_dim)  # offset
-        self.sig = np.ones(state_dim)  # scale
-        self.kernel_width = kernel_width
-        self.kernel_type = kernel_type
-
-    def get_mu_and_sig(self):
-        """get the average mean and std deviation of each dim over all buffers"""
-        mus = []
-        sigs = []
-        for buff in self.buffers:
-            mus.append(np.mean(buff.states, axis=0))
-            sigs.append(np.std(buff.states, axis=0))
-        return np.mean(mus, axis=0), np.mean(sigs, axis=0)
-
-    def autonormalize(self):
-        """NOTE: NO MU - won't work if state vars arent centered
-        should really check all buffer sizes as well, but this might be slow"""
-        if len(self.buffers[0]) <= self.k:
-            return
-        """change all states, in all buffers, to refect the changes in scaling factors"""
-        mu, sig = self.get_mu_and_sig()
-        sig[sig == 0] = 1
-        for buff in self.buffers:
-            buff.states = ((buff.states - mu) / sig).tolist()
-        self.mu = self.mu + self.mu / self.sig
-        self.sig = sig * self.sig
-
-        return
 
     def estimate(self, state, action):
-        state = (state - self.mu) / self.sig
-        """Changes:
-        - No exact matching"""
         buffer = self.buffers[action]
         if len(buffer) < self.k:
             return float("inf")
 
-        neighbors, dists = buffer.find_neighbors(state, self.k, ball=False)
+        neighbors, dists = buffer.find_neighbors(state, self.k)
         dists = dists[0]
         neighbors = neighbors[0]
 
-        if self.kernel_type == "AVG":
-            w = [1 for _ in dists]
+        # Identical state found
+        if dists[0] == 0:
+            return buffer.values[neighbors[0]]
+
+        w = [1/d for d in dists]
 
         value = 0
         for i, neighbor in enumerate(neighbors):
@@ -61,10 +30,9 @@ class QEC:
 
         return value / sum(w)
 
-    def update(self, state, action, value, time):
-        state = (state - self.mu) / self.sig
+    def update(self, state, action, value):
         buffer = self.buffers[action]
-        buffer.add(state, value, time)
+        buffer.add(state, value)
 
     def plot(self, skip_factor):
         if len(self.buffers[0].states) < 2:
@@ -220,26 +188,18 @@ class QEC:
 
 class ActionBuffer:
     def __init__(self, capacity):
-        p = hnswlib.Index(space='l2', dim=64*64)  # possible options are l2, cosine or ip
+        p = hnswlib.Index(space='l2', dim=84*84)  # possible options are l2, cosine or ip
         p.init_index(max_elements=capacity, ef_construction=200, M=16)
         self._tree = p
         self.values = []
 
-
-    def find_neighbors(self, state, k, ball):
+    def find_neighbors(self, state, k):
         """Return idx, dists"""
-        if ball:
-            return self._tree.query_radius([state], r=0.3, return_distance=True, sort_results=True) if self._tree else []
-        else:
-            #result = self._tree.query([state], k=k, return_distance=True, sort_results=True) if self._tree else []
-            return self._tree.knn_query(np.asarray(state), k=k)
-            return result[1], result[0]
+        return self._tree.knn_query(np.asarray(state), k=k)
 
-    def add(self, state, value, time):
+    def add(self, state, value):
         self.values.append(value)
-        #dist = DistanceMetric.get_metric('minkowski', p=1)
-        self._tree.add_items(np.asarray(state))
-        #self._tree = KDTree(np.asarray(self.states))
+        self._tree.add_items(state)
 
     def __len__(self):
         return len(self._tree.get_ids_list())
