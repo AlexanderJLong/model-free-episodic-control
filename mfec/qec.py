@@ -37,19 +37,6 @@ class QEC:
             buff.states = ((buff.states - mu) / sig).tolist()
         self.mu = self.mu + self.mu / self.sig
         self.sig = sig * self.sig
-        #print(self.get_mu_and_sig())
-        #print(self.mu, self.sig)
-
-        #Drop randomly once beyond certain size:
-        #for buff in self.buffers:
-        #    if len(buff) > 1e4:
-        #        print("dropping 20%")
-        #        import random
-        #        indxs = random.sample(range(0, len(buff)-1), int(len(buff)*0.5))
-        #        print(indxs)
-        #        buff.states = list(np.asarray(buff.states)[indxs])
-        #        buff.values = list(np.asarray(buff.values)[indxs])
-        #        buff._tree = KDTree(np.asarray(buff.states))
 
         return
 
@@ -62,14 +49,8 @@ class QEC:
             return float("inf")
 
         neighbors, dists = buffer.find_neighbors(state, self.k, ball=False)
-        print(neighbors)
         dists = dists[0]
         neighbors = neighbors[0]
-
-        if np.allclose(buffer.states[neighbors[0]], state):
-            #print("same")
-            return buffer.values[neighbors[0]]
-
 
         def gaus(x, sig):
             return 1. / (np.sqrt(2. * np.pi) * sig) * np.exp(-np.power(x / sig, 2.) / 2)
@@ -247,13 +228,10 @@ class QEC:
 class ActionBuffer:
     def __init__(self, capacity):
         p = hnswlib.Index(space='l2', dim=64*64)  # possible options are l2, cosine or ip
-        p.init_index(max_elements=1_000_00, ef_construction=200, M=16)
-
+        p.init_index(max_elements=capacity, ef_construction=200, M=16)
         self._tree = p
-        self.capacity = capacity
-        self.states = []
         self.values = []
-        self.times = []
+
 
     def find_neighbors(self, state, k, ball):
         """Return idx, dists"""
@@ -265,24 +243,10 @@ class ActionBuffer:
             return result[1], result[0]
 
     def add(self, state, value, time):
-        if len(self) < self.capacity:
-            self.states.append(state)
-            self.values.append(value)
-            self.times.append(time)
-        else:
-            min_time_idx = int(np.argmin(self.times))
-            if time > self.times[min_time_idx]:
-                self.replace(state, value, time, min_time_idx)
+        self.values.append(value)
         #dist = DistanceMetric.get_metric('minkowski', p=1)
-        print(state)
-        print(len(state))
         self._tree.add_items(np.asarray(state))
         #self._tree = KDTree(np.asarray(self.states))
 
-    def replace(self, state, value, time, index):
-        self.states[index] = state
-        self.values[index] = value
-        self.times[index] = time
-
     def __len__(self):
-        return len(self.states)
+        return len(self._tree.get_ids_list())
