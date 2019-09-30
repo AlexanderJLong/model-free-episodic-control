@@ -5,6 +5,7 @@ from sklearn.neighbors.dist_metrics import DistanceMetric
 from sklearn.neighbors.kd_tree import KDTree
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import hnswlib
 
 class QEC:
     def __init__(self, actions, buffer_size, k, kernel_type, kernel_width, state_dim):
@@ -61,6 +62,7 @@ class QEC:
             return float("inf")
 
         neighbors, dists = buffer.find_neighbors(state, self.k, ball=False)
+        print(neighbors)
         dists = dists[0]
         neighbors = neighbors[0]
 
@@ -80,6 +82,7 @@ class QEC:
         value = 0
         for i, neighbor in enumerate(neighbors):
             value += w[i] * buffer.values[neighbor]
+
         if sum(w) == 0:
             return 0
         return value / sum(w)
@@ -87,14 +90,7 @@ class QEC:
     def update(self, state, action, value, time):
         state = (state - self.mu) / self.sig
         buffer = self.buffers[action]
-        state_index = buffer.find_state(state)
-        lr = 0.01
-        if state_index:
-            max_value = max(buffer.values[state_index], value)
-            max_time = max(buffer.times[state_index], time)
-            buffer.replace(state, max_value, max_time, state_index)
-        else:
-            buffer.add(state, value, time)
+        buffer.add(state, value, time)
 
     def plot(self, skip_factor):
         if len(self.buffers[0].states) < 2:
@@ -250,25 +246,22 @@ class QEC:
 
 class ActionBuffer:
     def __init__(self, capacity):
-        self._tree = None
+        p = hnswlib.Index(space='l2', dim=64*64)  # possible options are l2, cosine or ip
+        p.init_index(max_elements=1_000_00, ef_construction=200, M=16)
+
+        self._tree = p
         self.capacity = capacity
         self.states = []
         self.values = []
         self.times = []
-
-    def find_state(self, state):
-        if self._tree:
-            neighbor_idx = self._tree.query([state])[1][0][0]
-            if np.allclose(self.states[neighbor_idx], state):
-                return neighbor_idx
-        return None
 
     def find_neighbors(self, state, k, ball):
         """Return idx, dists"""
         if ball:
             return self._tree.query_radius([state], r=0.3, return_distance=True, sort_results=True) if self._tree else []
         else:
-            result = self._tree.query([state], k=k, return_distance=True, sort_results=True) if self._tree else []
+            #result = self._tree.query([state], k=k, return_distance=True, sort_results=True) if self._tree else []
+            return self._tree.knn_query(np.asarray(state), k=k)
             return result[1], result[0]
 
     def add(self, state, value, time):
@@ -281,7 +274,10 @@ class ActionBuffer:
             if time > self.times[min_time_idx]:
                 self.replace(state, value, time, min_time_idx)
         #dist = DistanceMetric.get_metric('minkowski', p=1)
-        self._tree = KDTree(np.asarray(self.states))
+        print(state)
+        print(len(state))
+        self._tree.add_items(np.asarray(state))
+        #self._tree = KDTree(np.asarray(self.states))
 
     def replace(self, state, value, time, index):
         self.states[index] = state

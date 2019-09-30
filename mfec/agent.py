@@ -126,7 +126,8 @@ class MFECAgent:
 
         # Preprocess and project observation to state
         state = self.prepro(observation)
-        self.state = np.dot(self.projection, state.flatten())
+        #self.state = np.dot(self.projection, state.flatten())
+        self.state = state.flatten()
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:
