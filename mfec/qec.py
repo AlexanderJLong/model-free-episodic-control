@@ -188,7 +188,7 @@ class QEC:
 
 class ActionBuffer:
     def __init__(self, capacity):
-        p = hnswlib.Index(space='l2', dim=84*84)  # possible options are l2, cosine or ip
+        p = hnswlib.Index(space='l2', dim=4)  # possible options are l2, cosine or ip
         p.init_index(max_elements=capacity, ef_construction=200, M=16)
         self._tree = p
         self.values = []

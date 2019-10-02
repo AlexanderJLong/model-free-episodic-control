@@ -43,7 +43,6 @@ class MFECAgent:
             buffer_size,
             k,
             discount,
-            prepro,
             epsilon,
             observation_dim,
             state_dimension,
@@ -61,10 +60,10 @@ class MFECAgent:
         self.actions = actions
         self.qec = QEC(self.actions, buffer_size, k, kernel_type, kernel_width, state_dimension)
 
-        if prepro == "Pong":
-            self.prepro = lambda x:x
-        elif prepro == "GreyScaleNormalizeResize":
+        if observation_dim > 4:
             self.prepro = cartpole_crop_grey_scale_normalize_resize
+        else:
+            self.prepro = lambda x:x
 
 
         self.discount = discount

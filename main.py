@@ -34,11 +34,10 @@ from multiprocessing import Pool
 TITLE = "Noautonorm"
 EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
-FRAMES_PER_EPOCH = 50000
+FRAMES_PER_EPOCH = 1000
 
 config = {
-    "ENV": "Pong",
-    "PREPRO": "Pong",
+    "ENV": "CartPoleLong",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
     "K": 15,
@@ -48,7 +47,7 @@ config = {
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 64*64,
+    "STATE-DIM": 64,
     "PROJECTION-TYPE": 3,
     "SEED": [1, 2, 3],
 }
@@ -108,7 +107,6 @@ def main(cfg):
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
         k=cfg["K"],
         discount=cfg["DISCOUNT"],
-        prepro=cfg["PREPRO"],
         epsilon=cfg["EPSILON"],
         observation_dim=np.prod(env.observation_space.shape),
         state_dimension=cfg["STATE-DIM"],
