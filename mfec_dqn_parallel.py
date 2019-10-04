@@ -41,7 +41,7 @@ class Args:
     history_len = 0
     replay_memory_size = 100_000
     batch_size = 128
-    learning_rate = 0.00005
+    learning_rate = 0.0001
     learn_step = 1
 
     # Stored variables
@@ -62,7 +62,6 @@ class CombinedAgent:
     def reset(self, obv, train=True):
         self.dqn_agent.Reset(obv, train)
         self.mfec_agent.train()
-
 
     def get_action(self, obv):
         """
@@ -85,21 +84,43 @@ class CombinedAgent:
         if terminal:
             self.mfec_agent.train()
 
-def test_agent(agent, env):
-    try:
-        state = env.reset(train=False)
-    except:
-        state = env.reset()
-    agent.reset(state, train=False)
-    R = 0
 
-    terminal = False
-    while not terminal:
-        action, _, _ = agent.get_action(state)
-        state, reward, terminal, info = env.step(action)
-        agent.train(action, reward, state, terminal)
-        R += reward
-    return R
+def test_agent(agent, env):
+    """
+    Test the main agent, as well as its two sub-agents over 1 episode
+    """
+
+    main_R = 0
+    dqn_R = 0
+    mfec_R = 0
+
+    # Combined
+    s = env.reset()
+    agent.reset(s, train=False)
+    done = False
+    while not done:
+        a, _, _ = agent.get_action(s)
+        s, r, done, _ = env.step(a)
+        main_R += r
+
+    # DQN
+    s = env.reset()
+    agent.dqn_agent.Reset(s, train=False)
+    done = False
+    while not done:
+        a, value = agent.dqn_agent.GetAction()
+        s, r, done, _ = env.step(a)
+        dqn_R += r
+
+    # MFEC
+    s = env.reset()
+    done = False
+    while not done:
+        a, _ = agent.mfec_agent.choose_action(s)
+        s, r, done, _ = env.step(a)
+        mfec_R += r
+
+    return main_R, mfec_R, dqn_R
 
 
 from DQNAgent import DQNAgent
@@ -153,23 +174,30 @@ with tf.Session() as sess:
         rewards.append(reward)
         mfec_values.append(mfec_qs)
         dqn_values.append(dqn_qs)
-        #print(mfec_qs, dqn_qs)
+        # print(mfec_qs, dqn_qs)
 
         if terminal:
             # Test after every ep.
             ep_rewards.append(np.sum(rewards))
             rewards = []
 
-            R_s = []
+            main_rewards = []
+            mfec_rewards = []
+            dqn_rewards = []
             for i in range(test_count):
-                R = test_agent(agent, env)
-                R_s.append(R)
-            print(np.mean(R_s))
+                main_r, mfec_r, dqn_r = test_agent(agent, env)
+                main_rewards.append(main_r)
+                mfec_rewards.append(mfec_r)
+                dqn_rewards.append(dqn_r)
+
+            print(np.mean(main_rewards), np.mean(mfec_rewards), np.mean(dqn_rewards))
             tests_done += 1
             test_results.append({'step': step,
-                                 'scores': R_s,
-                                 'average': np.mean(R_s),
-                                 'max': np.max(R_s),
+                                 'scores': main_rewards,
+                                 'main_rewards': np.mean(main_rewards),
+                                 'max': np.max(main_rewards),
+                                 'mfec_rewards': np.mean(mfec_rewards),
+                                 'dqn_rewards': np.mean(dqn_rewards),
                                  'mfec_qs': np.mean(mfec_values),
                                  'dqn_qs': np.mean(dqn_values)})
 
@@ -181,5 +209,5 @@ with tf.Session() as sess:
             state = env.reset()
             agent.reset(state)
 
-            mfec_values=[]
-            dqn_values=[]
+            mfec_values = []
+            dqn_values = []

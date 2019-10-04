@@ -39,7 +39,7 @@ FRAMES_PER_EPOCH = 1000
 config = {
     "ENV": "CartPoleLong",
     "EXP-SKIP": 1,
-    "ACTION-BUFFER-SIZE": 100_000,
+    "ACTION-BUFFER-SIZE": 50_000,
     "K": 15,
     "DISCOUNT": 1,
     "EPSILON": 0,
@@ -149,7 +149,7 @@ def run_episode(agent, env):
 
     done = False
     while not done:
-        action = agent.choose_action(observation)
+        action, _ = agent.choose_action(observation)
         observation, reward, done, _ = env.step(action)
 
         agent.receive_reward(reward)

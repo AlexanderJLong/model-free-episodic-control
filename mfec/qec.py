@@ -32,6 +32,9 @@ class QEC:
 
     def update(self, state, action, value):
         buffer = self.buffers[action]
+        if len(buffer) >= buffer.capacity:
+            print("not training mfec anymore")
+            return
         buffer.add(state, value)
 
     def plot(self, skip_factor):
@@ -188,6 +191,7 @@ class QEC:
 
 class ActionBuffer:
     def __init__(self, capacity):
+        self.capacity = capacity
         p = hnswlib.Index(space='l2', dim=4)  # possible options are l2, cosine or ip
         p.init_index(max_elements=capacity, ef_construction=200, M=16)
         self._tree = p
