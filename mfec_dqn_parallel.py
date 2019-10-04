@@ -46,7 +46,7 @@ class Args:
 
     # Stored variables
     seed = 0
-    save_file = "./myrun.npy"
+    save_file="./myrun.npy"
 
 
 class CombinedAgent:
@@ -61,28 +61,28 @@ class CombinedAgent:
 
     def reset(self, obv, train=True):
         self.dqn_agent.Reset(obv, train)
-        self.mfec_agent.train()
 
     def get_action(self, obv):
         """
         Return action, q_vals_mfec, q_values_dqn
         """
-        _, dqn_qs = self.dqn_agent.GetAction()
-        _, mfec_qs = self.mfec_agent.choose_action(obv)
+        mfec_qs = np.zeros(2)
+        a, dqn_qs = self.dqn_agent.GetAction()
+        #_, mfec_qs = self.mfec_agent.choose_action(obv)
 
         values = np.asarray(dqn_qs) + np.asarray(mfec_qs)
-        best_actions = np.argwhere(values == np.max(values)).flatten()
+        best_action = np.argwhere(values == np.max(values)).flatten()
 
-        action = self.rs.choice(best_actions)
+        action = self.rs.choice(best_action)
         self.mfec_agent.action = action  # try with and without this. This keeps MFEC consistent with combined agent
-        return action, mfec_qs, dqn_qs
+        return a, mfec_qs, dqn_qs
 
     def train(self, action, reward, state, terminal):
         self.dqn_agent.Update(action, reward, state, terminal)
-        self.mfec_agent.receive_reward(reward)
+        #self.mfec_agent.receive_reward(reward)
 
-        if terminal:
-            self.mfec_agent.train()
+        #if terminal:
+        #    self.mfec_agent.train()
 
 
 def test_agent(agent, env):

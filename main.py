@@ -140,7 +140,7 @@ def run_algorithm(agent, env, utils):
             agent.qec.plot3d(both=False, diff=False)
 
 
-def run_episode(agent, env):
+def run_episode(agent, env):standalone_slow_DQN.py
     episode_frames = 0
     episode_reward = 0
 
