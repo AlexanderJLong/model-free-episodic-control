@@ -1,5 +1,5 @@
 import numpy as np
-import tensorflow as tf
+import tensorflow    as tf
 
 from ops import linear
 
@@ -56,15 +56,15 @@ class DQNAgent():
 
         # Model for Embeddings
         if self.model_type == 'CNN':
-            from networks import deepmind_CNN
+            from dqn_networks import deepmind_CNN
             state_dim = [None, self.history_len] + self.obs_size
             model = deepmind_CNN
         elif self.model_type == 'nn':
-            from networks import feedforward_network
+            from dqn_networks import feedforward_network
             state_dim = [None] + self.obs_size
             model = feedforward_network
         elif self.model_type == 'object':
-            from networks import object_embedding_network2
+            from dqn_networks import object_embedding_network2
             state_dim = [None] + self.obs_size
             model = lambda x: object_embedding_network2(x, args.emb_layers, args.out_layers)
 
@@ -195,7 +195,7 @@ class DQNAgent():
                 # value = Qs[action] # Paper uses maxQ, uncomment for on-policy updates
 
         self.trajectory_values.append(value)
-        return action, value
+        return action, Qs
 
     def Update(self, action, reward, obs, terminal=False):
 

@@ -89,7 +89,7 @@ class MFECAgent:
         best_actions = np.argwhere(values == np.max(values)).flatten()
         self.action = self.rs.choice(best_actions)
 
-        return self.action
+        return self.action, values
 
     def receive_reward(self, reward):
         self.memory.append(
