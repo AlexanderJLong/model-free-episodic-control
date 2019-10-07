@@ -176,7 +176,7 @@ class DQNAgent():
         return True
 
     def GetAction(self):
-        # TODO: Perform calculations on Update, then use aaved values to select actions
+        # TODO: Perform calculations on Update, then use saved values to select actions
 
         # Get state embedding of last stored state
         state = self._get_state()

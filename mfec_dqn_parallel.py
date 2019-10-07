@@ -18,9 +18,19 @@ from mfec.agent import MFECAgent
 # GLOBAl VARS FIXED FOR EACH RUN
 TITLE = "Merged-Q-Vals"
 
-cfg = {"ENV": "CartPoleLong", "EXP-SKIP": 1, "ACTION-BUFFER-SIZE": 100_000, "K": 15, "DISCOUNT": 1, "EPSILON": 0,
-       "EPS-DECAY": 0.005, "NORM-FREQ": 0, "KERNEL-WIDTH": 1, "KERNEL-TYPE": "AVG", "STATE-DIM": 64,
-       "PROJECTION-TYPE": 3, "SEED": [1, 2, 3], }
+cfg = {"ENV": "CartPoleLong",
+       "EXP-SKIP": 1,
+       "ACTION-BUFFER-SIZE": 100_000,
+       "K": 15,
+       "DISCOUNT": 1,
+       "EPSILON": 0,
+       "EPS-DECAY": 0.005,
+       "NORM-FREQ": 0,
+       "KERNEL-WIDTH": 1,
+       "KERNEL-TYPE": "AVG",
+       "STATE-DIM": 4,
+       "PROJECTION-TYPE": 3,
+       "SEED": [1, 2, 3], }
 
 
 class Args:
@@ -66,23 +76,24 @@ class CombinedAgent:
         """
         Return action, q_vals_mfec, q_values_dqn
         """
-        mfec_qs = np.zeros(2)
-        a, dqn_qs = self.dqn_agent.GetAction()
-        #_, mfec_qs = self.mfec_agent.choose_action(obv)
+        _, dqn_qs = self.dqn_agent.GetAction()
+        _, mfec_qs = self.mfec_agent.choose_action(obv)
 
-        values = np.asarray(dqn_qs) + np.asarray(mfec_qs)
-        best_action = np.argwhere(values == np.max(values)).flatten()
+        values = np.asarray(dqn_qs)*20 + np.asarray(mfec_qs)
+        best_actions = np.argwhere(values == np.max(values)).flatten()
 
-        action = self.rs.choice(best_action)
+        action = self.rs.choice(best_actions)
         self.mfec_agent.action = action  # try with and without this. This keeps MFEC consistent with combined agent
-        return a, mfec_qs, dqn_qs
+        return action, mfec_qs, dqn_qs
 
-    def train(self, action, reward, state, terminal):
+    def train(self, action, reward, state, terminal, dqn_only=False):
         self.dqn_agent.Update(action, reward, state, terminal)
-        #self.mfec_agent.receive_reward(reward)
 
-        #if terminal:
-        #    self.mfec_agent.train()
+        if not dqn_only:
+            self.mfec_agent.receive_reward(reward)
+
+            if terminal:
+                self.mfec_agent.train()
 
 
 def test_agent(agent, env):
@@ -101,10 +112,9 @@ def test_agent(agent, env):
     while not done:
         a, _, _ = agent.get_action(s)
         s, r, done, _ = env.step(a)
-        agent.train(a, r, s, done)
+        agent.train(a, r, s, done, dqn_only=True)
         main_R += r
 
-    """"
     # DQN
     s = env.reset()
     agent.dqn_agent.Reset(s, train=False)
@@ -112,7 +122,7 @@ def test_agent(agent, env):
     while not done:
         a, value = agent.dqn_agent.GetAction()
         s, r, done, _ = env.step(a)
-        agent.train(a, r, s, done)
+        agent.train(a, r, s, done, dqn_only=True)
         dqn_R += r
 
     # MFEC
@@ -122,7 +132,7 @@ def test_agent(agent, env):
         a, _ = agent.mfec_agent.choose_action(s)
         s, r, done, _ = env.step(a)
         mfec_R += r
-    """
+
     return main_R, mfec_R, dqn_R
 
 

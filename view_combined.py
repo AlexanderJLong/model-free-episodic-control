@@ -31,8 +31,8 @@ import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots()
 ax.plot(steps, r, label="reward")
-#ax.plot(steps, dqn_qs, label="dqn q-values")
-#ax.plot(steps, mfec_qs, label="mfec q-values")
+ax.plot(steps, np.asarray(dqn_qs)*20, label="dqn q-values")
+ax.plot(steps, mfec_qs, label="mfec q-values")
 ax.plot(steps, dqn, label="dqn reward")
 ax.plot(steps, mfec, label="mfec reward")
 plt.legend()
