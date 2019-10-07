@@ -4,11 +4,8 @@ from pyvirtualdisplay import Display
 display = Display(visible=0, size=(640, 640))
 display.start()
 
-from pyvirtualdisplay import Display
 import tensorflow as tf
-import gym
 from tqdm import tqdm
-import numpy as np
 
 import numpy as np
 import gym
@@ -16,8 +13,6 @@ import gym
 from mfec.agent import MFECAgent
 
 # GLOBAl VARS FIXED FOR EACH RUN
-TITLE = "Merged-Q-Vals"
-
 cfg = {"ENV": "CartPoleLong",
        "EXP-SKIP": 1,
        "ACTION-BUFFER-SIZE": 100_000,
@@ -32,9 +27,7 @@ cfg = {"ENV": "CartPoleLong",
        "PROJECTION-TYPE": 3,
        "SEED": [1, 2, 3], }
 
-
 class Args:
-    # Environment details
     obs_size = [4]
     num_actions = 2
 
@@ -174,14 +167,14 @@ with tf.Session() as sess:
     state = env.reset()
     agent.reset(state)
     rewards = []
-    terminal = False
+    done = False
 
     for step in tqdm(list(range(training_iters)), ncols=80):
 
         # Act, and add
         action, mfec_qs, dqn_qs = agent.get_action(state)
-        state, reward, terminal, info = env.step(action)
-        agent.train(action, reward, state, terminal)
+        state, reward, done, info = env.step(action)
+        agent.train(action, reward, state, done, dqn_only=True)
 
         # Bookeeping
         rewards.append(reward)
@@ -189,7 +182,9 @@ with tf.Session() as sess:
         dqn_values.append(dqn_qs)
         # print(mfec_qs, dqn_qs)
 
-        if terminal:
+        if done:
+            # Here MFEC should be updated
+            agent.train(action, reward, state, done, dqn_only=False)
             # Test after every ep.
             ep_rewards.append(np.sum(rewards))
             rewards = []
