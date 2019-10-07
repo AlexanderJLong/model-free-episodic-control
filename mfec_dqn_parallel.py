@@ -79,7 +79,7 @@ class CombinedAgent:
         _, dqn_qs = self.dqn_agent.GetAction()
         _, mfec_qs = self.mfec_agent.choose_action(obv)
 
-        values = np.asarray(dqn_qs)*20 + np.asarray(mfec_qs)
+        values = np.asarray(dqn_qs)*1e5 + np.asarray(mfec_qs)
         best_actions = np.argwhere(values == np.max(values)).flatten()
 
         action = self.rs.choice(best_actions)
@@ -211,8 +211,8 @@ with tf.Session() as sess:
                                  'max': np.max(main_rewards),
                                  'mfec_rewards': np.mean(mfec_rewards),
                                  'dqn_rewards': np.mean(dqn_rewards),
-                                 'mfec_qs': np.mean(mfec_values),
-                                 'dqn_qs': np.mean(dqn_values)})
+                                 'mfec_qs': mfec_qs[0] - mfec_qs[1],
+                                 'dqn_qs': dqn_qs[0] - dqn_qs[1]})
 
             # Save to file
             summary = {'params': vars(args), 'tests': test_results}
