@@ -101,8 +101,10 @@ def test_agent(agent, env):
     while not done:
         a, _, _ = agent.get_action(s)
         s, r, done, _ = env.step(a)
+        agent.train(a, r, s, done)
         main_R += r
 
+    """"
     # DQN
     s = env.reset()
     agent.dqn_agent.Reset(s, train=False)
@@ -110,6 +112,7 @@ def test_agent(agent, env):
     while not done:
         a, value = agent.dqn_agent.GetAction()
         s, r, done, _ = env.step(a)
+        agent.train(a, r, s, done)
         dqn_R += r
 
     # MFEC
@@ -119,7 +122,7 @@ def test_agent(agent, env):
         a, _ = agent.mfec_agent.choose_action(s)
         s, r, done, _ = env.step(a)
         mfec_R += r
-
+    """
     return main_R, mfec_R, dqn_R
 
 
