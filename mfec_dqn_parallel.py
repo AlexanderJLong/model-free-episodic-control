@@ -72,21 +72,24 @@ class CombinedAgent:
         _, dqn_qs = self.dqn_agent.GetAction()
         _, mfec_qs = self.mfec_agent.choose_action(obv)
 
-        values = np.asarray(dqn_qs)*1e5 + np.asarray(mfec_qs)
+        print(dqn_qs)
+        print(mfec_qs)
+        values = np.asarray(dqn_qs) + np.asarray(mfec_qs)
         best_actions = np.argwhere(values == np.max(values)).flatten()
 
         action = self.rs.choice(best_actions)
         self.mfec_agent.action = action  # try with and without this. This keeps MFEC consistent with combined agent
         return action, mfec_qs, dqn_qs
 
-    def train(self, action, reward, state, terminal, dqn_only=False):
-        self.dqn_agent.Update(action, reward, state, terminal)
+    def train_dqn(self, a, r, s, d):
+        # Must be called after each timestep due to internal state
+        self.dqn_agent.Update(a, r, s, d)
 
-        if not dqn_only:
-            self.mfec_agent.receive_reward(reward)
-
-            if terminal:
-                self.mfec_agent.train()
+    def train_mfec(self, r, d):
+        # Should call after every get_action call
+        self.mfec_agent.receive_reward(r)
+        if d:
+            self.mfec_agent.train()
 
 
 def test_agent(agent, env):
@@ -105,7 +108,8 @@ def test_agent(agent, env):
     while not done:
         a, _, _ = agent.get_action(s)
         s, r, done, _ = env.step(a)
-        agent.train(a, r, s, done, dqn_only=True)
+        agent.train_dqn(a, r, s, done)
+        agent.train_mfec(r, done)
         main_R += r
 
     # DQN
@@ -115,7 +119,7 @@ def test_agent(agent, env):
     while not done:
         a, value = agent.dqn_agent.GetAction()
         s, r, done, _ = env.step(a)
-        agent.train(a, r, s, done, dqn_only=True)
+        agent.train_dqn(a, r, s, done)
         dqn_R += r
 
     # MFEC
@@ -124,6 +128,7 @@ def test_agent(agent, env):
     while not done:
         a, _ = agent.mfec_agent.choose_action(s)
         s, r, done, _ = env.step(a)
+        agent.train_mfec(r, done)
         mfec_R += r
 
     return main_R, mfec_R, dqn_R
@@ -174,7 +179,8 @@ with tf.Session() as sess:
         # Act, and add
         action, mfec_qs, dqn_qs = agent.get_action(state)
         state, reward, done, info = env.step(action)
-        agent.train(action, reward, state, done, dqn_only=True)
+        agent.train_dqn(action, reward, state, done)
+        agent.train_mfec(reward, done)
 
         # Bookeeping
         rewards.append(reward)
@@ -183,8 +189,6 @@ with tf.Session() as sess:
         # print(mfec_qs, dqn_qs)
 
         if done:
-            # Here MFEC should be updated
-            agent.train(action, reward, state, done, dqn_only=False)
             # Test after every ep.
             ep_rewards.append(np.sum(rewards))
             rewards = []
