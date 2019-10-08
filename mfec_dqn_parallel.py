@@ -32,19 +32,19 @@ class Args:
     num_actions = 2
 
     # Agent parameters
-    discount = 1
-    n_step = 10
-    epsilon = 0
-    epsilon_final = 0.01
-    epsilon_anneal = 20_000
+    discount = 0.95
+    n_step = 1
+    epsilon = 1
+    epsilon_final = 0
+    epsilon_anneal = 5000
 
     # Training parameters
     model = "nn"
     preprocessor = 'default'
     history_len = 0
     replay_memory_size = 100_000
-    batch_size = 128
-    learning_rate = 0.0001
+    batch_size = 20
+    learning_rate = 0.0002
     learn_step = 1
 
     # Stored variables
@@ -70,16 +70,16 @@ class CombinedAgent:
         Return action, q_vals_mfec, q_values_dqn
         """
         a, dqn_qs = self.dqn_agent.GetAction()
-        _, mfec_qs = self.mfec_agent.choose_action(obv)
+        #_, mfec_qs = self.mfec_agent.choose_action(obv)
 
         #print(dqn_qs)
         #print(mfec_qs)
-        values = np.asarray(dqn_qs)# + np.asarray(mfec_qs)
+        values = np.asarray(dqn_qs) #+ np.asarray(mfec_qs)
         best_actions = np.argwhere(values == np.max(values)).flatten()
 
         action = self.rs.choice(best_actions)
         self.mfec_agent.action = action  # try with and without this. This keeps MFEC consistent with combined agent
-        return action, mfec_qs, dqn_qs
+        return action, [0, 0], dqn_qs
 
     def train_dqn(self, a, r, s, d):
         # Must be called after each timestep due to internal state
@@ -87,9 +87,10 @@ class CombinedAgent:
 
     def train_mfec(self, r, d):
         # Should call after every get_action call
-        self.mfec_agent.receive_reward(r)
-        if d:
-            self.mfec_agent.train()
+        #self.mfec_agent.receive_reward(r)
+        #if d:
+        #    self.mfec_agent.train()
+        pass
 
 
 def test_agent(agent, env):

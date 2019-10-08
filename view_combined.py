@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots()
 ax.plot(steps, r, label="reward")
-ax.plot(steps, np.asarray(dqn_qs)*20, label="dqn q-diff (Qa0-Qa1)", linestyle=":")
+ax.plot(steps, np.asarray(dqn_qs), label="dqn q-diff (Qa0-Qa1)", linestyle=":")
 ax.plot(steps, mfec_qs, label="mfec q-diff (Qa0-Qa1)", linestyle=":")
 ax.plot(steps, dqn, label="dqn reward")
 ax.plot(steps, mfec, label="mfec reward")
@@ -40,7 +40,7 @@ ax.set(xlabel='steps (M)', ylabel='average reward',
        title='Hybrid agent on Cartpole-v1')
 ax.grid()
 
-plt.show()
-plt.scatter(dqn_qs, mfec_qs,)
+#plt.show()
+#plt.scatter(dqn_qs, mfec_qs,)
 fig.savefig("test.png")
 plt.show()
