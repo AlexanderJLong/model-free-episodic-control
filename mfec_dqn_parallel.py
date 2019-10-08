@@ -34,7 +34,7 @@ class Args:
     # Agent parameters
     discount = 1
     n_step = 10
-    epsilon = 1
+    epsilon = 0
     epsilon_final = 0.01
     epsilon_anneal = 20_000
 
@@ -69,12 +69,12 @@ class CombinedAgent:
         """
         Return action, q_vals_mfec, q_values_dqn
         """
-        _, dqn_qs = self.dqn_agent.GetAction()
+        a, dqn_qs = self.dqn_agent.GetAction()
         _, mfec_qs = self.mfec_agent.choose_action(obv)
 
-        print(dqn_qs)
-        print(mfec_qs)
-        values = np.asarray(dqn_qs) + np.asarray(mfec_qs)
+        #print(dqn_qs)
+        #print(mfec_qs)
+        values = np.asarray(dqn_qs)# + np.asarray(mfec_qs)
         best_actions = np.argwhere(values == np.max(values)).flatten()
 
         action = self.rs.choice(best_actions)

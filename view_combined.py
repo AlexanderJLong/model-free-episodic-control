@@ -40,5 +40,7 @@ ax.set(xlabel='steps (M)', ylabel='average reward',
        title='Hybrid agent on Cartpole-v1')
 ax.grid()
 
+plt.show()
+plt.scatter(dqn_qs, mfec_qs,)
 fig.savefig("test.png")
 plt.show()
