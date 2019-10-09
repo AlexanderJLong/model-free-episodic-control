@@ -1,5 +1,5 @@
 import numpy as np
-import tensorflow    as tf
+import tensorflow as tf
 
 from ops import linear
 
@@ -334,5 +334,5 @@ def deepmind_preprocessor(state):
     state = greyscale_preprocessor(state)
     # state = np.array(cv2.resize(state, (84, 84)))
     resized_screen = np.array(Image.fromarray(state).resize((130, 300)))
-    #state = resized_screen[18:102, :]
+    # state = resized_screen[18:102, :]
     return resized_screen

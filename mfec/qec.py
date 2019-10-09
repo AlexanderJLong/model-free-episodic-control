@@ -33,7 +33,7 @@ class QEC:
     def update(self, state, action, value):
         buffer = self.buffers[action]
         if len(buffer) >= buffer.capacity:
-            print("not training mfec anymore")
+            #print("not training mfec anymore")
             return
         buffer.add(state, value)
 
