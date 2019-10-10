@@ -12,6 +12,8 @@ import gym
 
 from mfec.agent import MFECAgent
 
+from collections import deque
+
 # GLOBAl VARS FIXED FOR EACH RUN
 cfg = {"ENV": "CartPoleLong",
        "EXP-SKIP": 1,
@@ -62,6 +64,9 @@ class CombinedAgent:
         self.mfec_agent = MFEC
         self.dqn_agent = DQN
         self.rs = np.random.RandomState(0)
+        self.mfec_running_diff = deque(maxlen=100)
+        self.dqn_running_diff = deque(maxlen=100)
+        self.weight = 1  # start as an even mix
 
     def reset(self, obv, train=True):
         self.dqn_agent.Reset(obv, train)
@@ -70,15 +75,23 @@ class CombinedAgent:
         """
         Return action, q_vals_mfec, q_values_dqn
         """
-        weight = 120
         a, dqn_qs = self.dqn_agent.GetAction()
         _, mfec_qs = self.mfec_agent.choose_action(obv)
 
-        # print(dqn_qs)
-        # print(mfec_qs)
-        dqn_qs = np.asarray(dqn_qs)*weight
-        mfec_qs = np.asarray(mfec_qs)
-        values = dqn_qs + mfec_qs
+        mfec_diff = mfec_qs[0] - mfec_qs[1]
+        dqn_diff = dqn_qs[0] - dqn_qs[1]
+        if not -float("inf") < mfec_diff < float("inf"): mfec_diff = 0
+        if not -float("inf") < dqn_diff < float("inf"): dqn_diff = 0
+
+        self.mfec_running_diff.append(mfec_diff)
+        self.dqn_running_diff.append(dqn_diff)
+
+        mfec_qs = np.asarray(mfec_qs) / np.mean(self.mfec_running_diff)
+        dqn_qs = np.asarray(dqn_qs) / np.mean(self.dqn_running_diff)
+        weight = self.weight*(np.mean(self.dqn_running_diff)/
+                                               np.mean(self.mfec_running_diff))
+        if np.isinf(weight): weight = 100
+        values = dqn_qs + mfec_qs*self.weight
         best_actions = np.argwhere(values == np.max(values)).flatten()
 
         action = self.rs.choice(best_actions)
@@ -158,7 +171,11 @@ with tf.Session() as sess:
     test_step = 2000
     test_count = 5
     tests_done = 0
-    test_results = [[],[]]
+    test_results = [[], []]
+
+    # trailing test reward
+    dqn_trailing = deque(maxlen=5)
+    mfec_trailing = deque(maxlen=5)
 
     # Stats for display
     ep_rewards = []
@@ -195,8 +212,8 @@ with tf.Session() as sess:
         mfec_values.append(mfec_qs)
         dqn_values.append(dqn_qs)
         test_results[0].append({'step': step,
-                             'mfec_qs': mfec_qs,
-                             'dqn_qs': dqn_qs})
+                                'mfec_qs': mfec_qs,
+                                'dqn_qs': dqn_qs})
 
         # print(mfec_qs, dqn_qs)
 
@@ -217,15 +234,24 @@ with tf.Session() as sess:
                 mfec_rewards.append(mfec_r)
                 dqn_rewards.append(dqn_r)
 
-            print(np.mean(main_rewards), np.mean(mfec_rewards), np.mean(dqn_rewards))
+            main_reward = np.mean(main_rewards)
+            mfec_reward = np.mean(mfec_rewards)
+            dqn_reward = np.mean(dqn_rewards)
+
+            # update trailing reward and set weight
+            mfec_trailing.append(mfec_reward)
+            dqn_trailing.append(dqn_reward)
+            agent.weight = np.mean(mfec_trailing) / np.mean(dqn_trailing),
+
+            print(main_reward, mfec_reward, dqn_reward)
             tests_done += 1
             test_results[1].append({'step': step,
-                                 'scores': main_rewards,
-                                 'main_rewards': np.mean(main_rewards),
-                                 'max': np.max(main_rewards),
-                                 'mfec_rewards': np.mean(mfec_rewards),
-                                 'dqn_rewards': np.mean(dqn_rewards),})
-
+                                    'scores': main_rewards,
+                                    'main_rewards': main_reward,
+                                    'max': np.max(mfec_rewards),
+                                    'mfec_rewards': np.mean(mfec_trailing),
+                                    'dqn_rewards': np.mean(dqn_trailing),
+                                    "weights": agent.weight})
 
             # Save to file
             summary = {'params': vars(args), 'tests': test_results}
