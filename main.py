@@ -62,7 +62,6 @@ config = {
 5: invert 1
 """
 
-
 def main(cfg):
     print(cfg)
     # Create agent-directory

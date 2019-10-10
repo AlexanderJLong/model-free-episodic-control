@@ -15,8 +15,8 @@ from mfec.agent import MFECAgent
 # GLOBAl VARS FIXED FOR EACH RUN
 cfg = {"ENV": "CartPoleLong",
        "EXP-SKIP": 1,
-       "ACTION-BUFFER-SIZE": 1_000,
-       "K": 15,
+       "ACTION-BUFFER-SIZE": 1_000_000,
+       "K": 7,
        "DISCOUNT": 1,
        "EPSILON": 0,
        "EPS-DECAY": 0.005,
@@ -26,6 +26,7 @@ cfg = {"ENV": "CartPoleLong",
        "STATE-DIM": 4,
        "PROJECTION-TYPE": 3,
        "SEED": [1, 2, 3], }
+
 
 class Args:
     obs_size = [4]
@@ -42,14 +43,14 @@ class Args:
     model = "nn"
     preprocessor = 'default'
     history_len = 0
-    replay_memory_size = 10_000
+    replay_memory_size = 1_000_000
     batch_size = 30
     learning_rate = 0.001
     learn_step = 1
 
     # Stored variables
     seed = 0
-    save_file="./myrun.npy"
+    save_file = "./myrun.npy"
 
 
 class CombinedAgent:
@@ -69,30 +70,28 @@ class CombinedAgent:
         """
         Return action, q_vals_mfec, q_values_dqn
         """
-        weight = 90
+        weight = 120
         a, dqn_qs = self.dqn_agent.GetAction()
         _, mfec_qs = self.mfec_agent.choose_action(obv)
 
-        #print(dqn_qs)
-        #print(mfec_qs)
+        # print(dqn_qs)
+        # print(mfec_qs)
         dqn_qs = np.asarray(dqn_qs)*weight
-        values = dqn_qs + np.asarray(mfec_qs)
+        mfec_qs = np.asarray(mfec_qs)
+        values = dqn_qs + mfec_qs
         best_actions = np.argwhere(values == np.max(values)).flatten()
 
         action = self.rs.choice(best_actions)
-        #self.mfec_agent.action = action  # try with and without this. This keeps MFEC consistent with combined agent
         return action, mfec_qs, dqn_qs
 
     def train_dqn(self, a, r, s, d):
         # Must be called after each timestep due to internal state
         self.dqn_agent.Update(a, r, s, d)
 
-    def train_mfec(self, r, d):
-        # Should call after every get_action call
-        self.mfec_agent.receive_transition(r)
-        if d:
-            self.mfec_agent.train()
-        pass
+    def train_mfec(self, trace):
+        # Call at end of episode
+        # Takes trace object: a list of dicts {"state", "action", "reward"}
+        self.mfec_agent.train(trace)
 
 
 def test_agent(agent, env):
@@ -112,7 +111,6 @@ def test_agent(agent, env):
         a, _, _ = agent.get_action(s)
         s, r, d, _ = env.step(a)
         agent.train_dqn(a, r, s, d)
-        agent.train_mfec(r, d)
         main_R += r
 
     # DQN
@@ -131,7 +129,6 @@ def test_agent(agent, env):
     while not done:
         a, _ = agent.mfec_agent.choose_action(s)
         s, r, done, _ = env.step(a)
-        #agent.train_mfec(r, done)
         mfec_R += r
 
     return main_R, mfec_R, dqn_R
@@ -161,7 +158,7 @@ with tf.Session() as sess:
     test_step = 2000
     test_count = 5
     tests_done = 0
-    test_results = []
+    test_results = [[],[]]
 
     # Stats for display
     ep_rewards = []
@@ -175,23 +172,38 @@ with tf.Session() as sess:
     state = env.reset()
     agent.reset(state)
     rewards = []
+    trace = []
     done = False
 
     for step in tqdm(list(range(training_iters)), ncols=80):
 
         # Act, and add
         action, mfec_qs, dqn_qs = agent.get_action(state)
+        old_state = state
         state, reward, done, info = env.step(action)
         agent.train_dqn(action, reward, state, done)
-        agent.train_mfec(reward, done)
+        trace.append(
+            {
+                "state": old_state,
+                "action": action,
+                "reward": reward,
+            }
+        )
 
         # Bookeeping
         rewards.append(reward)
         mfec_values.append(mfec_qs)
         dqn_values.append(dqn_qs)
+        test_results[0].append({'step': step,
+                             'mfec_qs': mfec_qs,
+                             'dqn_qs': dqn_qs})
+
         # print(mfec_qs, dqn_qs)
 
         if done:
+            agent.train_mfec(trace)
+            trace = []
+
             # Test after every ep.
             ep_rewards.append(np.sum(rewards))
             rewards = []
@@ -207,14 +219,13 @@ with tf.Session() as sess:
 
             print(np.mean(main_rewards), np.mean(mfec_rewards), np.mean(dqn_rewards))
             tests_done += 1
-            test_results.append({'step': step,
+            test_results[1].append({'step': step,
                                  'scores': main_rewards,
                                  'main_rewards': np.mean(main_rewards),
                                  'max': np.max(main_rewards),
                                  'mfec_rewards': np.mean(mfec_rewards),
-                                 'dqn_rewards': np.mean(dqn_rewards),
-                                 'mfec_qs': mfec_qs[0] - mfec_qs[1],
-                                 'dqn_qs': dqn_qs[0] - dqn_qs[1]})
+                                 'dqn_rewards': np.mean(dqn_rewards),})
+
 
             # Save to file
             summary = {'params': vars(args), 'tests': test_results}

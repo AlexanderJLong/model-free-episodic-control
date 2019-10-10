@@ -10,35 +10,50 @@ print(log.item()["tests"])
 
 print("step, average_reward")
 steps = []
+q_steps = []
 r = []
 dqn = []
 mfec = []
 dqn_qs = []
 mfec_qs = []
-for i in log.item()["tests"]:
+results = log.item()["tests"]
+for i in results[1]:
     print(i['step'], i['main_rewards'])
     steps.append(i['step']/1e6)
-    dqn_qs.append(i['dqn_qs'])
-    mfec_qs.append(i['mfec_qs'])
+
     r.append(i['main_rewards'])
     mfec.append(i['mfec_rewards'])
     dqn.append(i['dqn_rewards'])
+
+for i in results[0]:
+    q_steps.append(i["step"]/1e6)
+    dqn_qs.append(i['dqn_qs'])
+    mfec_qs.append(i['mfec_qs'])
 
 
 import matplotlib.pyplot as plt
 
 # Data for plotting
+mfec_qs = np.array(mfec_qs)
+dqn_qs = np.array(dqn_qs)
 
-fig, ax = plt.subplots()
-ax.plot(steps, r, label="reward")
-ax.plot(steps, np.asarray(dqn_qs), label="dqn q-diff (Qa0-Qa1)", linestyle=":")
-ax.plot(steps, mfec_qs, label="mfec q-diff (Qa0-Qa1)", linestyle=":")
-ax.plot(steps, dqn, label="dqn reward")
-ax.plot(steps, mfec, label="mfec reward")
-plt.legend()
-ax.set(xlabel='steps (M)', ylabel='average reward',
-       title='Hybrid agent on Cartpole-v1')
-ax.grid()
+fig, (r_ax, q_ax) = plt.subplots(nrows=2, ncols=1, sharex=True)
+r_ax.plot(steps, r, label="reward")
+r_ax.plot(steps, dqn, label="dqn reward")
+r_ax.plot(steps, mfec, label="mfec reward")
+r_ax.legend()
+
+q_ax.plot(q_steps, dqn_qs[:, 0], label="dqn Qa0", linestyle=":")
+q_ax.plot(q_steps, dqn_qs[:, 1], label="dqn Qa1", linestyle=":")
+
+q_ax.plot(q_steps, mfec_qs[:, 0], label="mfec Qa0", linestyle=":")
+q_ax.plot(q_steps, mfec_qs[:, 1], label="mfec Qa1", linestyle=":")
+q_ax.legend()
+
+for ax in [r_ax, q_ax]:
+    ax.set(xlabel='steps (M)', ylabel='average reward',
+           title='Hybrid agent on Cartpole-v1')
+    ax.grid()
 
 #plt.show()
 #plt.scatter(dqn_qs, mfec_qs,)
