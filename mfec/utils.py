@@ -28,16 +28,6 @@ class Utils:
             self.epoch_reward_max = episode_reward
         self.total_frames += episode_frames
 
-        message = "Epoch: {}\tEpisode: {}\tReward: {}\tEpoch-Frames: {}/{}"
-        results = [
-            self.epoch,
-            self.epoch_episodes,
-            int(episode_reward),
-            self.epoch_frames,
-            self.frames_per_epoch,
-        ]
-        print(message.format(*results))
-
     def end_epoch(self):
         """Save the results for the given epoch in the results-file"""
         results = [

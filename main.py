@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-from pyvirtualdisplay import Display
-display = Display(visible=0, size=(640, 640))
-display.start()
+#from pyvirtualdisplay import Display
+#display = Display(visible=0, size=(640, 640))
+#display.start()
 """
 HOW TO RUN:
 This file will run with the command args provided, or will use the
@@ -23,6 +23,8 @@ import itertools
 import numpy as np
 from glob import glob
 
+from tqdm import tqdm
+
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
@@ -39,15 +41,15 @@ FRAMES_PER_EPOCH = 1000
 config = {
     "ENV": "CartPoleLong",
     "EXP-SKIP": 1,
-    "ACTION-BUFFER-SIZE": 50_000,
-    "K": 15,
+    "ACTION-BUFFER-SIZE": 1_000_000,
+    "K": 7,
     "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.005,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 64,
+    "STATE-DIM": 4,
     "PROJECTION-TYPE": 3,
     "SEED": [1, 2, 3],
 }
@@ -124,7 +126,7 @@ def main(cfg):
 
 def run_algorithm(agent, env, utils):
     frames_left = 0
-    for e in range(EPOCHS):
+    for e in tqdm(range(EPOCHS)):
         frames_left += FRAMES_PER_EPOCH
         while frames_left > 0:
             episode_frames, episode_reward = run_episode(agent, env)
@@ -132,9 +134,8 @@ def run_algorithm(agent, env, utils):
             utils.end_episode(episode_frames, episode_reward)
         utils.end_epoch()
 
-        # agent.save(agent_dir)
-        # agent.qec.plot3d(both=False, diff=False)
-        # agent.qec.plot_scatter()
+        #agent.qec.plot3d(both=False, diff=False)
+        #agent.qec.plot_scatter()
         if e > EPOCHS_TILL_VIS:
             agent.qec.plot_scatter()
             agent.qec.plot3d(both=False, diff=False)
@@ -148,15 +149,21 @@ def run_episode(agent, env):
     observation = env.reset()
 
     done = False
+    trace = []
     while not done:
         action, _ = agent.choose_action(observation)
-        observation, reward, done, _ = env.step(action)
-
-        agent.receive_reward(reward)
-
+        new_observation, reward, done, _ = env.step(action)
+        trace.append(
+            {
+                "state": observation,
+                "action": action,
+                "reward": reward,
+            }
+        )
+        observation = new_observation
         episode_reward += reward
         episode_frames += 1
-    agent.train()
+    agent.train(trace)
 
     # agent.qec.plot_scatter()
     # agent.qec.plot3d(both=F alse, diff=False)
@@ -181,8 +188,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    main(all_configs[0])
+    exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

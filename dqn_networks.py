@@ -44,12 +44,12 @@ def feedforward_network(state, seed=123):
     initializer = tf.truncated_normal_initializer(0, 0.02, seed=seed)
     activation_fn = tf.nn.relu
 
-    l1, w['l1_w'], w['l1_b'] = linear(state, 16,
+    l1, w['l1_w'], w['l1_b'] = linear(state, 20,
       activation_fn=activation_fn, name='l1')
     #l2, w['l2_w'], w['l2_b'] = linear(state, 64,
     #  activation_fn=activation_fn, name='l2')
 
-    embedding, w['l3_w'], w['l3_b'] = linear(l1, 8,
+    embedding, w['l3_w'], w['l3_b'] = linear(l1, 20,
       activation_fn=activation_fn, name='value_hid')
 
     # Returns the network output, parameters

@@ -32,7 +32,7 @@ class Args:
     num_actions = 2
 
     # Agent parameters
-    discount = 0.95
+    discount = 0.99
     n_step = 1
     epsilon = 0
     epsilon_final = 0
@@ -42,9 +42,9 @@ class Args:
     model = "nn"
     preprocessor = 'default'
     history_len = 0
-    replay_memory_size = 100_000
-    batch_size = 20
-    learning_rate = 0.0001
+    replay_memory_size = 10_000
+    batch_size = 30
+    learning_rate = 0.001
     learn_step = 1
 
     # Stored variables
@@ -69,7 +69,7 @@ class CombinedAgent:
         """
         Return action, q_vals_mfec, q_values_dqn
         """
-        weight = 75
+        weight = 90
         a, dqn_qs = self.dqn_agent.GetAction()
         _, mfec_qs = self.mfec_agent.choose_action(obv)
 
@@ -80,7 +80,7 @@ class CombinedAgent:
         best_actions = np.argwhere(values == np.max(values)).flatten()
 
         action = self.rs.choice(best_actions)
-        self.mfec_agent.action = action  # try with and without this. This keeps MFEC consistent with combined agent
+        #self.mfec_agent.action = action  # try with and without this. This keeps MFEC consistent with combined agent
         return action, mfec_qs, dqn_qs
 
     def train_dqn(self, a, r, s, d):
@@ -89,7 +89,7 @@ class CombinedAgent:
 
     def train_mfec(self, r, d):
         # Should call after every get_action call
-        self.mfec_agent.receive_reward(r)
+        self.mfec_agent.receive_transition(r)
         if d:
             self.mfec_agent.train()
         pass
@@ -107,17 +107,17 @@ def test_agent(agent, env):
     # Combined
     s = env.reset()
     agent.reset(s, train=False)
-    done = False
-    while not done:
+    d = False
+    while not d:
         a, _, _ = agent.get_action(s)
-        s, r, done, _ = env.step(a)
-        agent.train_dqn(a, r, s, done)
-        #agent.train_mfec(r, done)
+        s, r, d, _ = env.step(a)
+        agent.train_dqn(a, r, s, d)
+        agent.train_mfec(r, d)
         main_R += r
 
     # DQN
     s = env.reset()
-    agent.dqn_agent.Reset(s, train=False)
+    agent.dqn_agent.Reset(s, train=False)  # No updates during testing
     done = False
     while not done:
         a, value = agent.dqn_agent.GetAction()
