@@ -68,6 +68,7 @@ class CombinedAgent:
         self.dqn_running_diff = deque(maxlen=7000)
         self.weight = 1  # start as an even mix
         self.step = 0
+        self.e = 1
 
     def reset(self, obv, train=True):
         self.dqn_agent.Reset(obv, train)
@@ -76,39 +77,33 @@ class CombinedAgent:
         """
         Return action, q_vals_mfec, q_values_dqn
         """
+
         a, dqn_qs = self.dqn_agent.GetAction()
         _, mfec_qs = self.mfec_agent.choose_action(obv)
 
         mfec_diff = mfec_qs[0] - mfec_qs[1]
         dqn_diff = dqn_qs[0] - dqn_qs[1]
-        if not -float("inf") < mfec_diff < float("inf"):
-            mfec_diff = 0
-        if not -float("inf") < dqn_diff < float("inf"):
-            dqn_diff = 0
 
         self.mfec_running_diff.append(mfec_diff)
         self.dqn_running_diff.append(dqn_diff)
 
-        #if self.step < 10000:
-        #    self.step += 1  # warmup for the trailing diff buffers
-        #    mfec_diff_normalized = mfec_diff
-        #    dqn_diff_normalized = dqn_diff
-        #else:
-        mfec_diff_normalized = (mfec_diff - np.mean(self.mfec_running_diff)) / np.std(self.mfec_running_diff)
-        dqn_diff_normalized = (dqn_diff - np.mean(self.dqn_running_diff)) / np.std(self.dqn_running_diff)
-
+        mfec_diff_normalized = (mfec_diff ) / np.std(self.mfec_running_diff)
+        dqn_diff_normalized = (dqn_diff ) / np.std(self.dqn_running_diff)
         if np.isnan(mfec_diff_normalized):
             mfec_diff_normalized = 0
-        #print(mfec_diff_normalized, dqn_diff_normalized)
-        # best_actions = np.argwhere(values == np.max(values)).flatten()
 
-        combined_diff = mfec_diff_normalized*self.weight + dqn_diff_normalized*(1-self.weight)
-        if combined_diff == 0:
+        combined_diff = mfec_diff_normalized * self.weight + dqn_diff_normalized * (1 - self.weight)
+        #print(self.e)
+        self.e -= 1e-4
+        if self.e > np.random.rand():
             action = self.rs.choice([0, 1])
-        elif combined_diff > 0:
-            action = 0
         else:
-            action = 1
+            if combined_diff == 0:
+                action = self.rs.choice([0, 1])
+            elif combined_diff > 0:
+                action = 0
+            else:
+                action = 1
         return action, mfec_diff_normalized, dqn_diff_normalized
 
     def train_dqn(self, a, r, s, d):
@@ -228,8 +223,7 @@ with tf.Session() as sess:
         test_results[0].append({'step': step,
                                 'mfec_qs': mfec_qs,
                                 'dqn_qs': dqn_qs,
-                                "combined_diff": mfec_qs*agent.weight + dqn_qs*(1-agent.weight)})
-
+                                "combined_diff": mfec_qs * agent.weight + dqn_qs * (1 - agent.weight)})
 
         if done:
             agent.train_mfec(trace)
