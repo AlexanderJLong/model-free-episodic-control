@@ -53,12 +53,14 @@ weight_ax.plot(steps, weights, label="weighting (mfec/dqn)", linestyle=":")
 weight_ax.legend()
 r_ax.legend()
 
-q_ax.plot(q_steps, dqn_qs, label="dqn diff normed", linestyle=":")
-q_ax.plot(q_steps, combined_diff, label="combined diff normed", linestyle=":")
 
 #q_ax.plot(q_steps, dqn_qs[:, 1], label="dqn Qa1", linestyle=":")
 
-q_ax.plot(q_steps, mfec_qs, label="mfec diff normed", linestyle=":")
+q_ax.plot(q_steps, mfec_qs, label="mfec diff normed", linestyle=":", alpha=0.7)
+q_ax.plot(q_steps, dqn_qs, label="dqn diff normed", linestyle=":", alpha=0.7)
+q_ax.plot(q_steps, combined_diff, label="combined diff normed", linestyle=":", alpha=0.7)
+
+
 #q_ax.plot(q_steps, mfec_qs[:, 1], label="mfec Qa1", linestyle=":")
 q_ax.legend()
 

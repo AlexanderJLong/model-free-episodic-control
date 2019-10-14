@@ -64,8 +64,8 @@ class CombinedAgent:
         self.mfec_agent = MFEC
         self.dqn_agent = DQN
         self.rs = np.random.RandomState(0)
-        self.mfec_running_diff = deque(maxlen=7000)
-        self.dqn_running_diff = deque(maxlen=7000)
+        self.mfec_running_diff = deque(maxlen=1000)
+        self.dqn_running_diff = deque(maxlen=1000)
         self.weight = 1  # start as an even mix
         self.step = 0
         self.e = 1
@@ -87,13 +87,13 @@ class CombinedAgent:
         self.mfec_running_diff.append(mfec_diff)
         self.dqn_running_diff.append(dqn_diff)
 
-        mfec_diff_normalized = (mfec_diff ) / np.std(self.mfec_running_diff)
-        dqn_diff_normalized = (dqn_diff ) / np.std(self.dqn_running_diff)
+        mfec_diff_normalized = mfec_diff / np.std(self.mfec_running_diff)
+        dqn_diff_normalized = dqn_diff / np.std(self.dqn_running_diff)
         if np.isnan(mfec_diff_normalized):
             mfec_diff_normalized = 0
 
         combined_diff = mfec_diff_normalized * self.weight + dqn_diff_normalized * (1 - self.weight)
-        #print(self.e)
+        # print(self.e)
         self.e -= 1e-4
         if self.e > np.random.rand():
             action = self.rs.choice([0, 1])
