@@ -89,14 +89,16 @@ class CombinedAgent:
         self.mfec_running_diff.append(mfec_diff)
         self.dqn_running_diff.append(dqn_diff)
 
-        if self.step < 10000:
-            self.step += 1  # warmup for the trailing diff buffers
-            mfec_diff_normalized = mfec_diff
-            dqn_diff_normalized = dqn_diff
-        else:
-            mfec_diff_normalized = (mfec_diff - np.mean(self.mfec_running_diff)) / np.std(self.mfec_running_diff)
-            dqn_diff_normalized = (dqn_diff - np.mean(self.dqn_running_diff)) / np.std(self.dqn_running_diff)
+        #if self.step < 10000:
+        #    self.step += 1  # warmup for the trailing diff buffers
+        #    mfec_diff_normalized = mfec_diff
+        #    dqn_diff_normalized = dqn_diff
+        #else:
+        mfec_diff_normalized = (mfec_diff - np.mean(self.mfec_running_diff)) / np.std(self.mfec_running_diff)
+        dqn_diff_normalized = (dqn_diff - np.mean(self.dqn_running_diff)) / np.std(self.dqn_running_diff)
 
+        if np.isnan(mfec_diff_normalized):
+            mfec_diff_normalized = 0
         #print(mfec_diff_normalized, dqn_diff_normalized)
         # best_actions = np.argwhere(values == np.max(values)).flatten()
 
@@ -186,8 +188,8 @@ with tf.Session() as sess:
     test_results = [[], []]
 
     # trailing test reward
-    dqn_trailing = deque(maxlen=5)
-    mfec_trailing = deque(maxlen=5)
+    dqn_trailing = deque(maxlen=10)
+    mfec_trailing = deque(maxlen=10)
 
     # Stats for display
     ep_rewards = []
@@ -261,8 +263,8 @@ with tf.Session() as sess:
                                     'scores': main_rewards,
                                     'main_rewards': main_reward,
                                     'max': np.max(mfec_rewards),
-                                    'mfec_rewards': np.mean(mfec_trailing),
-                                    'dqn_rewards': np.mean(dqn_trailing),
+                                    'mfec_rewards': mfec_reward,
+                                    'dqn_rewards': dqn_reward,
                                     "weights": agent.weight})
 
             # Save to file

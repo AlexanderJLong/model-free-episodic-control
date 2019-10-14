@@ -24,7 +24,7 @@ for i in results[1]:
     steps.append(i['step']/1e6)
 
     r.append(i['main_rewards'])
-    mfec.append(i['mfec_rewards'])
+    mfec.append(i['mfec_rewards']   )
     dqn.append(i['dqn_rewards'])
     weights.append(i['weights'])
 
