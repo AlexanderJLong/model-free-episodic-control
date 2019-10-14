@@ -17,6 +17,7 @@ mfec = []
 dqn_qs = []
 mfec_qs = []
 weights = []
+combined_diff = []
 results = log.item()["tests"]
 for i in results[1]:
     print(i['step'], i['main_rewards'])
@@ -32,6 +33,7 @@ for i in results[0]:
     q_steps.append(i["step"]/1e6)
     dqn_qs.append(i['dqn_qs'])
     mfec_qs.append(i['mfec_qs'])
+    combined_diff.append(i['combined_diff'])
 
 
 import matplotlib.pyplot as plt
@@ -52,6 +54,8 @@ weight_ax.legend()
 r_ax.legend()
 
 q_ax.plot(q_steps, dqn_qs, label="dqn diff normed", linestyle=":")
+q_ax.plot(q_steps, combined_diff, label="combined diff normed", linestyle=":")
+
 #q_ax.plot(q_steps, dqn_qs[:, 1], label="dqn Qa1", linestyle=":")
 
 q_ax.plot(q_steps, mfec_qs, label="mfec diff normed", linestyle=":")
