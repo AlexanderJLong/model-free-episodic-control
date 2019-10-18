@@ -18,7 +18,7 @@ from collections import deque
 cfg = {"ENV": "CartPoleLong",
        "EXP-SKIP": 1,
        "ACTION-BUFFER-SIZE": 1_000_000,
-       "K": 7,
+       "K": 15,
        "DISCOUNT": 1,
        "EPSILON": 0,
        "EPS-DECAY": 0.005,
@@ -35,7 +35,7 @@ class Args:
     num_actions = 2
 
     # Agent parameters
-    discount = 0.99
+    discount = 1
     n_step = 1
     epsilon = 0
     epsilon_final = 0
@@ -45,9 +45,9 @@ class Args:
     model = "nn"
     preprocessor = 'default'
     history_len = 0
-    replay_memory_size = 1_000_000
-    batch_size = 30
-    learning_rate = 0.001
+    replay_memory_size = 100_000
+    batch_size = 128
+    learning_rate = 0.0005
     learn_step = 1
 
     # Stored variables
@@ -68,7 +68,8 @@ class CombinedAgent:
         self.dqn_running_diff = deque(maxlen=1000)
         self.weight = 1  # start as an even mix
         self.step = 0
-        self.e = 1
+        self.e = 0.8
+        self.epsilon_decay = 1e-5
 
     def reset(self, obv, train=True):
         self.dqn_agent.Reset(obv, train)
@@ -77,33 +78,34 @@ class CombinedAgent:
         """
         Return action, q_vals_mfec, q_values_dqn
         """
+        # Decay epsilon and act randomly if exploring
+        self.e -= self.epsilon_decay
+        if self.e > np.random.rand():
+            return self.rs.choice([0, 1]), 0, 0
 
+        # Get sub-agent Q-vals
         a, dqn_qs = self.dqn_agent.GetAction()
         _, mfec_qs = self.mfec_agent.choose_action(obv)
 
+        # Convert to diffs
         mfec_diff = mfec_qs[0] - mfec_qs[1]
         dqn_diff = dqn_qs[0] - dqn_qs[1]
 
         self.mfec_running_diff.append(mfec_diff)
         self.dqn_running_diff.append(dqn_diff)
 
-        mfec_diff_normalized = mfec_diff / np.std(self.mfec_running_diff)
-        dqn_diff_normalized = dqn_diff / np.std(self.dqn_running_diff)
+        mfec_diff_normalized = mfec_diff  # / np.std(self.mfec_running_diff)
+        dqn_diff_normalized = dqn_diff  # / np.std(self.dqn_running_diff)
         if np.isnan(mfec_diff_normalized):
             mfec_diff_normalized = 0
 
         combined_diff = mfec_diff_normalized * self.weight + dqn_diff_normalized * (1 - self.weight)
-        # print(self.e)
-        self.e -= 1e-4
-        if self.e > np.random.rand():
+        if combined_diff == 0:
             action = self.rs.choice([0, 1])
+        elif combined_diff > 0:
+            action = 0
         else:
-            if combined_diff == 0:
-                action = self.rs.choice([0, 1])
-            elif combined_diff > 0:
-                action = 0
-            else:
-                action = 1
+            action = 1
         return action, mfec_diff_normalized, dqn_diff_normalized
 
     def train_dqn(self, a, r, s, d):
@@ -183,8 +185,8 @@ with tf.Session() as sess:
     test_results = [[], []]
 
     # trailing test reward
-    dqn_trailing = deque(maxlen=10)
-    mfec_trailing = deque(maxlen=10)
+    dqn_trailing = deque(maxlen=5)
+    mfec_trailing = deque(maxlen=5)
 
     # Stats for display
     ep_rewards = []
@@ -250,6 +252,7 @@ with tf.Session() as sess:
             mfec_trailing.append(mfec_reward)
             dqn_trailing.append(dqn_reward)
             agent.weight = np.mean(mfec_trailing) / (np.mean(mfec_trailing) + np.mean(dqn_trailing))
+            agent.weight = 0
 
             print(main_reward, mfec_reward, dqn_reward)
             tests_done += 1
