@@ -64,8 +64,8 @@ class CombinedAgent:
         self.mfec_agent = MFEC
         self.dqn_agent = DQN
         self.rs = np.random.RandomState(0)
-        self.mfec_running_diff = deque(maxlen=1000)
-        self.dqn_running_diff = deque(maxlen=1000)
+        self.mfec_running_diff = []
+        self.dqn_running_diff = []
         self.weight = 1  # start as an even mix
         self.step = 0
         self.e = 0.8
@@ -91,11 +91,12 @@ class CombinedAgent:
         mfec_diff = mfec_qs[0] - mfec_qs[1]
         dqn_diff = dqn_qs[0] - dqn_qs[1]
 
-        self.mfec_running_diff.append(mfec_diff)
+        if -np.inf < mfec_diff < np.inf:
+            self.mfec_running_diff.append(mfec_diff)
         self.dqn_running_diff.append(dqn_diff)
 
-        mfec_diff_normalized = mfec_diff  # / np.std(self.mfec_running_diff)
-        dqn_diff_normalized = dqn_diff  # / np.std(self.dqn_running_diff)
+        mfec_diff_normalized = mfec_diff / np.std(self.mfec_running_diff)
+        dqn_diff_normalized = dqn_diff / np.std(self.dqn_running_diff)
         if np.isnan(mfec_diff_normalized):
             mfec_diff_normalized = 0
 
@@ -185,8 +186,8 @@ with tf.Session() as sess:
     test_results = [[], []]
 
     # trailing test reward
-    dqn_trailing = deque(maxlen=5)
-    mfec_trailing = deque(maxlen=5)
+    dqn_trailing = deque(maxlen=20)
+    mfec_trailing = deque(maxlen=20)
 
     # Stats for display
     ep_rewards = []
@@ -222,10 +223,12 @@ with tf.Session() as sess:
         rewards.append(reward)
         mfec_values.append(mfec_qs)
         dqn_values.append(dqn_qs)
-        test_results[0].append({'step': step,
-                                'mfec_qs': mfec_qs,
-                                'dqn_qs': dqn_qs,
-                                "combined_diff": mfec_qs * agent.weight + dqn_qs * (1 - agent.weight)})
+        # Log every few steps
+        if not step % 3:
+            test_results[0].append({'step': step,
+                                    'mfec_qs': mfec_qs,
+                                    'dqn_qs': dqn_qs,
+                                    "combined_diff": mfec_qs * agent.weight + dqn_qs * (1 - agent.weight)})
 
         if done:
             agent.train_mfec(trace)
@@ -252,7 +255,7 @@ with tf.Session() as sess:
             mfec_trailing.append(mfec_reward)
             dqn_trailing.append(dqn_reward)
             agent.weight = np.mean(mfec_trailing) / (np.mean(mfec_trailing) + np.mean(dqn_trailing))
-            agent.weight = 0
+            # agent.weight = 0
 
             print(main_reward, mfec_reward, dqn_reward)
             tests_done += 1
