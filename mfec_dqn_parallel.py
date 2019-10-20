@@ -19,7 +19,7 @@ cfg = {"ENV": "CartPoleLong",
        "EXP-SKIP": 1,
        "ACTION-BUFFER-SIZE": 1_000_000,
        "K": 15,
-       "DISCOUNT": 1,
+       "DISCOUNT": 0.9,
        "EPSILON": 0,
        "EPS-DECAY": 0.005,
        "NORM-FREQ": 0,
@@ -35,7 +35,7 @@ class Args:
     num_actions = 2
 
     # Agent parameters
-    discount = 1
+    discount = 0.9
     n_step = 1
     epsilon = 0
     epsilon_final = 0
@@ -265,7 +265,8 @@ with tf.Session() as sess:
                                     'max': np.max(mfec_rewards),
                                     'mfec_rewards': mfec_reward,
                                     'dqn_rewards': dqn_reward,
-                                    "weights": agent.weight})
+                                    "weights": agent.weight,
+                                    "exploration": agent.e})
 
             # Save to file
             summary = {'params': vars(args), 'tests': test_results}
