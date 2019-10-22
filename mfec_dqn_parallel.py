@@ -80,10 +80,10 @@ class CombinedAgent:
         Return action, q_vals_mfec, q_values_dqn
         """
         # Decay epsilon and act randomly if exploring
-        if self.e > self.e_final:
-            self.e /= self.epsilon_decay
-        if self.e > np.random.rand():
-            return self.rs.choice([0, 1]), 0, 0
+        #if self.e > self.e_final:
+        #    self.e /= self.epsilon_decay
+        #if self.e > np.random.rand():
+        #    return self.rs.choice([0, 1]), 0, 0
 
         # Get sub-agent Q-vals
         a, dqn_qs = self.dqn_agent.GetAction()
@@ -257,7 +257,7 @@ with tf.Session() as sess:
             mfec_trailing.append(mfec_reward)
             dqn_trailing.append(dqn_reward)
             agent.weight = np.mean(mfec_trailing) / (np.mean(mfec_trailing) + np.mean(dqn_trailing))
-            agent.weight = 0
+            #agent.weight = 0
 
             print(main_reward, mfec_reward, dqn_reward)
             tests_done += 1
