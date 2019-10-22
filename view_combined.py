@@ -28,7 +28,7 @@ for i in results[1]:
     mfec.append(i['mfec_rewards']   )
     dqn.append(i['dqn_rewards'])
     weights.append(i['weights'])
-    #epsilon.append(i['exploration'])
+    epsilon.append(i['exploration'])
 
 
 for i in results[0]:
@@ -59,7 +59,7 @@ q_ax.plot(q_steps, combined_diff, label="combined diff normed", linestyle="-", a
 
 weight_ax = q_ax.twinx()  # instantiate a second axes that shares the same x-axis
 weight_ax.plot(steps, weights, label="weighting (mfec/dqn)", linestyle="-")
-#weight_ax.plot(steps, epsilon, label="epsilon", linestyle="-")
+weight_ax.plot(steps, epsilon, label="epsilon", linestyle="-")
 
 weight_ax.legend()
 r_ax.legend()

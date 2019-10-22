@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-#from pyvirtualdisplay import Display
-#display = Display(visible=0, size=(640, 640))
-#display.start()
+
 """
 HOW TO RUN:
 This file will run with the command args provided, or will use the
@@ -23,8 +21,6 @@ import itertools
 import numpy as np
 from glob import glob
 
-from tqdm import tqdm
-
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
@@ -36,21 +32,22 @@ from multiprocessing import Pool
 TITLE = "Noautonorm"
 EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
-FRAMES_PER_EPOCH = 1000
+FRAMES_PER_EPOCH = 5000
 
 config = {
-    "ENV": "CartPoleLong",
+    "ENV": "PixelCopter",
+    "PREPRO": "GreyScaleNormalizeResize",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
-    "K": 7,
-    "DISCOUNT": 1,
-    "EPSILON": 0,
+    "K": 15,
+    "DISCOUNT": 0.999,
+    "EPSILON": 1,
     "EPS-DECAY": 0.005,
-    "NORM-FREQ": 0,
+    "NORM-FREQ": 20,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 4,
-    "PROJECTION-TYPE": 3,
+    "STATE-DIM": 64,
+    "PROJECTION-TYPE": 3,k
     "SEED": [1, 2, 3],
 }
 """Projection type:
@@ -61,6 +58,7 @@ config = {
 4: good manual
 5: invert 1
 """
+
 
 def main(cfg):
     print(cfg)
@@ -94,10 +92,7 @@ def main(cfg):
         env = make_atari('BreakoutNoFrameskip-v4')
         env = wrap_deepmind(env, frame_stack=True, scale=False)
     elif cfg["ENV"] == "Pong":
-        env = gym.make("PongNoFrameskip-v0")
-        from baselines.common.atari_wrappers import wrap_deepmind
-        env = wrap_deepmind(env, frame_stack=False, scale=False, episode_life=True)
-
+        env = gym.make("Pong-v0")
 
     else:
         raise Exception("Invalid env specified")
@@ -108,6 +103,7 @@ def main(cfg):
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
         k=cfg["K"],
         discount=cfg["DISCOUNT"],
+        prepro=cfg["PREPRO"],
         epsilon=cfg["EPSILON"],
         observation_dim=np.prod(env.observation_space.shape),
         state_dimension=cfg["STATE-DIM"],
@@ -125,7 +121,7 @@ def main(cfg):
 
 def run_algorithm(agent, env, utils):
     frames_left = 0
-    for e in tqdm(range(EPOCHS)):
+    for e in range(EPOCHS):
         frames_left += FRAMES_PER_EPOCH
         while frames_left > 0:
             episode_frames, episode_reward = run_episode(agent, env)
@@ -133,8 +129,9 @@ def run_algorithm(agent, env, utils):
             utils.end_episode(episode_frames, episode_reward)
         utils.end_epoch()
 
-        #agent.qec.plot3d(both=False, diff=False)
-        #agent.qec.plot_scatter()
+        # agent.save(agent_dir)
+        # agent.qec.plot3d(both=False, diff=False)
+        # agent.qec.plot_scatter()
         if e > EPOCHS_TILL_VIS:
             agent.qec.plot_scatter()
             agent.qec.plot3d(both=False, diff=False)
@@ -148,21 +145,15 @@ def run_episode(agent, env):
     observation = env.reset()
 
     done = False
-    trace = []
     while not done:
-        action, _ = agent.choose_action(observation)
-        new_observation, reward, done, _ = env.step(action)
-        trace.append(
-            {
-                "state": observation,
-                "action": action,
-                "reward": reward,
-            }
-        )
-        observation = new_observation
+        action = agent.choose_action(observation)
+        observation, reward, done, _ = env.step(action)
+
+        agent.receive_reward(reward)
+
         episode_reward += reward
         episode_frames += 1
-    agent.train(trace)
+    agent.train()
 
     # agent.qec.plot_scatter()
     # agent.qec.plot3d(both=F alse, diff=False)
@@ -187,8 +178,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    main(all_configs[0])
-    exit()
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

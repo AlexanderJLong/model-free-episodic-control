@@ -36,7 +36,7 @@ class Args:
 
     # Agent parameters
     discount = 0.9
-    n_step = 1
+    n_step = 50
     epsilon = 0
     epsilon_final = 0
     epsilon_anneal = 5000
@@ -69,7 +69,8 @@ class CombinedAgent:
         self.weight = 1  # start as an even mix
         self.step = 0
         self.e = 0.8
-        self.epsilon_decay = 1e-5
+        self.epsilon_decay = 1.00005
+        self.e_final = 0.01
 
     def reset(self, obv, train=True):
         self.dqn_agent.Reset(obv, train)
@@ -79,7 +80,8 @@ class CombinedAgent:
         Return action, q_vals_mfec, q_values_dqn
         """
         # Decay epsilon and act randomly if exploring
-        self.e -= self.epsilon_decay
+        if self.e > self.e_final:
+            self.e /= self.epsilon_decay
         if self.e > np.random.rand():
             return self.rs.choice([0, 1]), 0, 0
 
@@ -224,7 +226,7 @@ with tf.Session() as sess:
         mfec_values.append(mfec_qs)
         dqn_values.append(dqn_qs)
         # Log every few steps
-        if not step % 3:
+        if not step % 20:
             test_results[0].append({'step': step,
                                     'mfec_qs': mfec_qs,
                                     'dqn_qs': dqn_qs,
@@ -255,7 +257,7 @@ with tf.Session() as sess:
             mfec_trailing.append(mfec_reward)
             dqn_trailing.append(dqn_reward)
             agent.weight = np.mean(mfec_trailing) / (np.mean(mfec_trailing) + np.mean(dqn_trailing))
-            # agent.weight = 0
+            agent.weight = 0
 
             print(main_reward, mfec_reward, dqn_reward)
             tests_done += 1
