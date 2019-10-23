@@ -69,7 +69,7 @@ class CombinedAgent:
         self.weight = 1  # start as an even mix
         self.step = 0
         self.e = 0.8
-        self.epsilon_decay = 1.00005
+        self.epsilon_decay = 1.0005
         self.e_final = 0.01
 
     def reset(self, obv, train=True):
@@ -80,10 +80,10 @@ class CombinedAgent:
         Return action, q_vals_mfec, q_values_dqn
         """
         # Decay epsilon and act randomly if exploring
-        #if self.e > self.e_final:
-        #    self.e /= self.epsilon_decay
-        #if self.e > np.random.rand():
-        #    return self.rs.choice([0, 1]), 0, 0
+        if self.e > self.e_final:
+            self.e /= self.epsilon_decay
+        if self.e > np.random.rand():
+            return self.rs.choice([0, 1]), 0, 0
 
         # Get sub-agent Q-vals
         a, dqn_qs = self.dqn_agent.GetAction()
@@ -188,8 +188,8 @@ with tf.Session() as sess:
     test_results = [[], []]
 
     # trailing test reward
-    dqn_trailing = deque(maxlen=20)
-    mfec_trailing = deque(maxlen=20)
+    dqn_trailing = deque(maxlen=5)
+    mfec_trailing = deque(maxlen=5)
 
     # Stats for display
     ep_rewards = []

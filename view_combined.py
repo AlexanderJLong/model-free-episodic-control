@@ -1,10 +1,9 @@
 import numpy as np
+
 np_load_old = np.load
 
-
-
 # modify the default parameters of np.load
-np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
+np.load = lambda *a, **k: np_load_old(*a, allow_pickle=True, **k)
 log = np.load("./myrun.npy")
 print(log.item()["tests"])
 
@@ -22,21 +21,19 @@ epsilon = []
 results = log.item()["tests"]
 for i in results[1]:
     print(i['step'], i['main_rewards'])
-    steps.append(i['step']/1e6)
+    steps.append(i['step'] / 1e6)
 
     r.append(i['main_rewards'])
-    mfec.append(i['mfec_rewards']   )
+    mfec.append(i['mfec_rewards'])
     dqn.append(i['dqn_rewards'])
     weights.append(i['weights'])
     epsilon.append(i['exploration'])
 
-
 for i in results[0]:
-    q_steps.append(i["step"]/1e6)
+    q_steps.append(i["step"] / 1e6)
     dqn_qs.append(i['dqn_qs'])
     mfec_qs.append(i['mfec_qs'])
     combined_diff.append(i['combined_diff'])
-
 
 import matplotlib.pyplot as plt
 
@@ -49,9 +46,7 @@ r_ax.plot(steps, r, label="reward")
 r_ax.plot(steps, dqn, label="dqn reward")
 r_ax.plot(steps, mfec, label="mfec reward")
 
-
-
-#q_ax.plot(q_steps, dqn_qs[:, 1], label="dqn Qa1", linestyle=":")
+# q_ax.plot(q_steps, dqn_qs[:, 1], label="dqn Qa1", linestyle=":")
 
 q_ax.plot(q_steps, mfec_qs, label="mfec diff normed", linestyle="-", alpha=0.7)
 q_ax.plot(q_steps, dqn_qs, label="dqn diff normed", linestyle="-", alpha=0.7)
@@ -64,7 +59,7 @@ weight_ax.plot(steps, epsilon, label="epsilon", linestyle="-")
 weight_ax.legend()
 r_ax.legend()
 
-#q_ax.plot(q_steps, mfec_qs[:, 1], label="mfec Qa1", linestyle=":")
+# q_ax.plot(q_steps, mfec_qs[:, 1], label="mfec Qa1", linestyle=":")
 q_ax.legend()
 
 for ax in [r_ax, q_ax]:
@@ -72,7 +67,7 @@ for ax in [r_ax, q_ax]:
            title='Hybrid agent on Cartpole-v1')
     ax.grid()
 
-#plt.show()
-#plt.scatter(dqn_qs, mfec_qs,)
+# plt.show()
+# plt.scatter(dqn_qs, mfec_qs,)
 fig.savefig("test.png")
 plt.show()

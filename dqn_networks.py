@@ -49,7 +49,7 @@ def feedforward_network(state, seed=123):
     #l2, w['l2_w'], w['l2_b'] = linear(state, 64,
     #  activation_fn=activation_fn, name='l2')
 
-    embedding, w['l3_w'], w['l3_b'] = linear(l1, 20,
+    embedding, w['l3_w'], w['l3_b'] = linear(l1, 10,
       activation_fn=activation_fn, name='value_hid')
 
     # Returns the network output, parameters

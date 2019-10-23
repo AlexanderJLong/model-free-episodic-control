@@ -47,7 +47,7 @@ config = {
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
     "STATE-DIM": 64,
-    "PROJECTION-TYPE": 3,k
+    "PROJECTION-TYPE": 3,
     "SEED": [1, 2, 3],
 }
 """Projection type:
