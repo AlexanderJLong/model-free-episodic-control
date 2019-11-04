@@ -11,8 +11,10 @@ import numpy as np
 import gym
 
 from mfec.agent import MFECAgent
-
 from collections import deque
+
+# Logging
+from spinup.utils.logx import EpochLogger
 
 # GLOBAl VARS FIXED FOR EACH RUN
 cfg = {"ENV": "CartPoleLong",
@@ -47,7 +49,7 @@ class Args:
     history_len = 0
     replay_memory_size = 100_000
     batch_size = 128
-    learning_rate = 0.0005
+    learning_rate = 0.002
     learn_step = 1
 
     # Stored variables
@@ -69,7 +71,7 @@ class CombinedAgent:
         self.weight = 1  # start as an even mix
         self.step = 0
         self.e = 0.8
-        self.epsilon_decay = 1.0005
+        self.epsilon_decay = 1.01
         self.e_final = 0.01
 
     def reset(self, obv, train=True):
@@ -164,6 +166,9 @@ def test_agent(agent, env):
 from DQNAgent import DQNAgent
 
 env = gym.make("CartPole-v1")
+logger = EpochLogger(output_dir="logs", exp_name="KNN-DQN")
+logger.save_config(locals())
+
 
 with tf.Session() as sess:
     args = Args()
@@ -183,7 +188,7 @@ with tf.Session() as sess:
     training_iters = 100_000
     display_step = 1000
     test_step = 2000
-    test_count = 5
+    test_count = 3
     tests_done = 0
     test_results = [[], []]
 
@@ -257,9 +262,19 @@ with tf.Session() as sess:
             mfec_trailing.append(mfec_reward)
             dqn_trailing.append(dqn_reward)
             agent.weight = np.mean(mfec_trailing) / (np.mean(mfec_trailing) + np.mean(dqn_trailing))
-            #agent.weight = 0
+            # agent.weight = 0
 
             print(main_reward, mfec_reward, dqn_reward)
+
+            # Spinup Logging
+            logger.log_tabular('step', step)
+
+            logger.log_tabular('AverageTestEpRet', main_reward)
+            logger.log_tabular('mfec_reward', mfec_reward)
+            logger.log_tabular('dqn_reward', dqn_reward)
+            logger.dump_tabular()
+
+
             tests_done += 1
             test_results[1].append({'step': step,
                                     'scores': main_rewards,

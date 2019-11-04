@@ -35,7 +35,7 @@ EPOCHS = 3000
 FRAMES_PER_EPOCH = 5000
 
 config = {
-    "ENV": "PixelCopter",
+    "ENV": "CartPoleLong",
     "PREPRO": "GreyScaleNormalizeResize",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 1_000_000,
