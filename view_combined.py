@@ -67,7 +67,5 @@ for ax in [r_ax, q_ax]:
            title='Hybrid agent on Cartpole-v1')
     ax.grid()
 
-# plt.show()
-# plt.scatter(dqn_qs, mfec_qs,)
 fig.savefig("test.png")
 plt.show()
