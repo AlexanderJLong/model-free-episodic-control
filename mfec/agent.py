@@ -134,7 +134,6 @@ class MFECAgent:
 
         # Decay e linearly
         if self.epsilon > 0:
-            print(self.epsilon)
             self.epsilon -= self.epsilon_decay
 
     def save(self, results_dir):

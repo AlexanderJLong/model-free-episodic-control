@@ -21,9 +21,10 @@ class QEC:
         mus = []
         sigs = []
         for buff in self.buffers:
-            mus.append(np.mean(buff.states, axis=0))
-            sigs.append(np.std(buff.states, axis=0))
-        return np.mean(mus, axis=0), np.mean(sigs, axis=0)
+            states = buff.get_states()
+            mus.append(np.mean(states, axis=0))
+            sigs.append(np.std(states, axis=0))
+        return np.mean(np.asarray(mus), axis=0), np.mean(np.asarray(sigs), axis=0)
 
     def autonormalize(self):
         """NOTE: NO MU - won't work if state vars arent centered
@@ -34,7 +35,9 @@ class QEC:
         mu, sig = self.get_mu_and_sig()
         sig[sig == 0] = 1
         for buff in self.buffers:
-            buff.states = ((buff.states - mu) / sig).tolist()
+            # Recreate the buffer and fill it again
+            states = (buff.get_states() - mu) / sig
+            buff.reset(states)
         self.mu = self.mu + self.mu / self.sig
         self.sig = sig * self.sig
         return
@@ -136,11 +139,17 @@ class QEC:
 
 class ActionBuffer:
     def __init__(self, capacity, state_dim):
-        print(state_dim)
+        self.state_dim = state_dim
         self.capacity = capacity
         self._tree = hnswlib.Index(space='l2', dim=state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=capacity, ef_construction=200, M=16)
         self.values = []
+
+    def reset(self, data):
+        """Reset the buffer with just the data provided"""
+        self._tree = hnswlib.Index(space='l2', dim=self.state_dim)  # possible options are l2, cosine or ip
+        self._tree.init_index(max_elements=self.capacity, ef_construction=200, M=16)
+        self._tree.add_items(data)
 
     def find_neighbors(self, state, k):
         """Return idx, dists"""
