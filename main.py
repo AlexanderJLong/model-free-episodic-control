@@ -7,7 +7,7 @@ display.start()
 
 """
 HOW TO RUN:
-This file will run with the command args provided, or will use thier
+This file will run with the command args provided, or will use the
 defaults if not provided, over 3 random seeds, with one thread per run
 
 To do a grid search, you can write a run script that calls this fn
@@ -27,8 +27,8 @@ from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
 import argparse
+from collections import deque
 from multiprocessing import Pool
-
 
 # GLOBAl VARS FIXED FOR EACH RUN
 TITLE = "Noautonorm"
@@ -38,11 +38,11 @@ FRAMES_PER_EPOCH = 5_000
 
 config = {
     "EXP-SKIP": 1,
-    "ACTION-BUFFER-SIZE": 1_000_000,
+    "ACTION-BUFFER-SIZE": 100_000,
     "K": 16,
     "DISCOUNT": 1,
-    "EPSILON": 1,
-    "EPS-DECAY": 0.005,
+    "EPSILON": 0.05,
+    "EPS-DECAY": 0.0005,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
@@ -80,14 +80,10 @@ def main(cfg):
     # Initialize utils, environment and agent
 
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
-    env = gym.make("CartPole-v0")
-
-    from cartpole_wrapper import pixel_state_wrapper
-    env = pixel_state_wrapper(env)
 
     from baselines.common.atari_wrappers import make_atari, wrap_deepmind
     env = make_atari('MsPacmanNoFrameskip-v4')
-    env = wrap_deepmind(env, frame_stack=True, scale=False)
+    env = wrap_deepmind(env, frame_stack=True, scale=False, clip_rewards=False)
 
     print(env.observation_space.shape)
     obv_dim = np.prod(env.observation_space.shape)
@@ -136,20 +132,18 @@ def run_episode(agent, env):
     observation = env.reset()
 
     done = False
-    step = 0
     while not done:
-        action = agent.choose_action(observation, step)
+        action = agent.choose_action(observation)
         observation, reward, done, _ = env.step(action)
 
-        agent.receive_reward(reward, step)
+        agent.receive_reward(reward)
 
         episode_reward += reward
         episode_frames += 1
-        step += 1
     agent.train()
 
     # agent.qec.plot_scatter()
-    # agent.qec.plot3d(both=F alse, diff=False)
+    # agent.qec.plot3d(both=False, diff=False)
 
     return episode_frames, episode_reward
 
@@ -171,8 +165,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    # main(all_configs[0])
-    # exit()
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

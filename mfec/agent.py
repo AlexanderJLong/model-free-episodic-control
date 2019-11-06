@@ -86,7 +86,7 @@ class MFECAgent:
         self.exp_skip = exp_skip
         self.t = 0  # keep track of episode step
 
-    def choose_action(self, observation, step):
+    def choose_action(self, observation):
         self.time += 1
 
         # Preprocess and project observation to state
@@ -99,24 +99,18 @@ class MFECAgent:
 
         # Exploitation
         else:
-            values = [
-                self.qec.estimate(self.state, action, step)
-                for action in self.actions
-            ]
+            values = [self.qec.estimate(self.state, action) for action in self.actions]
             best_actions = np.argwhere(values == np.max(values)).flatten()
             self.action = self.rs.choice(best_actions)
-            # print(f"In {observation}, got values {values} and picked {self.action}")
 
         return self.action
 
-    def receive_reward(self, reward, step):
+    def receive_reward(self, reward):
         self.memory.append(
             {
                 "state": self.state,
                 "action": self.action,
                 "reward": reward,
-                "time": self.time,
-                "step": step,
             }
         )
 
@@ -131,8 +125,6 @@ class MFECAgent:
                     experience["state"],
                     experience["action"],
                     value,
-                    experience["time"],
-                    experience["step"],
                 )
 
         # Normalize
@@ -142,6 +134,7 @@ class MFECAgent:
 
         # Decay e linearly
         if self.epsilon > 0:
+            print(self.epsilon)
             self.epsilon -= self.epsilon_decay
 
     def save(self, results_dir):
