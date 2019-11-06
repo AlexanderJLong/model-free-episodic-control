@@ -29,16 +29,12 @@ from mfec.utils import Utils
 import argparse
 from multiprocessing import Pool
 
-parser = argparse.ArgumentParser()
-parser.add_argument("environment")
-args = parser.parse_args()
-print(args.environment)
 
 # GLOBAl VARS FIXED FOR EACH RUN
 TITLE = "Noautonorm"
 EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
-FRAMES_PER_EPOCH = 10_000
+FRAMES_PER_EPOCH = 5_000
 
 config = {
     "EXP-SKIP": 1,
@@ -90,7 +86,7 @@ def main(cfg):
     env = pixel_state_wrapper(env)
 
     from baselines.common.atari_wrappers import make_atari, wrap_deepmind
-    env = make_atari('BreakoutNoFrameskip-v4')
+    env = make_atari('MsPacmanNoFrameskip-v4')
     env = wrap_deepmind(env, frame_stack=True, scale=False)
 
     print(env.observation_space.shape)
