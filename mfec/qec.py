@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
-import numpy as np
-from sklearn.neighbors.dist_metrics import DistanceMetric
-from sklearn.neighbors.kd_tree import KDTree
-import matplotlib.pyplot as plt
 import hnswlib
-from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 class QEC:
     def __init__(self, actions, buffer_size, k, kernel_type, kernel_width, state_dim):
@@ -59,7 +57,7 @@ class QEC:
         if dists[0] == 0:
             return buffer.values[neighbors[0]]
 
-        w = [1/d for d in dists]
+        w = [1 / d for d in dists]
 
         value = 0
         for i, neighbor in enumerate(neighbors):
@@ -125,7 +123,7 @@ class QEC:
         else:
             ax1 = fig.add_subplot(111, projection='3d')
             fig.set_tight_layout(True)
-            maps= ["Blues", "Reds"]
+            maps = ["Blues", "Reds"]
             for i in range(2):
                 data = self.buffers[i]
                 states = np.asarray(data.get_states())
@@ -136,6 +134,7 @@ class QEC:
             ax1.set(ylabel="Angle")
             ax1.set(zlabel="Position")
         plt.show()
+
 
 class ActionBuffer:
     def __init__(self, capacity, state_dim):
@@ -156,16 +155,14 @@ class ActionBuffer:
         return self._tree.knn_query(np.asarray(state), k=k)
 
     def add(self, state, value):
-        # must be a vectorized soln for this
-        i = 0
-        idx = 0
-        for r in np.asarray(self.get_states()):
-            if np.allclose(r, state):
-                idx = i
-                break
-            i+=1
+        if len(self.get_states()) > 20:
+            idx, dist = self.find_neighbors(state, 1)
+            idx = idx[0][0]
+            dist = dist[0][0]
+        else:
+            dist = 10
 
-        if idx:
+        if dist < 1e-6:
             self.values[idx] = max(value, self.values[idx])
         else:
             self.values.append(value)
