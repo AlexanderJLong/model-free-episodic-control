@@ -34,6 +34,10 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
+eval_steps = 5000
+total_steps = 100_000
+test_eps = 6
+
 config = {
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
@@ -107,15 +111,14 @@ def main(cfg):
         projection_type=cfg["PROJECTION-TYPE"],
     )
 
-    eval_steps = 2000
-    total_steps = 100_000
+
     env.train()  # turn on episodic life
     observation = env.reset()
     trace = []
     for step in tqdm(list(range(total_steps))):
 
-        if step % eval_steps == 0:
-            test_agent(agent, env, test_eps=5, utils=utils, train_step=step)
+        if step % eval_steps == 0 and step:
+            tqdm.write(test_agent(agent, env, test_eps=test_eps, utils=utils, train_step=step))
 
         # Act, and add
         action, state = agent.choose_action(observation)
@@ -153,13 +156,12 @@ def test_agent(agent, env, test_eps, utils, train_step):
             R += r
 
         utils.end_episode(0, R)
-    utils.end_epoch(train_step)
-
+    msg = utils.end_epoch(train_step)
     # Revert to training
     agent.training = True
     env.train()
 
-    return
+    return msg
 
 
 if __name__ == "__main__":

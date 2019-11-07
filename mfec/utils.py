@@ -57,13 +57,14 @@ class Utils:
             "Reward Sum: {}\tReward Avg: {}\tReward Max: {}\n"
         )
         results = results + [self.total_frames, self.max_frames]
-        print(message.format(*results))
+
 
         self.epoch += 1
         self.epoch_episodes = 0
         self.epoch_frames = 0
         self.epoch_reward_sum = 0
         self.epoch_reward_max = 0
+        return message.format(*results)
 
     def close(self):
         self.results_file.close()

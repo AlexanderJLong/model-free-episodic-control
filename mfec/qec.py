@@ -156,8 +156,20 @@ class ActionBuffer:
         return self._tree.knn_query(np.asarray(state), k=k)
 
     def add(self, state, value):
-        self.values.append(value)
-        self._tree.add_items(state)
+        # must be a vectorized soln for this
+        i = 0
+        idx = 0
+        for r in np.asarray(self.get_states()):
+            if np.allclose(r, state):
+                idx = i
+                break
+            i+=1
+
+        if idx:
+            self.values[idx] = max(value, self.values[idx])
+        else:
+            self.values.append(value)
+            self._tree.add_items(state)
 
     def get_states(self):
         return self._tree.get_items(range(0, len(self)))
