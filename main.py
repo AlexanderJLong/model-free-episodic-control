@@ -15,10 +15,8 @@ with different arugments. k
 """
 
 import os
-import random
 from time import gmtime, strftime
 import shutil
-import gym
 import itertools
 import numpy as np
 from glob import glob
@@ -28,8 +26,6 @@ from tqdm import tqdm
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
-import argparse
-from collections import deque
 from multiprocessing import Pool
 
 # GLOBAl VARS FIXED FOR EACH RUN
@@ -83,16 +79,14 @@ def main(cfg):
 
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
 
-    #from baselines.common.atari_wrappers import make_atari, wrap_deepmind
-    #env = make_atari('MsPacmanNoFrameskip-v4')
-    #env = wrap_deepmind(env, frame_stack=True, scale=False, clip_rewards=False)
+    # from baselines.common.atari_wrappers import make_atari, wrap_deepmind
+    # env = make_atari('MsPacmanNoFrameskip-v4')
+    # env = wrap_deepmind(env, frame_stack=True, scale=False, clip_rewards=False)
 
-    #Create env
-    import atari_py
+    # Create env
     from rainbow_env import Env
     env = Env(seed=cfg["SEED"], game='ms_pacman')
     env.eval()
-
 
     print(env.reset().shape)
     obv_dim = np.prod(env.reset().shape)
@@ -112,42 +106,60 @@ def main(cfg):
         kernel_width=cfg["KERNEL-WIDTH"],
         projection_type=cfg["PROJECTION-TYPE"],
     )
-    run_algorithm(agent, env, utils)
 
-
-def run_algorithm(agent, env, utils):
-    frames_left = 0
-    for e in range(EPOCHS):
-        frames_left += FRAMES_PER_EPOCH
-        while frames_left > 0:
-            episode_frames, episode_reward = run_episode(agent, env)
-            frames_left -= episode_frames
-            utils.end_episode(episode_frames, episode_reward)
-        utils.end_epoch()
-
-
-def run_episode(agent, env):
-    episode_frames = 0
-    episode_reward = 0
-
-    #env.seed(random.randint(0, 1000000))
+    eval_steps = 2000
+    total_steps = 100_000
+    env.train()  # turn on episodic life
     observation = env.reset()
+    trace = []
+    for step in tqdm(list(range(total_steps))):
 
-    done = False
-    while not done:
-        action = agent.choose_action(observation)
+        if step % eval_steps == 0:
+            test_agent(agent, env, test_eps=5, utils=utils, train_step=step)
+
+        # Act, and add
+        action, state = agent.choose_action(observation)
         observation, reward, done = env.step(action)
+        trace.append(
+            {
+                "state": state,
+                "action": action,
+                "reward": reward,
+            }
+        )
 
-        agent.receive_reward(reward)
+        if done:
+            agent.train(trace)
 
-        episode_reward += reward
-        episode_frames += 1
-    agent.train()
+            # Reset agent and environment
+            observation = env.reset()
 
-    # agent.qec.plot_scatter()
-    # agent.qec.plot3d(both=False, diff=False)
 
-    return episode_frames, episode_reward
+def test_agent(agent, env, test_eps, utils, train_step):
+    """
+    Test the main agent, as well as its two sub-agents over 1 episode
+    """
+    # No exploration and no episodic life
+    agent.training = False
+    env.eval()
+
+    for e in range(test_eps):
+        s = env.reset()
+        done = False
+        R = 0
+        while not done:
+            a, _ = agent.choose_action(s)
+            s, r, done = env.step(a)
+            R += r
+
+        utils.end_episode(0, R)
+    utils.end_epoch(train_step)
+
+    # Revert to training
+    agent.training = True
+    env.train()
+
+    return
 
 
 if __name__ == "__main__":

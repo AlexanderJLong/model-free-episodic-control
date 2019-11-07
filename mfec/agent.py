@@ -31,6 +31,8 @@ class MFECAgent:
         self.actions = actions
         self.qec = QEC(self.actions, buffer_size, k, kernel_type, kernel_width, state_dimension)
 
+        self.training = True # set to false to act greedily
+
         if projection_type == 0:
             self.projection = np.eye(state_dimension)[:, :observation_dim]
         elif projection_type == 1:
@@ -94,7 +96,7 @@ class MFECAgent:
         # self.state = observation
 
         # Exploration
-        if self.rs.random_sample() < self.epsilon:
+        if self.rs.random_sample() < self.epsilon and self.training:
             self.action = self.rs.choice(self.actions)
 
         # Exploitation
@@ -103,29 +105,19 @@ class MFECAgent:
             best_actions = np.argwhere(values == np.max(values)).flatten()
             self.action = self.rs.choice(best_actions)
 
-        return self.action
+        return self.action, self.state
 
-    def receive_reward(self, reward):
-        self.memory.append(
-            {
-                "state": self.state,
-                "action": self.action,
-                "reward": reward,
-            }
-        )
-
-    def train(self):
-        self.rewards_received += 1
+    def train(self, trace):
+        # Takes trace object: a list of dicts {"state", "action", "reward"}
         value = 0.0
-        for _ in range(len(self.memory)):
-            experience = self.memory.pop()
+        for _ in range(len(trace)):
+            experience = trace.pop()
             value = value * self.discount + experience["reward"]
-            if self.rewards_received % self.exp_skip == 0:
-                self.qec.update(
-                    experience["state"],
-                    experience["action"],
-                    value,
-                )
+            self.qec.update(
+                experience["state"],
+                experience["action"],
+                value,
+            )
 
         # Normalize
         if self.autonormalization_frequency is not 0:

@@ -36,15 +36,15 @@ class Utils:
             self.epoch_frames,
             self.frames_per_epoch,
         ]
-        print(message.format(*results))
+        #print(message.format(*results))
 
-    def end_epoch(self):
+    def end_epoch(self, steps):
         """Save the results for the given epoch in the results-file"""
         results = [
             self.epoch,
             self.epoch_episodes,
             self.total_frames,
-            self.frames_per_epoch*self.epoch,
+            steps,
             int(self.epoch_reward_sum),
             round(self.epoch_reward_sum / self.epoch_episodes),
             int(self.epoch_reward_max),
