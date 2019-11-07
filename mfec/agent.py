@@ -124,9 +124,10 @@ class MFECAgent:
             if not self.rewards_received % self.autonormalization_frequency:
                 self.qec.autonormalize()
 
-        # Decay e linearly
+        # Decay e exponentially
         if self.epsilon > 0:
-            self.epsilon -= self.epsilon_decay
+            self.epsilon /= 1+self.epsilon_decay
+            print(self.epsilon)
 
     def save(self, results_dir):
         with open(os.path.join(results_dir, "agent.pkl"), "wb") as file:

@@ -34,21 +34,21 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 5000
+eval_steps = 10000
 total_steps = 100_000
-test_eps = 6
+test_eps = 7
 
 config = {
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
     "K": 16,
     "DISCOUNT": 1,
-    "EPSILON": 1,
-    "EPS-DECAY": 0.001,
+    "EPSILON": 0.0,
+    "EPS-DECAY": 0.01,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 64,
+    "STATE-DIM": 32,
     "PROJECTION-TYPE": 3,
     "SEED": [1, 2, 3],
 }
