@@ -23,6 +23,8 @@ import itertools
 import numpy as np
 from glob import glob
 
+from tqdm import tqdm
+
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
@@ -81,12 +83,19 @@ def main(cfg):
 
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
 
-    from baselines.common.atari_wrappers import make_atari, wrap_deepmind
-    env = make_atari('MsPacmanNoFrameskip-v4')
-    env = wrap_deepmind(env, frame_stack=True, scale=False, clip_rewards=False)
+    #from baselines.common.atari_wrappers import make_atari, wrap_deepmind
+    #env = make_atari('MsPacmanNoFrameskip-v4')
+    #env = wrap_deepmind(env, frame_stack=True, scale=False, clip_rewards=False)
 
-    print(env.observation_space.shape)
-    obv_dim = np.prod(env.observation_space.shape)
+    #Create env
+    import atari_py
+    from rainbow_env import Env
+    env = Env(seed=cfg["SEED"], game='ms_pacman')
+    env.eval()
+
+
+    print(env.reset().shape)
+    obv_dim = np.prod(env.reset().shape)
     agent = MFECAgent(
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
         k=cfg["K"],
@@ -94,7 +103,7 @@ def main(cfg):
         epsilon=cfg["EPSILON"],
         observation_dim=obv_dim,
         state_dimension=cfg["STATE-DIM"],
-        actions=range(env.action_space.n),
+        actions=range(len(env.actions)),
         seed=cfg["SEED"],
         exp_skip=cfg["EXP-SKIP"],
         autonormalization_frequency=cfg["NORM-FREQ"],
@@ -116,25 +125,18 @@ def run_algorithm(agent, env, utils):
             utils.end_episode(episode_frames, episode_reward)
         utils.end_epoch()
 
-        # agent.save(agent_dir)
-        # agent.qec.plot3d(both=False, diff=False)
-        # agent.qec.plot_scatter()
-        if e > EPOCHS_TILL_VIS:
-            agent.qec.plot_scatter()
-            agent.qec.plot3d(both=False, diff=False)
-
 
 def run_episode(agent, env):
     episode_frames = 0
     episode_reward = 0
 
-    env.seed(random.randint(0, 1000000))
+    #env.seed(random.randint(0, 1000000))
     observation = env.reset()
 
     done = False
     while not done:
         action = agent.choose_action(observation)
-        observation, reward, done, _ = env.step(action)
+        observation, reward, done = env.step(action)
 
         agent.receive_reward(reward)
 
@@ -165,8 +167,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    main(all_configs[0])
+    exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)
