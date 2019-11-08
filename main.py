@@ -36,20 +36,21 @@ FRAMES_PER_EPOCH = 5_000
 
 eval_steps = 10000
 total_steps = 100_000
-test_eps = 7
+test_eps = 3
 
 config = {
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
-    "K": 16,
+    "K": 3,
     "DISCOUNT": 1,
     "EPSILON": 0.0,
     "EPS-DECAY": 0.01,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 32,
+    "STATE-DIM": 16,
     "PROJECTION-TYPE": 3,
+    "LAST_FRAME_ONLY": True,
     "SEED": [1, 2, 3],
 }
 """Projection type:
@@ -88,8 +89,12 @@ def main(cfg):
     # env = wrap_deepmind(env, frame_stack=True, scale=False, clip_rewards=False)
 
     # Create env
-    from rainbow_env import Env
-    env = Env(seed=cfg["SEED"], game='ms_pacman')
+    if cfg["LAST_FRAME_ONLY"]:
+        from rainbow_env import EnvLastFrameOnly
+        env = EnvLastFrameOnly(seed=cfg["SEED"], game='ms_pacman')
+    else:
+        from rainbow_env import Env
+        env = Env(seed=cfg["SEED"], game='ms_pacman')
     env.eval()
 
     print(env.reset().shape)
@@ -115,9 +120,9 @@ def main(cfg):
     env.train()  # turn on episodic life
     observation = env.reset()
     trace = []
-    for step in tqdm(list(range(total_steps))):
+    for step in tqdm(list(range(total_steps+1))):
 
-        if step % eval_steps == 0 and step:
+        if step % eval_steps == 0:
             tqdm.write(test_agent(agent, env, test_eps=test_eps, utils=utils, train_step=step))
 
         # Act, and add

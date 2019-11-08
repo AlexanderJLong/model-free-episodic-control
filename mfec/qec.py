@@ -41,7 +41,6 @@ class QEC:
         return
 
     def estimate(self, state, action):
-        state = (state - self.mu) / self.sig
 
         buffer = self.buffers[action]
         if len(buffer) < self.k:
@@ -66,7 +65,6 @@ class QEC:
         return value / sum(w)
 
     def update(self, state, action, value):
-        state = (state - self.mu) / self.sig
         buffer = self.buffers[action]
         buffer.add(state, value)
 
