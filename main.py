@@ -39,6 +39,7 @@ total_steps = 100_000
 test_eps = 3
 
 config = {
+    "ENV": "ms_pacman",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
     "K": 3,
@@ -48,7 +49,7 @@ config = {
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 16,
+    "STATE-DIM": 2,
     "PROJECTION-TYPE": 3,
     "LAST_FRAME_ONLY": True,
     "SEED": [1, 2, 3],
@@ -91,10 +92,10 @@ def main(cfg):
     # Create env
     if cfg["LAST_FRAME_ONLY"]:
         from rainbow_env import EnvLastFrameOnly
-        env = EnvLastFrameOnly(seed=cfg["SEED"], game='ms_pacman')
+        env = EnvLastFrameOnly(seed=cfg["SEED"], game=cfg["ENV"])
     else:
         from rainbow_env import Env
-        env = Env(seed=cfg["SEED"], game='ms_pacman')
+        env = Env(seed=cfg["SEED"], game=cfg["ENV"])
     env.eval()
 
     print(env.reset().shape)
@@ -186,8 +187,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    main(all_configs[0])
-    exit()
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)
