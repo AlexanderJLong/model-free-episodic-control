@@ -14,32 +14,6 @@ class QEC:
         self.kernel_width = kernel_width
         self.kernel_type = kernel_type
 
-    def get_mu_and_sig(self):
-        """get the average mean and std deviation of each dim over all buffers"""
-        mus = []
-        sigs = []
-        for buff in self.buffers:
-            states = buff.get_states()
-            mus.append(np.mean(states, axis=0))
-            sigs.append(np.std(states, axis=0))
-        return np.mean(np.asarray(mus), axis=0), np.mean(np.asarray(sigs), axis=0)
-
-    def autonormalize(self):
-        """NOTE: NO MU - won't work if state vars arent centered
-        should really check all buffer sizes as well, but this might be slow"""
-        if len(self.buffers[0]) <= self.k:
-            return
-        """change all states, in all buffers, to refect the changes in scaling factors"""
-        mu, sig = self.get_mu_and_sig()
-        sig[sig == 0] = 1
-        for buff in self.buffers:
-            # Recreate the buffer and fill it again
-            states = (buff.get_states() - mu) / sig
-            buff.reset(states)
-        self.mu = self.mu + self.mu / self.sig
-        self.sig = sig * self.sig
-        return
-
     def estimate(self, state, action):
 
         buffer = self.buffers[action]

@@ -119,11 +119,6 @@ class MFECAgent:
                 value,
             )
 
-        # Normalize
-        if self.autonormalization_frequency is not 0:
-            if not self.rewards_received % self.autonormalization_frequency:
-                self.qec.autonormalize()
-
         # Decay e exponentially
         if self.epsilon > 0:
             self.epsilon /= 1+self.epsilon_decay

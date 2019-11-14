@@ -15,7 +15,6 @@ with different arugments. k
 """
 
 import os
-from time import gmtime, strftime
 import shutil
 import itertools
 import numpy as np
@@ -29,19 +28,19 @@ from mfec.utils import Utils
 from multiprocessing import Pool
 
 # GLOBAl VARS FIXED FOR EACH RUN
-TITLE = "Noautonorm"
+TITLE = "knn"
 EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 10000
-total_steps = 100_000
+eval_steps = 10_000
+total_steps = 1_000_000
 test_eps = 3
 
 config = {
-    "ENV": "ms_pacman",
+    "ENV": ["pong"],
     "EXP-SKIP": 1,
-    "ACTION-BUFFER-SIZE": 100_000,
+    "ACTION-BUFFER-SIZE": 1_000_000,
     "K": 3,
     "DISCOUNT": 1,
     "EPSILON": 0.0,
@@ -68,26 +67,19 @@ config = {
 
 
 def main(cfg):
-    print(cfg)
     # Create agent-directory
     config_string = ""
     for param in cfg:
-        config_string += "_" + param + "=" + str(cfg[param])
+        config_string += param + "=" + str(cfg[param]) + ":"
 
-    if TITLE:
-        agent_dir = os.path.join("agents", TITLE + config_string)
-    else:
-        execution_time = strftime("%Y-%m-%d-%H%M%S", gmtime())
-        agent_dir = os.path.join("agents", f"{execution_time}" + config_string)
+    agent_dir = os.path.join("agents", config_string)
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent
 
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
 
-    # from baselines.common.atari_wrappers import make_atari, wrap_deepmind
-    # env = make_atari('MsPacmanNoFrameskip-v4')
-    # env = wrap_deepmind(env, frame_stack=True, scale=False, clip_rewards=False)
+    np.random.seed(cfg["SEED"])
 
     # Create env
     if cfg["LAST_FRAME_ONLY"]:
@@ -98,7 +90,7 @@ def main(cfg):
         env = Env(seed=cfg["SEED"], game=cfg["ENV"])
     env.eval()
 
-    print(env.reset().shape)
+    print(f"Started {cfg['ENV']} seed {cfg['SEED']}")
     obv_dim = np.prod(env.reset().shape)
     agent = MFECAgent(
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
@@ -117,11 +109,10 @@ def main(cfg):
         projection_type=cfg["PROJECTION-TYPE"],
     )
 
-
     env.train()  # turn on episodic life
     observation = env.reset()
     trace = []
-    for step in tqdm(list(range(total_steps+1))):
+    for step in tqdm(list(range(total_steps + 1))):
 
         if step % eval_steps == 0:
             tqdm.write(test_agent(agent, env, test_eps=test_eps, utils=utils, train_step=step))
@@ -171,12 +162,11 @@ def test_agent(agent, env, test_eps, utils, train_step):
 
 
 if __name__ == "__main__":
-    if TITLE:
-        # Clear all dirs with the same title before spawning subprocs.
-        base_dirs = glob("./agents/" + TITLE + "*")
-        print(base_dirs)
-        for d in base_dirs:
-            shutil.rmtree(d)
+
+    # Clear all dirs before spawning subprocs.
+    base_dirs = glob("./agents/*")
+    for d in base_dirs:
+        shutil.rmtree(d)
 
     config_vals = list(config.values())
     for i, val in enumerate(config_vals):
@@ -187,8 +177,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    # main(all_configs[0])
+    # exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

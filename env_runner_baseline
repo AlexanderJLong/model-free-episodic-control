@@ -1,0 +1,13 @@
+from rainbow_env import EnvLastFrameOnly
+env = EnvLastFrameOnly(seed=1, game="ms_pacman")
+
+from tqdm import tqdm
+
+done = True
+
+for i in tqdm(range(100_000)):
+    if done:
+        s = env.reset()
+    R = 0
+    s, r, done = env.step(0)
+    R += r
