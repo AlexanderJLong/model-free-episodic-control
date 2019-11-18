@@ -34,21 +34,49 @@ EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
 eval_steps = 10_000
-total_steps = 1_000_000
+total_steps = 100_000
 test_eps = 3
 
+env_list = [
+    "alien",
+    "amidar",
+    "assault",
+    "asterix",
+    "bank_heist",
+    "battle_zone",
+    "boxing",
+    "breakout",
+    "chopper_command",
+    "crazy_climber",
+    "demon_attack",
+    "freeway",
+    "frostbite",
+    "gopher",
+    "hero",
+    "jamesbond",
+    "kangaroo",
+    "krull",
+    "kung_fu_master",
+    "ms_pacman",
+    "pong",
+    "private_eye",
+    "qbert",
+    "road_runner",
+    "seaquest",
+    "up_n_down",
+]
 config = {
-    "ENV": ["ms_pacman"],
+    "ENV": "alien",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
-    "K": 1,
+    "K": 3,
     "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.02,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 3,
+    "STATE-DIM": 5,
     "PROJECTION-TYPE": 3,
     "LAST_FRAME_ONLY": True,
     "NORMENV": True,

@@ -119,13 +119,14 @@ class ActionBuffer:
         self.state_dim = state_dim
         self.capacity = capacity
         self._tree = hnswlib.Index(space='l2', dim=state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=capacity, ef_construction=200, M=16)
+        self._tree.init_index(max_elements=capacity, ef_construction=200, M=24)
         self.values = []
+
 
     def reset(self, data):
         """Reset the buffer with just the data provided"""
         self._tree = hnswlib.Index(space='l2', dim=self.state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=self.capacity, ef_construction=40, M=16)
+        self._tree.init_index(max_elements=self.capacity, ef_construction=200, M=24)
         self._tree.add_items(data)
 
     def find_neighbors(self, state, k):
