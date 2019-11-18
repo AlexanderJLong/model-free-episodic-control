@@ -96,7 +96,7 @@ class Env:
 
 
 class EnvLastFrameOnly:
-    def __init__(self, seed, game):
+    def __init__(self, seed, game, normalize):
         self.ale = atari_py.ALEInterface()
         self.ale.setInt('random_seed', seed)
         self.ale.setInt('max_num_frames_per_episode', int(108e3))
@@ -108,12 +108,15 @@ class EnvLastFrameOnly:
         self.actions = dict([i, e] for i, e in zip(range(len(actions)), actions))
         self.lives = 0  # Life counter (used in DeepMind training)
         self.life_termination = False  # Used to check if resetting only from loss of life
-        self.window = 4  # Number of frames to concatenate
         self.training = True  # Consistent with model training mode
+        self.normalize = normalize
 
     def _get_state(self):
         state = cv2.resize(self.ale.getScreenGrayscale(), (84, 84), interpolation=cv2.INTER_LINEAR)
-        return state/255
+        if self.normalize:
+            return state/255
+        else:
+            return np.asarray(state, dtype=np.uint8)
 
     def reset(self):
         if self.life_termination:

@@ -31,7 +31,7 @@ class MFECAgent:
         self.actions = actions
         self.qec = QEC(self.actions, buffer_size, k, kernel_type, kernel_width, state_dimension)
 
-        self.training = True # set to false to act greedily
+        self.training = True  # set to false to act greedily
 
         if projection_type == 0:
             self.projection = np.eye(state_dimension)[:, :observation_dim]
@@ -56,25 +56,7 @@ class MFECAgent:
                     else:
                         r.append(-1)
                 m.append(r)
-            self.projection = np.asarray(m)
-        elif projection_type == 4:
-            self.projection = np.asarray([
-                [1, 0, 0, 0],
-                [0, 1, 0, 0],
-                [0, 0, 10, 0],
-                [0, 0, 0, 1]])
-        elif projection_type == 5:
-            self.projection = np.asarray([
-                [0.5, 0.5, 0, 0],
-                [0, 0.5, 0.5, 0],
-                [0, 0, 0.5, 0.5],
-                [0.5, 0, 0, 0.5]])
-        elif projection_type == 6:
-            self.projection = np.asarray([
-                [1, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 0, 10, 0],
-                [0, 0, 0, 1]])
+            self.projection = np.asarray(m, dtype=np.int16)
 
         print(self.projection.shape)
         self.discount = discount
@@ -121,7 +103,7 @@ class MFECAgent:
 
         # Decay e exponentially
         if self.epsilon > 0:
-            self.epsilon /= 1+self.epsilon_decay
+            self.epsilon /= 1 + self.epsilon_decay
             print(self.epsilon)
 
     def save(self, results_dir):

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-from pyvirtualdisplay import Display
-
-display = Display(visible=0, size=(80, 60))
-display.start()
+#from pyvirtualdisplay import Display
+#
+#display = Display(visible=0, size=(80, 60))
+#display.start()
 
 """
 HOW TO RUN:
@@ -38,19 +38,20 @@ total_steps = 1_000_000
 test_eps = 3
 
 config = {
-    "ENV": ["pong"],
+    "ENV": ["ms_pacman"],
     "EXP-SKIP": 1,
-    "ACTION-BUFFER-SIZE": 1_000_000,
-    "K": 3,
+    "ACTION-BUFFER-SIZE": 100_000,
+    "K": 1,
     "DISCOUNT": 1,
-    "EPSILON": 0.0,
-    "EPS-DECAY": 0.01,
+    "EPSILON": 0,
+    "EPS-DECAY": 0.02,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 2,
+    "STATE-DIM": 3,
     "PROJECTION-TYPE": 3,
     "LAST_FRAME_ONLY": True,
+    "NORMENV": True,
     "SEED": [1, 2, 3],
 }
 """Projection type:
@@ -58,13 +59,7 @@ config = {
 1: Random gau
 2: orthogonal random
 3: archoplas
-4: scale one
-5: invert 1
 """
-
-
-# STATE_DIMENSION = 4
-
 
 def main(cfg):
     # Create agent-directory
@@ -76,21 +71,20 @@ def main(cfg):
     os.makedirs(agent_dir)
 
     # Initialize utils, environment and agent
-
     utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
 
+    # FIX SEEDING
     np.random.seed(cfg["SEED"])
 
     # Create env
     if cfg["LAST_FRAME_ONLY"]:
         from rainbow_env import EnvLastFrameOnly
-        env = EnvLastFrameOnly(seed=cfg["SEED"], game=cfg["ENV"])
+        env = EnvLastFrameOnly(seed=cfg["SEED"], game=cfg["ENV"], normalize=cfg["NORMENV"])
     else:
         from rainbow_env import Env
         env = Env(seed=cfg["SEED"], game=cfg["ENV"])
-    env.eval()
-
     print(f"Started {cfg['ENV']} seed {cfg['SEED']}")
+
     obv_dim = np.prod(env.reset().shape)
     agent = MFECAgent(
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
@@ -116,6 +110,8 @@ def main(cfg):
 
         if step % eval_steps == 0:
             tqdm.write(test_agent(agent, env, test_eps=test_eps, utils=utils, train_step=step))
+            #agent.qec.plot3d(both=True, diff=False)
+
 
         # Act, and add
         action, state = agent.choose_action(observation)
@@ -177,8 +173,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    # main(all_configs[0])
-    # exit()
+    main(all_configs[0])
+    exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

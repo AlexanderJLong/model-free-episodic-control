@@ -57,8 +57,12 @@ env_dirs = glob("./agents/*SEED=1*/")
 envs = set([d.replace("=", ":").split(":")[1] for d in env_dirs])
 print(envs)
 
-ncols = len(envs) // 2 + 1
-nrows = len(envs) // ncols
+if len(envs) > 1:
+    ncols = len(envs) // 2 + 1
+    nrows = len(envs) // ncols
+else:
+    ncols = 1
+    nrows = 1
 #plt.subplots(constrained_layout=True)
 for i, env in enumerate(envs):
     data = []

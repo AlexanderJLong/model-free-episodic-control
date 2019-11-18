@@ -3,6 +3,7 @@
 import hnswlib
 import matplotlib.pyplot as plt
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 
 
 class QEC:
@@ -15,14 +16,14 @@ class QEC:
         self.kernel_type = kernel_type
 
     def estimate(self, state, action):
+        """Return the estimated value of the given state"""
 
         buffer = self.buffers[action]
         if len(buffer) < self.k:
             return float("inf")
 
         neighbors, dists = buffer.find_neighbors(state, self.k)
-
-        # Strip batch dim
+        # Strip batch dim. Note dists is already ordered.
         dists = dists[0]
         neighbors = neighbors[0]
 
@@ -93,19 +94,24 @@ class QEC:
             return
 
         else:
-            ax1 = fig.add_subplot(111, projection='3d')
-            fig.set_tight_layout(True)
-            maps = ["Blues", "Reds"]
-            for i in range(2):
-                data = self.buffers[i]
-                states = np.asarray(data.get_states())
-                vals = np.asarray(data.values)
-                ax1.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals, cmap=maps[i])
+            if len(self.buffers[0].values) < 10:
+                return
+            num_actions = len(self.buffers)
+            cols = 4
+            rows = num_actions // cols + 1
+            max_r = max([max(b.values) for b in self.buffers])
+            for i in range(num_actions):
+                ax = fig.add_subplot(rows, cols, i+1, projection='3d')
 
-            ax1.set(xlabel="Vel")
-            ax1.set(ylabel="Angle")
-            ax1.set(zlabel="Position")
-        plt.show()
+                data = self.buffers[i]
+                states = np.asarray(data.get_states())[::]
+                if len(states) < 1:
+                    return
+                vals = np.asarray(data.values)[::]
+                ax.scatter(states[:, 0], states[:, 1], states[:, 2], c=vals, vmax=max_r)
+
+            plt.show()
+        return
 
 
 class ActionBuffer:
@@ -119,7 +125,7 @@ class ActionBuffer:
     def reset(self, data):
         """Reset the buffer with just the data provided"""
         self._tree = hnswlib.Index(space='l2', dim=self.state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=self.capacity, ef_construction=200, M=16)
+        self._tree.init_index(max_elements=self.capacity, ef_construction=40, M=16)
         self._tree.add_items(data)
 
     def find_neighbors(self, state, k):
@@ -127,7 +133,7 @@ class ActionBuffer:
         return self._tree.knn_query(np.asarray(state), k=k)
 
     def add(self, state, value):
-        if len(self.get_states()) > 20:
+        if self.values: # at least one sample in buffer
             idx, dist = self.find_neighbors(state, 1)
             idx = idx[0][0]
             dist = dist[0][0]
