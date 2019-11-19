@@ -8,7 +8,7 @@ import numpy as np
 
 
 class Env:
-    def __init__(self, seed, game):
+    def __init__(self, seed, game, buffer_size):
         self.ale = atari_py.ALEInterface()
         self.ale.setInt('random_seed', seed)
         self.ale.setInt('max_num_frames_per_episode', int(108e3))
@@ -20,8 +20,8 @@ class Env:
         self.actions = dict([i, e] for i, e in zip(range(len(actions)), actions))
         self.lives = 0  # Life counter (used in DeepMind training)
         self.life_termination = False  # Used to check if resetting only from loss of life
-        self.window = 4  # Number of frames to concatenate
-        self.state_buffer = deque([], maxlen=4)
+        self.window = buffer_size  # Number of frames to concatenate
+        self.state_buffer = deque([], maxlen=buffer_size)
         self.training = True  # Consistent with model training mode
 
     def _get_state(self):

@@ -29,7 +29,7 @@ class MFECAgent:
         self.rs = np.random.RandomState(seed)
         self.memory = []
         self.actions = actions
-        self.qec = QEC(self.actions, buffer_size, k, kernel_type, kernel_width, state_dimension)
+        self.qec = QEC(self.actions, buffer_size, k, kernel_type, kernel_width, state_dimension, seed)
 
         self.training = True  # set to false to act greedily
 

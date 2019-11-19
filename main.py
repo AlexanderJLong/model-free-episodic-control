@@ -19,6 +19,7 @@ import shutil
 import itertools
 import numpy as np
 from glob import glob
+import random
 
 from tqdm import tqdm
 
@@ -66,21 +67,22 @@ env_list = [
     "up_n_down",
 ]
 config = {
-    "ENV": "alien",
+    "ENV": "ms_pacman",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
-    "K": 3,
+    "K": 64,
     "DISCOUNT": 1,
-    "EPSILON": 0,
-    "EPS-DECAY": 0.02,
+    "EPSILON": 0.0,
+    "EPS-DECAY": 0.01,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 5,
+    "STATE-DIM": 128,
     "PROJECTION-TYPE": 3,
     "LAST_FRAME_ONLY": True,
-    "NORMENV": True,
+    "NORMENV": False,
     "SEED": [1, 2, 3],
+
 }
 """Projection type:
 0: Identity
@@ -103,6 +105,7 @@ def main(cfg):
 
     # FIX SEEDING
     np.random.seed(cfg["SEED"])
+    random.seed(cfg["SEED"])
 
     # Create env
     if cfg["LAST_FRAME_ONLY"]:
@@ -110,7 +113,7 @@ def main(cfg):
         env = EnvLastFrameOnly(seed=cfg["SEED"], game=cfg["ENV"], normalize=cfg["NORMENV"])
     else:
         from rainbow_env import Env
-        env = Env(seed=cfg["SEED"], game=cfg["ENV"])
+        env = Env(seed=cfg["SEED"], game=cfg["ENV"], buffer_size=2)
     print(f"Started {cfg['ENV']} seed {cfg['SEED']}")
 
     obv_dim = np.prod(env.reset().shape)
@@ -201,8 +204,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    main(all_configs[0])
-    exit()
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)
