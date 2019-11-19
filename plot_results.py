@@ -81,6 +81,6 @@ for i, env in enumerate(envs):
                     table.insert(len(table.columns), p, v)
             data.append(table)
     plot_data(data, smooth=1, compare=None, env_name=env)
-plt.tight_layout()
+#plt.tight_layout()
 plt.savefig(f"./plots/{env}.png")
 plt.show()

@@ -70,7 +70,7 @@ config = {
     "ENV": "ms_pacman",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
-    "K": 64,
+    "K": 3,
     "DISCOUNT": 1,
     "EPSILON": 0.0,
     "EPS-DECAY": 0.01,
@@ -195,6 +195,9 @@ if __name__ == "__main__":
     for d in base_dirs:
         shutil.rmtree(d)
 
+    # If a list of envs, run one after the other
+    if type(config["ENV"]) is list:
+        pass
     config_vals = list(config.values())
     for i, val in enumerate(config_vals):
         if type(val) is not list:
@@ -204,8 +207,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    main(all_configs[0])
+    exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

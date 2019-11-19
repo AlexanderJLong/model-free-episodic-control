@@ -124,8 +124,8 @@ class ActionBuffer:
         self.state_dim = state_dim
         self.capacity = capacity
         self._tree = hnswlib.Index(space='l2', dim=state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=capacity, ef_construction=10, M=64, random_seed=seed)
-        #self._tree.set_ef(3)
+        self._tree.init_index(max_elements=capacity, ef_construction=10, M=48, random_seed=seed)
+        self._tree.set_ef(128)
         self.values = []
 
     #def reset(self, data):
