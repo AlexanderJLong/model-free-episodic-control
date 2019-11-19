@@ -49,7 +49,7 @@ class Env:
         observation = self._get_state()
         self.state_buffer.append(observation)
         self.lives = self.ale.lives()
-        return np.asarray(self.state_buffer)
+        return np.asarray(self.state_buffer, dtype=np.float32) #Lower precision is faster
 
     def step(self, action):
         # Repeat action 4 times, max pool over last 2 frames
@@ -109,14 +109,16 @@ class EnvLastFrameOnly:
         self.lives = 0  # Life counter (used in DeepMind training)
         self.life_termination = False  # Used to check if resetting only from loss of life
         self.training = True  # Consistent with model training mode
+        self.np_type = np.float32 if normalize else np.uint8
         self.normalize = normalize
+        self.frame_buffer = np.zeros([2, 84, 84], dtype= self.np_type)
 
     def _get_state(self):
         state = cv2.resize(self.ale.getScreenGrayscale(), (84, 84), interpolation=cv2.INTER_LINEAR)
         if self.normalize:
-            return state/255
+            return np.asarray(state/255, dtype=self.np_type)
         else:
-            return np.asarray(state, dtype=np.uint8)
+            return np.asarray(state, dtype=self.np_type)
 
     def reset(self):
         if self.life_termination:
@@ -136,18 +138,18 @@ class EnvLastFrameOnly:
 
     def step(self, action):
         # Repeat action 4 times, max pool over last 2 frames
-        frame_buffer = np.zeros([2, 84, 84])
+
         reward, done = 0, False
         for t in range(4):
             reward += self.ale.act(self.actions.get(action))
             if t == 2:
-                frame_buffer[0] = self._get_state()
+                self.frame_buffer[0] = self._get_state()
             elif t == 3:
-                frame_buffer[1] = self._get_state()
+                self.frame_buffer[1] = self._get_state()
             done = self.ale.game_over()
             if done:
                 break
-        observation = np.asarray(frame_buffer).max(0)
+        observation = self.frame_buffer.max(0)
         # Detect loss of life as terminal in training mode
         if self.training:
             lives = self.ale.lives()

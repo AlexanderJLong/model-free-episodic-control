@@ -56,7 +56,7 @@ class MFECAgent:
                     else:
                         r.append(-1)
                 m.append(r)
-            self.projection = np.asarray(m, dtype=np.int16)
+            self.projection = np.asarray(m, dtype=np.int8)
 
         print(self.projection.shape)
         self.discount = discount
@@ -74,7 +74,7 @@ class MFECAgent:
         self.time += 1
 
         # Preprocess and project observation to state
-        self.state = np.dot(self.projection, np.asarray(observation, dtype=np.float32).flatten())
+        self.state = self.projection @ observation.flatten()
         # self.state = observation
 
         # Exploration
