@@ -67,7 +67,7 @@ env_list = [
     "up_n_down",
 ]
 config = {
-    "ENV": "ms_pacman",
+    "ENV": "asterix",
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
     "K": 3,
@@ -207,8 +207,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    main(all_configs[0])
-    exit()
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

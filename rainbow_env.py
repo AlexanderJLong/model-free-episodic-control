@@ -97,6 +97,10 @@ class Env:
 
 class EnvLastFrameOnly:
     def __init__(self, seed, game, normalize):
+        """
+        A few changes here from origional prepro - specifically the dtypes of the arrays are now ints.
+        Frame buffer is not recreated at every step, is just updated.
+        """
         self.ale = atari_py.ALEInterface()
         self.ale.setInt('random_seed', seed)
         self.ale.setInt('max_num_frames_per_episode', int(108e3))
@@ -138,7 +142,6 @@ class EnvLastFrameOnly:
 
     def step(self, action):
         # Repeat action 4 times, max pool over last 2 frames
-
         reward, done = 0, False
         for t in range(4):
             reward += self.ale.act(self.actions.get(action))

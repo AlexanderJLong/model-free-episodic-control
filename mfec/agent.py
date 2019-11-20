@@ -2,7 +2,7 @@
 
 import os.path
 import pickle
-
+from sklearn import random_projection
 import numpy as np
 
 from mfec.qec import QEC
@@ -58,7 +58,6 @@ class MFECAgent:
                 m.append(r)
             self.projection = np.asarray(m, dtype=np.int8)
 
-        print(self.projection.shape)
         self.discount = discount
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
@@ -69,12 +68,16 @@ class MFECAgent:
         self.rewards_received = 0
         self.exp_skip = exp_skip
         self.t = 0  # keep track of episode step
+        self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=False)
+        self.transformer.fit(np.random.rand(1, observation_dim))
 
     def choose_action(self, observation):
         self.time += 1
 
         # Preprocess and project observation to state
-        self.state = self.projection @ observation.flatten()
+        self.state = np.asarray(self.transformer.transform(np.expand_dims(observation.flatten(), axis=0)), dtype=np.int16)
+        #self.state = self.projection @ observation.flatten()
+        #print(self.state.dtype)
         # self.state = observation
 
         # Exploration
