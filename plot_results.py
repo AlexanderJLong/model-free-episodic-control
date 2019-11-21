@@ -16,7 +16,7 @@ filenames are: ..._K=1_SEED=1
  """
 
 
-def plot_data(data, env_name, xaxis='rounded_frames', value="reward_avg", smooth=1, compare="k"):
+def plot_data(data, env_name, xaxis='rounded_frames', value="reward_avg", smooth=1, compare="k", n=0):
     if smooth > 1:
         """
         smooth data with moving window average.
@@ -40,7 +40,7 @@ def plot_data(data, env_name, xaxis='rounded_frames', value="reward_avg", smooth
                         ci='sd',
                         estimator=np.mean,
                         hue=compare,
-                        # palette=sns.color_palette("Set1", n)
+                        palette=sns.color_palette("Set1", n)
                         )
     plot.set_title(env_name)
     plot.axes.set_xlim(0, )
@@ -80,7 +80,8 @@ for i, env in enumerate(envs):
                         print(f"seed {v}")
                     table.insert(len(table.columns), p, v)
             data.append(table)
-    plot_data(data, smooth=1, compare=None, env_name=env)
+    print(len(files))
+    plot_data(data, smooth=1, compare="K", env_name=env, n = len(files))
 #plt.tight_layout()
 plt.savefig(f"./plots/{env}.png")
 plt.show()
