@@ -80,8 +80,10 @@ for i, env in enumerate(envs):
                         print(f"seed {v}")
                     table.insert(len(table.columns), p, v)
             data.append(table)
-    print(len(files))
-    plot_data(data, smooth=1, compare="K", env_name=env, n = len(files))
+    print(len(base_dirs))
+
+    plot_data(data, smooth=1, compare="K", env_name=env, n = len(base_dirs))
+
 #plt.tight_layout()
 plt.savefig(f"./plots/{env}.png")
 plt.show()

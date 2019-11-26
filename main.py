@@ -35,7 +35,7 @@ EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
 eval_steps = 10_000
-total_steps = 100_000
+total_steps = 1_000_000
 test_eps = 3
 
 env_list = [
@@ -97,18 +97,18 @@ small_env_list = [
     "up_n_down",
 ]
 config = {
-    "ENV": env_list,
+    "ENV": "ms_pacman",
     "EXP-SKIP": 1,
-    "ACTION-BUFFER-SIZE": 100_000,
-    "K": [2, 16, 64, 320],
+    "ACTION-BUFFER-SIZE": 1_000_000,
+    "K": 16,
     "DISCOUNT": 1,
     "EPSILON": 0.0,
     "EPS-DECAY": 0.01,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 7056,
-    "PROJECTION-TYPE": 3,
+    "STATE-DIM": 64,
+    "PROJECTION-TYPE": 4,
     "LAST_FRAME_ONLY": True,
     "NORMENV": False,
     "SEED": [1, 2, 3],
@@ -119,6 +119,8 @@ config = {
 1: Random gau
 2: orthogonal random
 3: archoplas
+4: very sparse Achlioptas
+
 """
 
 def main(cfg):
