@@ -72,7 +72,7 @@ small_env_list = [
     "asterix",
 ]
 config = {
-    "ENV": env_list,
+    "ENV": small_env_list,
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
     "K": 16,
@@ -83,10 +83,10 @@ config = {
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
     "STATE-DIM": 64,
-    "DISTANCE": "l2",
+    "DISTANCE": ["l2", "cosine"],
     "LAST_FRAME_ONLY": True,
     "NORMENV": False,
-    "WEIGHTING": [0, 1, 2, 3],
+    "WEIGHTING": 0,
     "SEED": [1, 2, 3],
 
 }
