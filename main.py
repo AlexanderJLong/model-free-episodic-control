@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-#from pyvirtualdisplay import Display
+# from pyvirtualdisplay import Display
 #
-#display = Display(visible=0, size=(80, 60))
-#display.start()
+# display = Display(visible=0, size=(80, 60))
+# display.start()
 
 """
 HOW TO RUN:
@@ -14,19 +14,18 @@ To do a grid search, you can write a run script that calls this fn
 with different arugments. k
 """
 
-import os
-import shutil
 import itertools
-import numpy as np
-from glob import glob
+import os
 import random
+import shutil
+from glob import glob
+from multiprocessing import Pool
 
+import numpy as np
 from tqdm import tqdm
 
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
-
-from multiprocessing import Pool
 
 # GLOBAl VARS FIXED FOR EACH RUN
 TITLE = "knn"
@@ -67,14 +66,13 @@ env_list = [
     "up_n_down",
 ]
 
-
 small_env_list = [
     "alien",
     "amidar",
     "asterix",
 ]
 config = {
-    "ENV": "amidar",
+    "ENV": env_list,
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
     "K": 16,
@@ -88,7 +86,7 @@ config = {
     "DISTANCE": "l2",
     "LAST_FRAME_ONLY": True,
     "NORMENV": False,
-    "WEIGHTING": [0,1,2],
+    "WEIGHTING": [0, 1, 2, 3],
     "SEED": [1, 2, 3],
 
 }
@@ -106,6 +104,7 @@ Weighting:
 2: ^1/4
 3: std
 """
+
 
 def main(cfg):
     # Create agent-directory
@@ -157,8 +156,7 @@ def main(cfg):
 
         if step % eval_steps == 0:
             tqdm.write(test_agent(agent, env, test_eps=test_eps, utils=utils, train_step=step))
-            #agent.qec.plot3d(both=True, diff=False)
-
+            # agent.qec.plot3d(both=True, diff=False)
 
         # Act, and add
         action, state = agent.choose_action(observation)
@@ -223,8 +221,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    # main(all_configs[0])
+    # exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)
