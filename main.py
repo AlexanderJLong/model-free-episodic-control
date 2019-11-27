@@ -35,7 +35,7 @@ EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
 eval_steps = 10_000
-total_steps = 1_000_000
+total_steps = 100_000
 test_eps = 3
 
 env_list = [
@@ -71,35 +71,12 @@ env_list = [
 small_env_list = [
     "alien",
     "amidar",
-    "assault",
     "asterix",
-    "bank_heist",
-    "battle_zone",
-    "boxing",
-    "breakout",
-    "chopper_command",
-    "crazy_climber",
-    "demon_attack",
-    "freeway",
-    "frostbite",
-    "gopher",
-    "hero",
-    "jamesbond",
-    "kangaroo",
-    "krull",
-    "kung_fu_master",
-    "ms_pacman",
-    "pong",
-    "private_eye",
-    "qbert",
-    "road_runner",
-    "seaquest",
-    "up_n_down",
 ]
 config = {
-    "ENV": "ms_pacman",
+    "ENV": "amidar",
     "EXP-SKIP": 1,
-    "ACTION-BUFFER-SIZE": 1_000_000,
+    "ACTION-BUFFER-SIZE": 100_000,
     "K": 16,
     "DISCOUNT": 1,
     "EPSILON": 0.0,
@@ -108,9 +85,10 @@ config = {
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
     "STATE-DIM": 64,
-    "PROJECTION-TYPE": 4,
+    "DISTANCE": "l2",
     "LAST_FRAME_ONLY": True,
     "NORMENV": False,
+    "WEIGHTING": [0,1,2],
     "SEED": [1, 2, 3],
 
 }
@@ -120,7 +98,13 @@ config = {
 2: orthogonal random
 3: archoplas
 4: very sparse Achlioptas
+5: Scikit sparse random auto
 
+Weighting:
+0: log
+1: sqrt
+2: ^1/4
+3: std
 """
 
 def main(cfg):
@@ -142,7 +126,7 @@ def main(cfg):
     # Create env
     if cfg["LAST_FRAME_ONLY"]:
         from rainbow_env import EnvLastFrameOnly
-        env = EnvLastFrameOnly(seed=cfg["SEED"], game=cfg["ENV"], normalize=cfg["NORMENV"])
+        env = EnvLastFrameOnly(seed=cfg["SEED"], game=cfg["ENV"], normalize=cfg["NORMENV"], weighting=cfg["WEIGHTING"])
     else:
         from rainbow_env import Env
         env = Env(seed=cfg["SEED"], game=cfg["ENV"], buffer_size=2)
@@ -163,7 +147,7 @@ def main(cfg):
         epsilon_decay=cfg["EPS-DECAY"],
         kernel_type=cfg["KERNEL-TYPE"],
         kernel_width=cfg["KERNEL-WIDTH"],
-        projection_type=cfg["PROJECTION-TYPE"],
+        distance=cfg["DISTANCE"],
     )
 
     env.train()  # turn on episodic life

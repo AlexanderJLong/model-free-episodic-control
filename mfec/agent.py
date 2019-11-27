@@ -25,81 +25,36 @@ class MFECAgent:
             epsilon_decay,
             kernel_type,
             kernel_width,
-            projection_type,
+            distance,
     ):
         self.rs = np.random.RandomState(seed)
         self.memory = []
         self.actions = actions
-        self.qec = QEC(self.actions, buffer_size, k, kernel_type, kernel_width, state_dimension, seed)
+        self.qec = QEC(self.actions, buffer_size, k, kernel_type, kernel_width, state_dimension, distance, seed)
 
         self.training = True  # set to false to act greedily
 
-        if projection_type == 0:
-            self.projection = np.eye(state_dimension)[:, :observation_dim]
-        elif projection_type == 1:
-            self.projection = self.rs.randn(
-                state_dimension, observation_dim
-            ).astype(np.float32)
-        elif projection_type == 2:
-            self.projection = np.linalg.qr(self.rs.randn(
-                state_dimension, observation_dim
-            ).astype(np.float32))[0]
-        elif projection_type == 3:
-            m = []
-            for i in range(state_dimension):
-                r = []
-                for j in range(observation_dim):
-                    d = np.random.rand()
-                    if d < 1 / 6:
-                        r.append(1)
-                    elif d < 5 / 6:
-                        r.append(0)
-                    else:
-                        r.append(-1)
-                m.append(r)
-            self.projection = np.asarray(m, dtype=np.int8)
-        elif projection_type == 4:
-            m = []
-            D = observation_dim
-            p1 = 1 / (2 * np.sqrt(D))
-            p2 = 1 - 1 / (np.sqrt(D))
-            p3 = p1
-            print(p1, p2, p3)
-            for i in range(state_dimension):
-                r = []
-                for j in range(observation_dim):
-                    d = np.random.rand()
-                    if d < p1:
-                        r.append(1)
-                    elif d < p1+p2:
-                        r.append(0)
-                    else:
-                        r.append(-1)
-                m.append(r)
-            self.projection = np.asarray(m, dtype=np.int8)
+        self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=True)
+        self.transformer.fit(np.zeros([1, observation_dim]))
+        self.transformer.components_ = self.transformer.components_.astype(np.int8)
 
-        print(self.projection.shape)
+        #self.transformer.components_ /= np.sum(self.transformer.components_, axis=1)
+        #print(np.sum(self.transformer.components_, axis=1))
+        #print(self.transformer.components_.shape)
+
+
         self.discount = discount
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.autonormalization_frequency = autonormalization_frequency
-        self.state = np.empty(state_dimension, self.projection.dtype)
         self.action = int
-        self.time = 0
-        self.rewards_received = 0
-        self.exp_skip = exp_skip
-        self.t = 0  # keep track of episode step
-        self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=True)
-        self.transformer.fit(np.zeros([1, observation_dim], dtype=np.uint8))
-        self.transformer.components_ = self.transformer.components_.astype(np.int8)
-        print(self.transformer.components_.dtype)
 
     def choose_action(self, observation):
-        self.time += 1
 
         # Preprocess and project observation to state
         self.state = self.transformer.transform(observation.reshape(1, -1))
         #print(self.state)
+        # print(self.state)
         # self.state = observation.flatten()
         # print(self.transformer.components_.dtype)
         # self.state = np.asarray(self.state, dtype=np.int16)
@@ -108,14 +63,14 @@ class MFECAgent:
         # self.state = observation
 
         # Exploration
-        if self.rs.random_sample() < self.epsilon and self.training:
-            self.action = self.rs.choice(self.actions)
+        # if self.rs.random_sample() < self.epsilon and self.training:
+        #    self.action = self.rs.choice(self.actions)
 
         # Exploitation
-        else:
-            values = [self.qec.estimate(self.state, action) for action in self.actions]
-            best_actions = np.argwhere(values == np.max(values)).flatten()
-            self.action = self.rs.choice(best_actions)
+        # else:
+        values = [self.qec.estimate(self.state, action) for action in self.actions]
+        best_actions = np.argwhere(values == np.max(values)).flatten()
+        self.action = self.rs.choice(best_actions)
 
         return self.action, self.state
 

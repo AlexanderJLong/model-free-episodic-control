@@ -40,7 +40,8 @@ def plot_data(data, env_name, xaxis='rounded_frames', value="reward_avg", smooth
                         ci='sd',
                         estimator=np.mean,
                         hue=compare,
-                        palette=sns.color_palette("Set1", n)
+                        palette=sns.color_palette("Set1", n),
+                        sort=False,
                         )
     plot.set_title(env_name)
     plot.axes.set_xlim(0, )
@@ -55,7 +56,7 @@ envs = sorted(list(set([d.replace("=", ":").split(":")[1] for d in env_dirs])))
 print(envs)
 
 if len(envs) > 1:
-    ncols = len(envs) // 3
+    ncols = len(envs) // 2
     nrows = len(envs) // ncols + 1
 else:
     ncols = 1
@@ -82,8 +83,9 @@ for i, env in enumerate(envs):
             data.append(table)
     print(len(base_dirs))
 
-    plot_data(data, smooth=1, compare="K", env_name=env, n = len(base_dirs))
+    plot_data(data, smooth=1, compare="WEIGHTING", env_name=env, n = len(base_dirs))
 
 #plt.tight_layout()
+plt.legend()
 plt.savefig(f"./plots/{env}.png")
 plt.show()

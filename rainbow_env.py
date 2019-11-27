@@ -26,7 +26,7 @@ class Env:
 
     def _get_state(self):
         state = cv2.resize(self.ale.getScreenGrayscale(), (84, 84), interpolation=cv2.INTER_LINEAR)
-        return state/255
+        return state / 255
 
     def _reset_buffer(self):
         for _ in range(self.window):
@@ -49,7 +49,7 @@ class Env:
         observation = self._get_state()
         self.state_buffer.append(observation)
         self.lives = self.ale.lives()
-        return np.asarray(self.state_buffer, dtype=np.float32) #Lower precision is faster
+        return np.asarray(self.state_buffer, dtype=np.float32)  # Lower precision is faster
 
     def step(self, action):
         # Repeat action 4 times, max pool over last 2 frames
@@ -96,7 +96,7 @@ class Env:
 
 
 class EnvLastFrameOnly:
-    def __init__(self, seed, game, normalize):
+    def __init__(self, seed, game, normalize, weighting):
         """
         A few changes here from origional prepro - specifically the dtypes of the arrays are now ints.
         Frame buffer is not recreated at every step, is just updated.
@@ -115,14 +115,23 @@ class EnvLastFrameOnly:
         self.training = True  # Consistent with model training mode
         self.np_type = np.float32 if normalize else np.uint8
         self.normalize = normalize
-        self.frame_buffer = np.zeros([2, 84, 84], dtype= self.np_type)
+        self.frame_buffer = np.zeros([2, 84, 84], dtype=np.float16)
+        self.weighting = weighting
 
     def _get_state(self):
         state = cv2.resize(self.ale.getScreenGrayscale(), (84, 84), interpolation=cv2.INTER_LINEAR)
         if self.normalize:
-            return np.asarray(state/255, dtype=self.np_type)
+            return np.asarray(state / 255, dtype=self.np_type)
         else:
-            return np.asarray(state, dtype=self.np_type)
+            # return np.asarray(state, dtype=self.np_type)
+            if self.weighting == 0:
+                return 1.0 + np.log(state, out=np.zeros_like(state, dtype=np.float16), where=(state != 0))
+            elif self.weighting == 1:
+                return np.sqrt(state)
+            elif self.weighting == 2:
+                return np.power(state, 0.25)
+            elif self.weighting == 3:
+                return state
 
     def reset(self):
         if self.life_termination:
