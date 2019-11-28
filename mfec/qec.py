@@ -24,24 +24,27 @@ class QEC:
         neighbors, dists = buffer.find_neighbors(state, self.k)
         # Strip batch dim. Note dists is already ordered.
         dists = dists[0]
+
         neighbors = neighbors[0]
 
         # Identical state found
         if dists[0] == 0:
             return buffer.values[neighbors[0]]
 
-        w = [1 / d for d in dists]
+        # return sum(buffer.values[n] for n in neighbors)
+        w = np.divide(1., dists)  # Get inverse distances as weights
+        # print(w)
         # def gaus(x, sig):
         #    return 1. / (np.sqrt(2. * np.pi) * sig) * np.exp(-np.power(x / sig, 2.) / 2)
-        #
-        # w = gaus(dists, self.kernel_width)
+
+        # w = gaus(dists, 300)
+        # print(w)
 
         # print(dists, w)
 
         value = 0
         for i, neighbor in enumerate(neighbors):
             value += w[i] * buffer.values[neighbor]
-
         return value / sum(w)
 
     def update(self, state, action, value):
@@ -124,11 +127,11 @@ class ActionBuffer:
         self.state_dim = state_dim
         self.capacity = capacity
         self._tree = hnswlib.Index(space=distance, dim=state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=capacity, ef_construction=10, M=48, random_seed=seed)
+        self._tree.init_index(max_elements=capacity, M=20, random_seed=seed)
         self._tree.set_ef(128)
         self.values = []
 
-    #def reset(self, data):
+    # def reset(self, data):
     #    """Reset the buffer with just the data provided"""
     #    self._tree = hnswlib.Index(space='l2', dim=self.state_dim)  # possible options are l2, cosine or ip
     #    self._tree.init_index(max_elements=self.capacity, ef_construction=200, M=24)

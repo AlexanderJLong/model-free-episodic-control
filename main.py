@@ -37,6 +37,65 @@ eval_steps = 10_000
 total_steps = 100_000
 test_eps = 3
 
+full_env_list = [
+"alien",
+"amidar",
+"assault",
+"asterix",
+"astroids",
+"atlantis",
+"bank_heist",
+"battle_zone",
+"beam_rider",
+"berzerk",
+"bowling",
+"boxing",
+"carnival",
+"centipede",
+"chopper_command",
+"crazy_climber",
+"demon_attack",
+"double_dunk",
+"elevator_action",
+"enduro",
+"fishing_derby",
+"freeway",
+"frostbite",
+"gopher",
+"gravitar",
+"hero",
+"ice_hockey",
+"jamesbond",
+"journey_escape",
+"kangaroo",
+"krull",
+"kung_fu_master",
+"montezuma_revenge",
+"ms_pacman",
+"name_this_game",
+"phoenix",
+"pitfall",
+"pitfall2",
+"pooyan",
+"private_eye",
+"riverraid",
+"road_runnerr",
+"robotank",
+"seaquest",
+"skiing",
+"solaris",
+"space_invaders",
+"star_gunner",
+"tennis",
+"time_pilot",
+"tutankham",
+"up_n_down",
+"video_pinball",
+"zaxxon",
+    ]
+
+
+
 env_list = [
     "alien",
     "amidar",
@@ -70,9 +129,10 @@ small_env_list = [
     "alien",
     "amidar",
     "asterix",
+    "demon_attack",
 ]
 config = {
-    "ENV": env_list,
+    "ENV": full_env_list,
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
     "K": 64,
@@ -86,7 +146,7 @@ config = {
     "DISTANCE": "l2",
     "LAST_FRAME_ONLY": True,
     "NORMENV": False,
-    "WEIGHTING": 0,
+    "WEIGHTING": "log",
     "SEED": [1, 2, 3],
 
 }
@@ -221,8 +281,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    # main(all_configs[0])
-    # exit()
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

@@ -113,24 +113,20 @@ class EnvLastFrameOnly:
         self.lives = 0  # Life counter (used in DeepMind training)
         self.life_termination = False  # Used to check if resetting only from loss of life
         self.training = True  # Consistent with model training mode
-        self.np_type = np.float32 if normalize else np.uint8
         self.normalize = normalize
-        self.frame_buffer = np.zeros([2, 84, 84], dtype=np.float16)
+        self.frame_buffer = np.zeros([2, 84, 84], dtype=np.int)
         self.weighting = weighting
+        self.median = 0
 
     def _get_state(self):
         state = cv2.resize(self.ale.getScreenGrayscale(), (84, 84), interpolation=cv2.INTER_LINEAR)
         if self.normalize:
-            return np.asarray(state / 255, dtype=self.np_type)
+            return np.asarray(state / 255, dtype=np.float32)
         else:
             # return np.asarray(state, dtype=self.np_type)
-            if self.weighting == 0:
-                return 1.0 + np.log(state, out=np.zeros_like(state, dtype=np.float16), where=(state != 0))
-            elif self.weighting == 1:
-                return np.sqrt(state)
-            elif self.weighting == 2:
-                return np.power(state, 0.25)
-            elif self.weighting == 3:
+            if self.weighting == "log":
+                return state-self.median
+            elif self.weighting == "none":
                 return state
 
     def reset(self):

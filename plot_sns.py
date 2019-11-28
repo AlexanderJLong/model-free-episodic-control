@@ -74,7 +74,7 @@ g = sns.FacetGrid(df, col="ENV", hue="DISTANCE", col_wrap=4, sharey=False)
 max_frames = max(df["rounded_frames"])
 for ax in g.axes.flat:
     env_name = ax.get_title()
-    ax.plot((0, max_frames), (sota[env_name][0], sota[env_name][0]), c="k", linewidth=1, ls=":", label="SimPLe")
+    #ax.plot((0, max_frames), (sota[env_name][0], sota[env_name][0]), c="k", linewidth=1, ls=":", label="SimPLe")
     ax.plot((0, max_frames), (sota[env_name][1], sota[env_name][1]), c="k", linewidth=1, ls="--", label="Rainbow (OT)")
 plt.legend()
 #g.add_legend()
