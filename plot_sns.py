@@ -49,33 +49,37 @@ for i, env in enumerate(envs):
     data = []
     base_dirs = glob(f"./agents/ENV={env}*SEED=1*/")
     print(env)
-    for bd in base_dirs:
-        base_dir = bd[:-4]  # get current run and strip off the seed
-        files = glob(base_dir + "*/results.csv")
-        for f in files:
-            table = pd.read_csv(f, sep=',', header=0)
-            f = f.split("/")[-2]
+    try:
+        for bd in base_dirs:
+            base_dir = bd[:-4]  # get current run and strip off the seed
+            files = glob(base_dir + "*/results.csv")
+            for f in files:
+                table = pd.read_csv(f, sep=',', header=0)
+                f = f.split("/")[-2]
 
-            for param in f.split(":"):
-                if "=" in param:
-                    p, v = param.split("=")
-                    if p == "SEED":
-                        print(f"seed {v}")
-                    table.insert(len(table.columns), p, v)
-            df = pd.concat([df, table], ignore_index=True)
-    print(len(base_dirs))
+                for param in f.split(":"):
+                    if "=" in param:
+                        p, v = param.split("=")
+                        if p == "SEED":
+                            print(f"seed {v}")
+                        table.insert(len(table.columns), p, v)
+                df = pd.concat([df, table], ignore_index=True)
+        print(len(base_dirs))
+    except:
+        continue
 
 print(df.to_string())
 sns.set_context("paper")
 sns.set(style="darkgrid")
-g = sns.FacetGrid(df, col="ENV", hue="DISTANCE", col_wrap=4, sharey=False)
+g = sns.FacetGrid(df, col="ENV", hue="WEIGHTING", col_wrap=8, sharey=False)
 (g.map(sns.lineplot, "rounded_frames", "reward_avg", ci='sd', estimator=np.mean, )).set_titles("{col_name}")
 
 max_frames = max(df["rounded_frames"])
 for ax in g.axes.flat:
     env_name = ax.get_title()
-    #ax.plot((0, max_frames), (sota[env_name][0], sota[env_name][0]), c="k", linewidth=1, ls=":", label="SimPLe")
-    ax.plot((0, max_frames), (sota[env_name][1], sota[env_name][1]), c="k", linewidth=1, ls="--", label="Rainbow (OT)")
+    if env_name in sota:
+        #ax.plot((0, max_frames), (sota[env_name][0], sota[env_name][0]), c="k", linewidth=1, ls=":", label="SimPLe")
+        ax.plot((0, max_frames), (sota[env_name][1], sota[env_name][1]), c="k", linewidth=1, ls="--", label="Rainbow (OT)")
 plt.legend()
 #g.add_legend()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))

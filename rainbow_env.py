@@ -124,8 +124,10 @@ class EnvLastFrameOnly:
             return np.asarray(state / 255, dtype=np.float32)
         else:
             # return np.asarray(state, dtype=self.np_type)
-            if self.weighting == "log":
+            if self.weighting == "median":
                 return state-self.median
+            elif self.weighting == "log":
+                return 1+np.log(state+1)
             elif self.weighting == "none":
                 return state
 

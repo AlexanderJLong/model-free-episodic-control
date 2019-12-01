@@ -142,11 +142,11 @@ config = {
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 64,
+    "STATE-DIM": 16,
     "DISTANCE": "l2",
     "LAST_FRAME_ONLY": True,
     "NORMENV": False,
-    "WEIGHTING": "log",
+    "WEIGHTING": ["log", "median"],
     "SEED": [1, 2, 3],
 
 }
