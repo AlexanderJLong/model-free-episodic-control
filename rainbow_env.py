@@ -116,7 +116,8 @@ class EnvLastFrameOnly:
         self.normalize = normalize
         self.frame_buffer = np.zeros([2, 84, 84], dtype=np.int)
         self.weighting = weighting
-        self.median = 0
+        self.median = np.median(cv2.resize(self.ale.getScreenGrayscale(), (84, 84), interpolation=cv2.INTER_LINEAR).flatten())
+        self.log_median = np.log(self.median) if self.median != 0 else 0
 
     def _get_state(self):
         state = cv2.resize(self.ale.getScreenGrayscale(), (84, 84), interpolation=cv2.INTER_LINEAR)
@@ -128,6 +129,11 @@ class EnvLastFrameOnly:
                 return state-self.median
             elif self.weighting == "log":
                 return 1+np.log(state+1)
+            elif self.weighting == "sqrt":
+                return np.sqrt(state)
+            elif self.weighting == "shifted":
+                logged = 1+np.log(state+1)
+                return logged-self.log_median
             elif self.weighting == "none":
                 return state
 

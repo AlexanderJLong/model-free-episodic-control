@@ -131,23 +131,26 @@ small_env_list = [
     "asterix",
     "demon_attack",
 ]
+
+#SEED MUST BE LAST IN LIST
 config = {
-    "ENV": full_env_list,
+    "ENV": env_list,
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
-    "K": 64,
+    "K": 32,
     "DISCOUNT": 1,
     "EPSILON": 0.0,
     "EPS-DECAY": 0.01,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": 16,
+    "STATE-DIM": [32, 45],
     "DISTANCE": "l2",
     "LAST_FRAME_ONLY": True,
     "NORMENV": False,
-    "WEIGHTING": ["log", "median"],
+    "WEIGHTING": ["sqrt", "log", "shifted", "none"],
     "SEED": [1, 2, 3],
+
 
 }
 """Projection type:
@@ -185,7 +188,11 @@ def main(cfg):
     # Create env
     if cfg["LAST_FRAME_ONLY"]:
         from rainbow_env import EnvLastFrameOnly
-        env = EnvLastFrameOnly(seed=cfg["SEED"], game=cfg["ENV"], normalize=cfg["NORMENV"], weighting=cfg["WEIGHTING"])
+        env = EnvLastFrameOnly(
+            seed=cfg["SEED"],
+            game=cfg["ENV"],
+            normalize=cfg["NORMENV"],
+            weighting=cfg["WEIGHTING"],)
     else:
         from rainbow_env import Env
         env = Env(seed=cfg["SEED"], game=cfg["ENV"], buffer_size=2)
