@@ -33,7 +33,7 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 10_000
+eval_steps = 3_000
 total_steps = 100_000
 test_eps = 3
 
@@ -137,19 +137,19 @@ config = {
     "ENV": env_list,
     "EXP-SKIP": 1,
     "ACTION-BUFFER-SIZE": 100_000,
-    "K": 32,
+    "K": [8, 32, 128, 512],
     "DISCOUNT": 1,
     "EPSILON": 0.0,
     "EPS-DECAY": 0.01,
     "NORM-FREQ": 0,
     "KERNEL-WIDTH": 1,
     "KERNEL-TYPE": "AVG",
-    "STATE-DIM": [32, 45],
+    "STATE-DIM": 16,
     "DISTANCE": "l2",
     "LAST_FRAME_ONLY": True,
     "NORMENV": False,
-    "WEIGHTING": ["sqrt", "log", "shifted", "none"],
-    "SEED": [1, 2, 3],
+    "WEIGHTING": "log",
+    "SEED": [1, 2, 3, 4],
 
 
 }
@@ -277,8 +277,6 @@ if __name__ == "__main__":
         shutil.rmtree(d)
 
     # If a list of envs, run one after the other
-    if type(config["ENV"]) is list:
-        pass
     config_vals = list(config.values())
     for i, val in enumerate(config_vals):
         if type(val) is not list:
