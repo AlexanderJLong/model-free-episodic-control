@@ -114,7 +114,7 @@ class EnvLastFrameOnly:
         self.life_termination = False  # Used to check if resetting only from loss of life
         self.training = True  # Consistent with model training mode
         self.normalize = normalize
-        self.frame_buffer = np.zeros([2, 84, 84], dtype=np.int)
+        self.frame_buffer = np.zeros([2, 84, 84], dtype=np.float32)
         self.weighting = weighting
         self.median = np.median(cv2.resize(self.ale.getScreenGrayscale(), (84, 84), interpolation=cv2.INTER_LINEAR).flatten())
         self.log_median = np.log(self.median) if self.median != 0 else 0

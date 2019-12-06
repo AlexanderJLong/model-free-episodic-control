@@ -54,6 +54,7 @@ class MFECAgent:
         # Preprocess and project observation to state
         #print(observation)
         self.state = self.transformer.transform(observation.reshape(1, -1))
+        #print(self.state.dtype)
         #print(self.state)
         # print(self.state)
         # self.state = observation.flatten()
