@@ -49,11 +49,9 @@ for i, env in enumerate(envs):
     data = []
     base_dirs = glob(f"./agents/ENV={env}*SEED=1*/")
     print(env)
-    print(base_dirs)
     try:
         for bd in base_dirs:
             base_dir = bd[:-4]  # get current run and strip off the seed
-            print(base_dir)
             files = glob(base_dir + "*/results.csv")
             for f in files:
                 table = pd.read_csv(f, sep=',', header=0)
@@ -74,6 +72,7 @@ sns.set_context("paper")
 sns.set(style="darkgrid")
 sns.set_palette("colorblind")
 df["SEED"] = pd.to_numeric(df["SEED"])
+
 g = sns.FacetGrid(df, col="ENV", hue="K", col_wrap=7, sharey=False)
 (g.map(sns.lineplot, "rounded_frames", "reward_avg", ci='sd', estimator=np.mean, )).set_titles("{col_name}")
 

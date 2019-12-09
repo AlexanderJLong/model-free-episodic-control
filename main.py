@@ -33,9 +33,9 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 3_000
+eval_steps = 5_000
 total_steps = 100_000
-test_eps = 3
+test_eps = 2
 
 full_env_list = [
 "alien",
@@ -134,24 +134,19 @@ small_env_list = [
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
-    "EXP-SKIP": 1,
+    "ENV": "amidar",
     "ACTION-BUFFER-SIZE": 100_000,
-    "K": 128,
+    "K": [16, 128],
     "DISCOUNT": 1,
     "EPSILON": 0.0,
     "EPS-DECAY": 0.01,
-    "NORM-FREQ": 0,
-    "KERNEL-WIDTH": 1,
-    "KERNEL-TYPE": "AVG",
-    "STATE-DIM": [16, 64],
+    "STATE-DIM": 7056,
     "DISTANCE": "l2",
     "LAST_FRAME_ONLY": True,
     "NORMENV": False,
-    "WEIGHTING": "log",
+    "WEIGHTING": "none",
+    "WARMUP": 128, # min samples in buffer.
     "SEED": [1, 2, 3, 4],
-
-
 }
 """Projection type:
 0: Identity
@@ -208,11 +203,8 @@ def main(cfg):
         state_dimension=cfg["STATE-DIM"],
         actions=range(len(env.actions)),
         seed=cfg["SEED"],
-        exp_skip=cfg["EXP-SKIP"],
-        autonormalization_frequency=cfg["NORM-FREQ"],
         epsilon_decay=cfg["EPS-DECAY"],
-        kernel_type=cfg["KERNEL-TYPE"],
-        kernel_width=cfg["KERNEL-WIDTH"],
+        warmup=cfg["WARMUP"],
         distance=cfg["DISTANCE"],
     )
 

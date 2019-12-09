@@ -20,17 +20,14 @@ class MFECAgent:
             state_dimension,
             actions,
             seed,
-            exp_skip,
-            autonormalization_frequency,
             epsilon_decay,
-            kernel_type,
-            kernel_width,
+            warmup,
             distance,
     ):
         self.rs = np.random.RandomState(seed)
         self.memory = []
         self.actions = actions
-        self.qec = QEC(self.actions, buffer_size, k, kernel_type, kernel_width, state_dimension, distance, seed)
+        self.qec = QEC(self.actions, buffer_size, k, state_dimension, distance, warmup, seed)
 
         self.training = True  # set to false to act greedily
 
@@ -38,22 +35,17 @@ class MFECAgent:
         self.transformer.fit(np.zeros([1, observation_dim]))
         self.transformer.components_ = self.transformer.components_.astype(np.int8)
 
-        #self.transformer.components_ /= np.sum(self.transformer.components_, axis=1)
-        #print(np.sum(self.transformer.components_, axis=1))
-        #print(self.transformer.components_.shape)
-
-
         self.discount = discount
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
-        self.autonormalization_frequency = autonormalization_frequency
         self.action = int
 
     def choose_action(self, observation):
 
         # Preprocess and project observation to state
         #print(observation)
-        self.state = self.transformer.transform(observation.reshape(1, -1))
+        # self.state = self.transformer.transform(observation.reshape(1, -1))
+        self.state = observation.reshape(1, -1)
         #print(self.state.dtype)
         #print(self.state)
         # print(self.state)
@@ -88,6 +80,7 @@ class MFECAgent:
                 value,
             )
 
+        self.qec.solidify_values()
         # Decay e exponentially
         if self.epsilon > 0:
             self.epsilon /= 1 + self.epsilon_decay
