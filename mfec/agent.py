@@ -33,7 +33,12 @@ class MFECAgent:
 
         self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=True)
         self.transformer.fit(np.zeros([1, observation_dim]))
-        self.transformer.components_ = self.transformer.components_.astype(np.int8)
+        #self.transformer.components_.data[np.where(self.transformer.components_.data < 0)] = -1
+        #self.transformer.components_.data[np.where(self.transformer.components_.data > 0)] = 1
+        #self.transformer.components_ = self.transformer.components_.astype(np.int8)
+
+        for r in self.transformer.components_:
+            print(r)
 
         self.discount = discount
         self.epsilon = epsilon
@@ -44,9 +49,9 @@ class MFECAgent:
 
         # Preprocess and project observation to state
         #print(observation)
-        # self.state = self.transformer.transform(observation.reshape(1, -1))
-        self.state = observation.reshape(1, -1)
-        #print(self.state.dtype)
+        self.state = self.transformer.transform(observation.reshape(1, -1))
+        #self.state = observation.reshape(1, -1)
+
         #print(self.state)
         # print(self.state)
         # self.state = observation.flatten()

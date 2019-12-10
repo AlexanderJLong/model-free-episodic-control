@@ -129,24 +129,24 @@ small_env_list = [
     "alien",
     "amidar",
     "asterix",
-    "demon_attack",
+    "road_runner",
 ]
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": "amidar",
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": 100_000,
-    "K": [16, 128],
+    "K": 128,
     "DISCOUNT": 1,
     "EPSILON": 0.0,
     "EPS-DECAY": 0.01,
-    "STATE-DIM": 7056,
+    "STATE-DIM": 2048,
     "DISTANCE": "l2",
-    "LAST_FRAME_ONLY": True,
+    "LAST_FRAME_ONLY": False,
     "NORMENV": False,
     "WEIGHTING": "none",
     "WARMUP": 128, # min samples in buffer.
-    "SEED": [1, 2, 3, 4],
+    "SEED": [1, 2, 3],
 }
 """Projection type:
 0: Identity
@@ -165,6 +165,7 @@ Weighting:
 
 
 def main(cfg):
+    print(cfg)
     # Create agent-directory
     config_string = ""
     for param in cfg:
@@ -189,9 +190,10 @@ def main(cfg):
             normalize=cfg["NORMENV"],
             weighting=cfg["WEIGHTING"],)
     else:
-        from rainbow_env import Env
-        env = Env(seed=cfg["SEED"], game=cfg["ENV"], buffer_size=2)
-    print(f"Started {cfg['ENV']} seed {cfg['SEED']}")
+        from rainbow_env import EnvStacked
+        env = EnvStacked(
+            seed=cfg["SEED"],
+            game=cfg["ENV"],)
 
     obv_dim = np.prod(env.reset().shape)
     agent = MFECAgent(

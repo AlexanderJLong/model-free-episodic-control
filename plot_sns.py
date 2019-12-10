@@ -73,8 +73,9 @@ sns.set(style="darkgrid")
 sns.set_palette("colorblind")
 df["SEED"] = pd.to_numeric(df["SEED"])
 
-g = sns.FacetGrid(df, col="ENV", hue="K", col_wrap=7, sharey=False)
-(g.map(sns.lineplot, "rounded_frames", "reward_avg", ci='sd', estimator=np.mean, )).set_titles("{col_name}")
+g = sns.FacetGrid(df, col="ENV", hue="LAST_FRAME_ONLY", col_wrap=7, sharey=False, )
+g.set(xlim=(0, 1e5))
+(g.map(sns.lineplot, "rounded_frames", "reward_avg", ci='sd', estimator=np.mean)).set_titles("{col_name}")
 
 max_frames = max(df["rounded_frames"])
 for ax in g.axes.flat:
@@ -90,34 +91,25 @@ plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.savefig(f"./plots/full_run.png")
 plt.show()
 
-# hns
-all_hns = []
-timesteps = list(range(0, 100001, 10000))
-print()
-for env in sota.keys():
-    print(env)
-    means = []
-    for t in timesteps:
-        at_timestep = df['rounded_frames'] == t
-        at_env = df['ENV'] == env
-        at_k = df['STATE-DIM'] == "32"
-        average = df.loc[at_env & at_timestep & at_k, "reward_avg"].mean()
-        means.append(average - sota[env][3])
-    means = np.asarray(means)
-    hns = means / (sota[env][2] - sota[env][3])
-    if not any(np.isnan(hns)):
-        all_hns.append(hns)
+# human normalized median performance
+summary_scores = df.groupby(["ENV", "rounded_frames", "SEED"], as_index=False).agg({"reward_avg": "mean"})
+"""
+Create a new column by mapping env name to the sota dict, then convert this column of 
+tuples to seperate columns and rename.
+"""
+summary_scores[["simple", "rainbow", "human", "random"]] = pd.DataFrame(summary_scores["ENV"].map(sota).tolist())
+summary_scores["reward_rnd_normed"] = summary_scores["reward_avg"] - summary_scores["random"]
+summary_scores["human_rnd_normed"] = summary_scores["human"] - summary_scores["random"]
+summary_scores["reward_human_normed"] = summary_scores["reward_rnd_normed"] / summary_scores["human_rnd_normed"]
 
-full_runs = []
-for r in all_hns:
-    if len(r) == 10: full_runs.append(r)
-all_envs = np.median(full_runs, axis=0)
-print(all_envs)
-plt.figure()
-plt.plot(timesteps, all_envs)
-rainbow_hns = []
-for env in sota.keys():
-    rainbow_hns.append((sota[env][1] - sota[env][3]) / (sota[env][2] - sota[env][3]))
+num_games = summary_scores["ENV"].nunique()
 
-print("rb mean: ", np.median(rainbow_hns))
+hns = summary_scores.groupby(["rounded_frames", "SEED"], as_index=False).agg({"reward_human_normed": "median"})
+print(hns)
+sns.lineplot("rounded_frames",
+             "reward_human_normed",
+             ci='sd',
+             estimator=np.mean,
+             data=hns,
+             ).set_title(f"Median Human Normalized Reward Across {num_games} Games")
 plt.show()

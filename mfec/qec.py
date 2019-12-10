@@ -116,7 +116,7 @@ class ActionBuffer:
         self.state_dim = state_dim
         self.capacity = capacity
         self._tree = hnswlib.Index(space=distance, dim=state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=capacity, M=64, random_seed=seed)
+        self._tree.init_index(max_elements=capacity, M=20, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
         self.values_array = np.asarray([])  # For lookup. Update at train by converting values_list.
 
@@ -141,16 +141,6 @@ class ActionBuffer:
             self._tree.add_items(state)
 
         return
-
-        # Update all close vals as well
-        w = np.asarray([1 / d for d in dists])
-        w = w / sum(w)
-        # print(w)
-
-        # for i, idx in enumerate(idxs):
-        #    #print(self.values[idx], w[i]*value * (1-w[i])*self.values[idx])
-        #    if value > self.values[idx]:
-        #        self.values[idx] = w[i]*value * (1-w[i])*self.values[idx]
 
     def solidify_values(self):
         self.values_array = np.asarray(self.values_list)

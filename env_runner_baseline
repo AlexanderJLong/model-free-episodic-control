@@ -1,5 +1,5 @@
-from rainbow_env import EnvLastFrameOnly
-env = EnvLastFrameOnly(seed=1, game="ms_pacman")
+from rainbow_env import EnvStacked
+env = EnvStacked(seed=1, game="ms_pacman")
 
 from tqdm import tqdm
 
