@@ -208,7 +208,7 @@ class EnvStacked(Env):
 
     def step(self, action):
         # Repeat action 4 times, max pool over last 2 frames
-        frame_buffer = np.zeros([2, 84, 84], dtype=np.int8)
+        frame_buffer = np.zeros([4, 84, 84], dtype=np.int8)
         reward, done = 0, False
         for t in range(4):
             reward += self.ale.act(self.actions.get(action))

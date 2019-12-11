@@ -140,7 +140,7 @@ config = {
     "DISCOUNT": 1,
     "EPSILON": 0.0,
     "EPS-DECAY": 0.01,
-    "STATE-DIM": 2048,
+    "STATE-DIM": [32, 33],
     "DISTANCE": "l2",
     "LAST_FRAME_ONLY": False,
     "NORMENV": False,
