@@ -25,17 +25,14 @@ class MFECAgent:
             distance,
     ):
         self.rs = np.random.RandomState(seed)
-        self.memory = []
         self.actions = actions
         self.qec = QEC(self.actions, buffer_size, k, state_dimension, distance, warmup, seed)
 
-        self.training = True  # set to false to act greedily
-
         self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=True)
         self.transformer.fit(np.zeros([1, observation_dim]))
-        #self.transformer.components_.data[np.where(self.transformer.components_.data < 0)] = -1
-        #self.transformer.components_.data[np.where(self.transformer.components_.data > 0)] = 1
-        #self.transformer.components_ = self.transformer.components_.astype(np.int8)
+        # self.transformer.components_.data[np.where(self.transformer.components_.data < 0)] = -1
+        # self.transformer.components_.data[np.where(self.transformer.components_.data > 0)] = 1
+        # self.transformer.components_ = self.transformer.components_.astype(np.int8)
 
         for r in self.transformer.components_:
             print(r)
@@ -48,11 +45,11 @@ class MFECAgent:
     def choose_action(self, observation):
 
         # Preprocess and project observation to state
-        #print(observation)
+        # print(observation)
         self.state = self.transformer.transform(observation.reshape(1, -1))
-        #self.state = observation.reshape(1, -1)
+        # self.state = observation.reshape(1, -1)
 
-        #print(self.state)
+        # print(self.state)
         # print(self.state)
         # self.state = observation.flatten()
         # print(self.transformer.components_.dtype)
@@ -67,9 +64,14 @@ class MFECAgent:
 
         # Exploitation
         # else:
-        values = [self.qec.estimate(self.state, action) for action in self.actions]
-        best_actions = np.argwhere(values == np.max(values)).flatten()
-        self.action = self.rs.choice(best_actions)
+        values = np.asarray([self.qec.estimate(self.state, action) for action in self.actions])
+        maxes = np.where(values == max(values))
+        probs = np.zeros_like(self.actions)
+        probs[maxes] = 1
+        # values = np.power(values+1, 5)
+        probs = probs / sum(probs)
+        # best_actions = np.argwhere(values == np.max(values)).flatten()
+        self.action = self.rs.choice(self.actions, p=probs)
 
         return self.action, self.state
 

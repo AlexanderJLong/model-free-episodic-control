@@ -15,10 +15,12 @@ class QEC:
         """Return the estimated value of the given state"""
 
         buffer = self.buffers[action]
-        if len(buffer) <= self.warmup:
+
+        if len(buffer) == 0:
             return float("inf")
 
-        neighbors, dists = buffer.find_neighbors(state, self.k)
+        k = min(self.k, len(buffer)) # the len call might slow it down a bit
+        neighbors, dists = buffer.find_neighbors(state, k)
         # Strip batch dim. Note dists is already ordered.
         dists = dists[0]
 

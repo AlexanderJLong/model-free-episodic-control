@@ -27,15 +27,7 @@ from tqdm import tqdm
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
-# GLOBAl VARS FIXED FOR EACH RUN
-TITLE = "knn"
-EPOCHS_TILL_VIS = 2000
-EPOCHS = 3000
-FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 5_000
-total_steps = 100_000
-test_eps = 2
 
 full_env_list = [
 "alien",
@@ -132,21 +124,33 @@ small_env_list = [
     "road_runner",
 ]
 
+# GLOBAl VARS FIXED FOR EACH RUN
+TITLE = "knn"
+EPOCHS_TILL_VIS = 2000
+EPOCHS = 3000
+FRAMES_PER_EPOCH = 5_000
+
+eval_steps = 10_000
+total_steps = 100_000
+test_eps = 1
+
 #SEED MUST BE LAST IN LIST
 config = {
     "ENV": env_list,
     "ACTION-BUFFER-SIZE": 100_000,
-    "K": 128,
+    "K": 16,
     "DISCOUNT": 1,
     "EPSILON": 0.0,
     "EPS-DECAY": 0.01,
-    "STATE-DIM": [32, 33],
+    "STATE-DIM": [1280, 5000],
     "DISTANCE": "l2",
     "LAST_FRAME_ONLY": False,
+    "STICKY-ACTIONS": False,
     "NORMENV": False,
+    "STACKED-STATE": 4,
     "WEIGHTING": "none",
-    "WARMUP": 128, # min samples in buffer.
-    "SEED": [1, 2, 3],
+    "WARMUP": 0, # min samples in buffer. Can Remove.
+    "SEED": list(range(5)),
 }
 """Projection type:
 0: Identity
@@ -193,7 +197,9 @@ def main(cfg):
         from rainbow_env import EnvStacked
         env = EnvStacked(
             seed=cfg["SEED"],
-            game=cfg["ENV"],)
+            game=cfg["ENV"],
+            sticky_actions=cfg["STICKY-ACTIONS"],
+            stacked_states=cfg["STACKED-STATE"])
 
     obv_dim = np.prod(env.reset().shape)
     agent = MFECAgent(

@@ -74,9 +74,11 @@ sns.set_palette("colorblind")
 df["SEED"] = pd.to_numeric(df["SEED"])
 
 compare_var = "STATE-DIM"
+#df = df[(df['STACKED-STATE'] == "4") & (df['STATE-DIM'] == "1280")]
+print(df)
 g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=7, sharey=False, )
 g.set(xlim=(0, 1e5))
-(g.map(sns.lineplot, "rounded_frames", "reward_avg", ci='sd', estimator=np.mean)).set_titles("{col_name}")
+(g.map(sns.lineplot, "rounded_frames", "reward_avg", ci=100, estimator=np.mean)).set_titles("{col_name}")
 
 max_frames = max(df["rounded_frames"])
 for ax in g.axes.flat:
@@ -102,11 +104,12 @@ summary_scores[["simple", "rainbow", "human", "random"]] = pd.DataFrame(summary_
 summary_scores["reward_rnd_normed"] = summary_scores["reward_avg"] - summary_scores["random"]
 summary_scores["human_rnd_normed"] = summary_scores["human"] - summary_scores["random"]
 summary_scores["normalized_reward"] = summary_scores["reward_rnd_normed"] / summary_scores["human_rnd_normed"]
-hns = summary_scores.groupby(["rounded_frames", compare_var, "SEED"], as_index=False).agg({"normalized_reward": "median"})
+hns = summary_scores.groupby(["rounded_frames", compare_var, "SEED"], as_index=False).agg(
+    {"normalized_reward": "median"})
 
 num_games = summary_scores["ENV"].nunique()
 hns[compare_var] = hns[compare_var].astype('category')
-num_lines = hns[compare_var] .nunique()
+num_lines = hns[compare_var].nunique()
 print(hns[compare_var])
 sns.lineplot("rounded_frames",
              "normalized_reward",
@@ -114,6 +117,6 @@ sns.lineplot("rounded_frames",
              estimator=np.mean,
              data=hns,
              hue=compare_var,
-                palette=sns.color_palette("colorblind", num_lines)
+             palette=sns.color_palette("colorblind", num_lines)
              ).set_title(f"Median Human Normalized Reward Across {num_games} Games")
 plt.show()
