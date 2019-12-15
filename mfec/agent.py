@@ -41,6 +41,7 @@ class MFECAgent:
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.action = int
+        self.training = False
 
     def choose_action(self, observation):
 
@@ -64,7 +65,10 @@ class MFECAgent:
 
         # Exploitation
         # else:
-        values = np.asarray([self.qec.estimate(self.state, action) for action in self.actions])
+        values = np.asarray(
+            [self.qec.estimate(self.state, action, use_count_exploration=self.training)
+             for action in self.actions
+             ])
         maxes = np.where(values == max(values))
         probs = np.zeros_like(self.actions)
         probs[maxes] = 1

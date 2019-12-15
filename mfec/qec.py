@@ -11,7 +11,8 @@ class QEC:
         self.k = k
         self.warmup = warmup
 
-    def estimate(self, state, action):
+
+    def estimate(self, state, action, use_count_exploration):
         """Return the estimated value of the given state"""
 
         buffer = self.buffers[action]
@@ -32,7 +33,10 @@ class QEC:
 
         # return sum(buffer.values[n] for n in neighbors)
         w = np.divide(1., dists)  # Get inverse distances as weights
-        return np.sum(w * buffer.values_array[neighbors]) / np.sum(w)
+        weighted_reward = np.sum(w * buffer.values_array[neighbors]) / np.sum(w)
+        dist_weighted_count = np.sum(buffer.counts_array[neighbors] * dists)
+        #print(1./ np.sqrt(0.000001*dist_weighted_count))
+        return weighted_reward + use_count_exploration / np.sqrt(0.000005*dist_weighted_count)
 
     def update(self, state, action, value):
         buffer = self.buffers[action]
@@ -121,6 +125,9 @@ class ActionBuffer:
         self._tree.init_index(max_elements=capacity, M=10, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
         self.values_array = np.asarray([])  # For lookup. Update at train by converting values_list.
+        self.counts_list = []
+        self.counts_array = np.asarray([])
+
 
     def find_neighbors(self, state, k):
         """Return idx, dists"""
@@ -130,6 +137,7 @@ class ActionBuffer:
         if not self.values_list:  # buffer empty, just add
             self.values_list.append(value)
             self._tree.add_items(state)
+            self.counts_list.append(1)
             return
 
         idx, dist = self.find_neighbors(state, 1)
@@ -137,15 +145,19 @@ class ActionBuffer:
         dist = dist[0][0]
         if dist < 1e-6 or np.isnan(dist):
             # Existing state, update and return
+            self.counts_list[idx] += 1
             self.values_list[idx] = max(value, self.values_list[idx])
         else:
             self.values_list.append(value)
             self._tree.add_items(state)
+            self.counts_list.append(1)
 
         return
 
     def solidify_values(self):
         self.values_array = np.asarray(self.values_list)
+        self.counts_array = np.asarray(self.counts_list)
+
 
     def get_states(self):
         return self._tree.get_items(range(0, len(self)))

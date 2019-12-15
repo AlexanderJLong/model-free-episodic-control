@@ -130,9 +130,9 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 50_000
-total_steps = 10_000_000
-test_eps = 5
+eval_steps = 10_000
+total_steps = 1_000_000
+test_eps = 3
 
 #SEED MUST BE LAST IN LIST
 config = {
