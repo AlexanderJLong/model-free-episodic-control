@@ -11,7 +11,6 @@ class QEC:
         self.k = k
         self.warmup = warmup
 
-
     def estimate(self, state, action, use_count_exploration):
         """Return the estimated value of the given state"""
 
@@ -20,7 +19,7 @@ class QEC:
         if len(buffer) == 0:
             return float("inf")
 
-        k = min(self.k, len(buffer)) # the len call might slow it down a bit
+        k = min(self.k, len(buffer))  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
         # Strip batch dim. Note dists is already ordered.
         dists = dists[0]
@@ -34,9 +33,9 @@ class QEC:
         # return sum(buffer.values[n] for n in neighbors)
         w = np.divide(1., dists)  # Get inverse distances as weights
         weighted_reward = np.sum(w * buffer.values_array[neighbors]) / np.sum(w)
-        dist_weighted_count = np.sum(buffer.counts_array[neighbors] * dists)
-        #print(1./ np.sqrt(0.000001*dist_weighted_count))
-        return weighted_reward + use_count_exploration / np.sqrt(0.000005*dist_weighted_count)
+        dist_weighted_count = np.sum(buffer.counts_array[neighbors])/len(neighbors)
+        #print(np.sqrt(dist_weighted_count ))
+        return weighted_reward + use_count_exploration / (np.sqrt(dist_weighted_count ))
 
     def update(self, state, action, value):
         buffer = self.buffers[action]
@@ -128,7 +127,6 @@ class ActionBuffer:
         self.counts_list = []
         self.counts_array = np.asarray([])
 
-
     def find_neighbors(self, state, k):
         """Return idx, dists"""
         return self._tree.knn_query(state, k=k)
@@ -157,7 +155,6 @@ class ActionBuffer:
     def solidify_values(self):
         self.values_array = np.asarray(self.values_list)
         self.counts_array = np.asarray(self.counts_list)
-
 
     def get_states(self):
         return self._tree.get_items(range(0, len(self)))

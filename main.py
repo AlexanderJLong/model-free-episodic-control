@@ -131,12 +131,12 @@ EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
 eval_steps = 10_000
-total_steps = 1_000_000
+total_steps = 100_000
 test_eps = 3
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": "ms_pacman",
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,

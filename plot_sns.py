@@ -76,7 +76,8 @@ df["SEED"] = pd.to_numeric(df["SEED"])
 compare_var = "STATE-DIM"
 #df = df[(df['STACKED-STATE'] == "4") & (df['STATE-DIM'] == "1280")]
 print(df)
-g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=2, sharey=False, )
+cols = df["ENV"].nunique() // 4
+g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
 #g.set(xlim=(0, 1e5))
 try:
     (g.map(sns.lineplot, "rounded_frames", "reward_avg", ci=100, estimator=np.mean)).set_titles("{col_name}")
