@@ -130,19 +130,19 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 10_000
-total_steps = 100_000
-test_eps = 1
+eval_steps = 50_000
+total_steps = 10_000_000
+test_eps = 5
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
-    "ACTION-BUFFER-SIZE": 100_000,
+    "ENV": "ms_pacman",
+    "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
     "EPSILON": 0.0,
-    "EPS-DECAY": 0.01,
-    "STATE-DIM": [1280, 5000],
+    "EPS-DECAY": 0.001,
+    "STATE-DIM": 100,
     "DISTANCE": "l2",
     "LAST_FRAME_ONLY": False,
     "STICKY-ACTIONS": False,
@@ -150,7 +150,7 @@ config = {
     "STACKED-STATE": 4,
     "WEIGHTING": "none",
     "WARMUP": 0, # min samples in buffer. Can Remove.
-    "SEED": list(range(5)),
+    "SEED": list(range(3)),
 }
 """Projection type:
 0: Identity
