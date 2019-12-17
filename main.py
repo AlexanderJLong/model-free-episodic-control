@@ -118,10 +118,11 @@ env_list = [
 ]
 
 small_env_list = [
-    "alien",
-    "amidar",
-    "asterix",
-    "road_runner",
+    "breakout",
+    "gravitar",
+    "ms_pacman",
+    "qbert",
+    "seaquest",
 ]
 
 # GLOBAl VARS FIXED FOR EACH RUN
@@ -130,26 +131,27 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 10_000
+eval_steps = 5_000
 total_steps = 100_000
 test_eps = 3
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
     "EPSILON": 0.0,
     "EPS-DECAY": 0.001,
     "STATE-DIM": 100,
-    "DISTANCE": "l2",
+    "DISTANCE": ["l2", "cosine"],
     "LAST_FRAME_ONLY": False,
     "STICKY-ACTIONS": False,
     "NORMENV": False,
     "STACKED-STATE": 4,
     "WEIGHTING": "none",
     "WARMUP": 0, # min samples in buffer. Can Remove.
+    "CLIP-REWARD": [True, False],
     "SEED": list(range(3)),
 }
 """Projection type:
@@ -213,6 +215,7 @@ def main(cfg):
         seed=cfg["SEED"],
         epsilon_decay=cfg["EPS-DECAY"],
         warmup=cfg["WARMUP"],
+        clip_rewards=cfg["CLIP-REWARD"],
         distance=cfg["DISTANCE"],
     )
 

@@ -22,10 +22,12 @@ class MFECAgent:
             seed,
             epsilon_decay,
             warmup,
+            clip_rewards,
             distance,
     ):
         self.rs = np.random.RandomState(seed)
         self.actions = actions
+
         self.qec = QEC(self.actions, buffer_size, k, state_dimension, distance, warmup, seed)
 
         self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=True)
@@ -42,6 +44,11 @@ class MFECAgent:
         self.epsilon_decay = epsilon_decay
         self.action = int
         self.training = False
+
+        if clip_rewards:
+            self.clipper = lambda x: np.clip(x, -1, 1)
+        else:
+            self.clipper = lambda x: x
 
     def choose_action(self, observation):
 
@@ -84,7 +91,8 @@ class MFECAgent:
         value = 0.0
         for _ in range(len(trace)):
             experience = trace.pop()
-            value = value * self.discount + experience["reward"]
+
+            value = value * self.discount + self.clipper(experience["reward"])
             self.qec.update(
                 experience["state"],
                 experience["action"],

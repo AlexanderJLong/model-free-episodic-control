@@ -47,7 +47,7 @@ data = []
 df = pd.DataFrame()
 for i, env in enumerate(envs):
     data = []
-    base_dirs = glob(f"./agents/ENV={env}*SEED=1*/")
+    base_dirs = glob(f"./agents/ENV={env}*SEED=0*/")
     print(env)
     try:
         for bd in base_dirs:
@@ -71,14 +71,14 @@ print(df.to_string())
 sns.set_context("paper")
 sns.set(style="darkgrid")
 sns.set_palette("colorblind")
+
 df["SEED"] = pd.to_numeric(df["SEED"])
 
-compare_var = "STATE-DIM"
-#df = df[(df['STACKED-STATE'] == "4") & (df['STATE-DIM'] == "1280")]
-print(df)
-cols = df["ENV"].nunique() // 4
+compare_var = 'CLIP-REWARD'
+df = df[(df["DISTANCE"] == "l2") ]
+cols = df["ENV"].nunique() % 10
 g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
-#g.set(xlim=(0, 1e5))
+g.set(xlim=(0, 1e5))
 try:
     (g.map(sns.lineplot, "rounded_frames", "reward_avg", ci=100, estimator=np.mean)).set_titles("{col_name}")
 except:
