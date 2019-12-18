@@ -6,10 +6,9 @@ import numpy as np
 
 
 class QEC:
-    def __init__(self, actions, buffer_size, k, state_dim, distance, warmup, seed):
+    def __init__(self, actions, buffer_size, k, state_dim, distance, seed):
         self.buffers = tuple([ActionBuffer(buffer_size, state_dim, distance, seed) for _ in actions])
         self.k = k
-        self.warmup = warmup
 
     def estimate(self, state, action, use_count_exploration):
         """Return the estimated value of the given state"""
@@ -17,7 +16,7 @@ class QEC:
         buffer = self.buffers[action]
 
         if len(buffer) == 0:
-            return 1e7
+            return 1e7, 1e10
 
         k = min(self.k, len(buffer))  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
@@ -28,14 +27,14 @@ class QEC:
 
         # Identical state found
         if dists[0] == 0:
-            return buffer.values_array[neighbors[0]]
+            return buffer.values_array[neighbors[0]], 1e-6
 
         # return sum(buffer.values[n] for n in neighbors)
         w = np.divide(1., dists)  # Get inverse distances as weights
         weighted_reward = np.sum(w * buffer.values_array[neighbors]) / np.sum(w)
         # dist_weighted_count = np.sum(buffer.counts_array[neighbors])/len(neighbors)
         # print(np.sqrt(dist_weighted_count ))
-        return weighted_reward  # + use_count_exploration / (np.sqrt(dist_weighted_count ))
+        return weighted_reward, np.median(dists)  # + use_count_exploration / (np.sqrt(dist_weighted_count ))
 
     def update(self, state, action, value):
         buffer = self.buffers[action]

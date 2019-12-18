@@ -75,15 +75,15 @@ sns.set_palette("colorblind")
 df["SEED"] = pd.to_numeric(df["SEED"])
 
 compare_var = 'CLIP-REWARD'
-df = df[(df["DISTANCE"] == "l2") ]
-cols = df["ENV"].nunique() % 10
+#df = df[(df["DISTANCE"] == "l2")]
+num_envs = df["ENV"].nunique()
+cols = min(num_envs, 9)
 g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
 g.set(xlim=(0, 1e5))
 try:
     (g.map(sns.lineplot, "rounded_frames", "reward_avg", ci=100, estimator=np.mean)).set_titles("{col_name}")
 except:
     (g.map(plt.plot, "rounded_frames", "reward_avg")).set_titles("{col_name}")
-
 
 max_frames = max(df["rounded_frames"])
 for ax in g.axes.flat:

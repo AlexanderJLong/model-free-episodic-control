@@ -21,14 +21,19 @@ class MFECAgent:
             actions,
             seed,
             epsilon_decay,
-            warmup,
             clip_rewards,
+            count_weight,
             distance,
     ):
         self.rs = np.random.RandomState(seed)
         self.actions = actions
-
-        self.qec = QEC(self.actions, buffer_size, k, state_dimension, distance, warmup, seed)
+        self.count_weight = count_weight
+        self.qec = QEC(actions=self.actions,
+                       buffer_size=buffer_size,
+                       k=k,
+                       state_dim=state_dimension,
+                       distance=distance,
+                       seed=seed)
 
         self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=True)
         self.transformer.fit(np.zeros([1, observation_dim]))
@@ -72,10 +77,17 @@ class MFECAgent:
 
         # Exploitation
         # else:
-        values = np.asarray(
+        estimates = np.asarray(
             [self.qec.estimate(self.state, action, use_count_exploration=self.training)
              for action in self.actions
              ])
+        rewards = estimates[:, 0]
+        #dists = estimates[:, 1]
+        #dists = dists/sum(dists)
+        #print(dists)
+        #print(rewards)
+        values = rewards
+
         maxes = np.where(values == max(values))
         probs = np.zeros_like(self.actions)
         probs[maxes] = 1

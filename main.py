@@ -131,28 +131,26 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 5_000
+eval_steps = 1_000
 total_steps = 100_000
 test_eps = 3
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": full_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
     "EPSILON": 0.0,
     "EPS-DECAY": 0.001,
     "STATE-DIM": 100,
-    "DISTANCE": ["l2", "cosine"],
-    "LAST_FRAME_ONLY": False,
+    "DISTANCE": "l2",
     "STICKY-ACTIONS": False,
-    "NORMENV": False,
     "STACKED-STATE": 4,
     "WEIGHTING": "none",
-    "WARMUP": 0, # min samples in buffer. Can Remove.
     "CLIP-REWARD": [True, False],
-    "SEED": list(range(3)),
+    "COUNT-WEIGHT": 0,
+    "SEED": list(range(5)),
 }
 """Projection type:
 0: Identity
@@ -188,20 +186,12 @@ def main(cfg):
     random.seed(cfg["SEED"])
 
     # Create env
-    if cfg["LAST_FRAME_ONLY"]:
-        from rainbow_env import EnvLastFrameOnly
-        env = EnvLastFrameOnly(
-            seed=cfg["SEED"],
-            game=cfg["ENV"],
-            normalize=cfg["NORMENV"],
-            weighting=cfg["WEIGHTING"],)
-    else:
-        from rainbow_env import EnvStacked
-        env = EnvStacked(
-            seed=cfg["SEED"],
-            game=cfg["ENV"],
-            sticky_actions=cfg["STICKY-ACTIONS"],
-            stacked_states=cfg["STACKED-STATE"])
+    from rainbow_env import EnvStacked
+    env = EnvStacked(
+        seed=cfg["SEED"],
+        game=cfg["ENV"],
+        sticky_actions=cfg["STICKY-ACTIONS"],
+        stacked_states=cfg["STACKED-STATE"])
 
     obv_dim = np.prod(env.reset().shape)
     agent = MFECAgent(
@@ -214,8 +204,8 @@ def main(cfg):
         actions=range(len(env.actions)),
         seed=cfg["SEED"],
         epsilon_decay=cfg["EPS-DECAY"],
-        warmup=cfg["WARMUP"],
         clip_rewards=cfg["CLIP-REWARD"],
+        count_weight=cfg["COUNT-WEIGHT"],
         distance=cfg["DISTANCE"],
     )
 
