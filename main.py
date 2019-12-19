@@ -118,7 +118,7 @@ env_list = [
 ]
 
 small_env_list = [
-    "breakout",
+    #"breakout",
     "gravitar",
     "ms_pacman",
     "qbert",
@@ -131,8 +131,8 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 3_000
-total_steps = 100_000
+eval_steps = 50_000
+total_steps = 1_000_000
 test_eps = 2
 
 #SEED MUST BE LAST IN LIST
@@ -149,7 +149,7 @@ config = {
     "STACKED-STATE": 4,
     "WEIGHTING": "none",
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": 0,
+    "COUNT-WEIGHT": 1,
     "SEED": list(range(3)),
 }
 """Projection type:

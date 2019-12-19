@@ -16,7 +16,7 @@ class QEC:
         buffer = self.buffers[action]
 
         if len(buffer) == 0:
-            return 1e7, 1e10
+            return 1e7, 1e7
 
         k = min(self.k, len(buffer))  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
@@ -143,7 +143,7 @@ class ActionBuffer:
         if dist < 1e-6 or np.isnan(dist):
             # Existing state, update and return
             self.counts_list[idx] += 1
-            self.values_list[idx] = max(value, self.values_list[idx])
+            self.values_list[idx] =0.3 * value + self.values_list[idx]
         else:
             self.values_list.append(value)
             self._tree.add_items(state)
