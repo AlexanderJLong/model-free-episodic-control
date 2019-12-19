@@ -16,7 +16,7 @@ class QEC:
         buffer = self.buffers[action]
 
         if len(buffer) == 0:
-            return 1e7, 1e7
+            return 1e7, 1e-6
 
         k = min(self.k, len(buffer))  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
@@ -26,15 +26,16 @@ class QEC:
 
         # Identical state found
         if dists[0] == 0:
-            return buffer.values_array[neighbors[0]], 1e-6
+            return buffer.values_array[neighbors[0]], buffer.counts_array[neighbors[0]]
 
 
         # return sum(buffer.values[n] for n in neighbors)
         w = np.divide(1., dists)  # Get inverse distances as weights
         weighted_reward = np.sum(w * buffer.values_array[neighbors]) / np.sum(w)
-        # dist_weighted_count = np.sum(buffer.counts_array[neighbors])/len(neighbors)
+
+        avg_count = np.mean(buffer.counts_array[neighbors])
         # print(np.sqrt(dist_weighted_count ))
-        return weighted_reward, np.mean(dists)  # + use_count_exploration / (np.sqrt(dist_weighted_count ))
+        return weighted_reward, avg_count  # + use_count_exploration / (np.sqrt(dist_weighted_count ))
 
     def update(self, state, action, value):
         buffer = self.buffers[action]

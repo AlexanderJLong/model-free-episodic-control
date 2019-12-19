@@ -119,7 +119,7 @@ env_list = [
 
 small_env_list = [
     #"breakout",
-    "gravitar",
+    #"gravitar",
     "ms_pacman",
     "qbert",
     "seaquest",
@@ -131,7 +131,7 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 50_000
+eval_steps = 30_000
 total_steps = 1_000_000
 test_eps = 2
 
@@ -149,7 +149,7 @@ config = {
     "STACKED-STATE": 4,
     "WEIGHTING": "none",
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": 1,
+    "COUNT-WEIGHT": [0, 100, 1, 2, 5],
     "SEED": list(range(3)),
 }
 """Projection type:

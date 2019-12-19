@@ -86,22 +86,22 @@ class MFECAgent:
         # if self.training:
         #    values = rewards
         # else:
-        dists = estimates[:, 1]
+        counts = estimates[:, 1]
         #print(f"raw dists {dists}")
-        dists = np.sqrt(dists)
-        dists = 1 + self.count_weight * dists / sum(dists)  # Convert to [1,count_weight]
+        #counts = np.sqrt(dists)
+        adj_counts = 1 + self.count_weight * counts / sum(counts)  # Convert to [1,count_weight]
         #print(f"processed dists {dists}")
         #print(rewards)
-        if self.training and np.random.rand() < 0.05:
+        if self.training:
             # Explor based on dist
-            maxes = np.where(dists == max(dists))
+            vals = rewards + adj_counts
             #print("explor")
         else:
-            maxes = np.where(rewards == max(rewards))
+            vals = rewards
 
         #print([len(b) for b in self.qec.buffers])
 
-        #maxes = np.where(values == max(values))
+        maxes = np.where(vals == max(vals))
         #if not np.all(np.equal(maxes, np.where(rewards == max(rewards)))): print("different action")
         probs = np.zeros_like(self.actions)
         probs[maxes] = 1
