@@ -82,16 +82,23 @@ class MFECAgent:
              for action in self.actions
              ])
         rewards = estimates[:, 0]
-        #dists = estimates[:, 1]
-        #dists = dists/sum(dists)
-        #print(dists)
+
+        #if self.training:
+        #    values = rewards
+        #else:
+        dists = estimates[:, 1]
+        dists = np.sqrt(dists)  # flatten the tail a bit
+        dists = 1 + dists / sum(dists)  # Convert to [1,2]
+        #print(f"dists {dists}")
         #print(rewards)
-        values = rewards
+        values = rewards * dists
+
+        #print(f"final vals {values}")
 
         maxes = np.where(values == max(values))
+        #if not np.all(np.equal(maxes, np.where(rewards == max(rewards)))): print("different action")
         probs = np.zeros_like(self.actions)
         probs[maxes] = 1
-        # values = np.power(values+1, 5)
         probs = probs / sum(probs)
         # best_actions = np.argwhere(values == np.max(values)).flatten()
         self.action = self.rs.choice(self.actions, p=probs)

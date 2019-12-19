@@ -131,13 +131,13 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 1_000
+eval_steps = 3_000
 total_steps = 100_000
-test_eps = 3
+test_eps = 2
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": full_env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
@@ -148,9 +148,9 @@ config = {
     "STICKY-ACTIONS": False,
     "STACKED-STATE": 4,
     "WEIGHTING": "none",
-    "CLIP-REWARD": [True, False],
+    "CLIP-REWARD": False,
     "COUNT-WEIGHT": 0,
-    "SEED": list(range(5)),
+    "SEED": list(range(3)),
 }
 """Projection type:
 0: Identity
