@@ -132,16 +132,16 @@ EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
 eval_steps = 10_000
-total_steps = 1_000_000
-test_eps = 2
+total_steps = 100_000
+test_eps = 3
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
-    "EPSILON": 0.5,
+    "EPSILON": 0,
     "EPS-DECAY": 0.01,
     "STATE-DIM": 100,
     "DISTANCE": "l2",
@@ -149,7 +149,7 @@ config = {
     "STACKED-STATE": 4,
     "WEIGHTING": "none",
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": 0,
+    "COUNT-WEIGHT": [True, False],
     "SEED": list(range(3)),
 }
 """Projection type:

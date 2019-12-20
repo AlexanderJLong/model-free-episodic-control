@@ -74,16 +74,19 @@ class MFECAgent:
         # Exploration
         if self.rs.random_sample() < self.epsilon and self.training:
             self.action = self.rs.choice(self.actions)
-            return self.action, self.state, [self.qec.estimate(self.state, action, use_count_exploration=self.training)
+            return self.action, self.state, [self.qec.estimate(self.state, action, use_count_exploration=self.count_weight)
                                              for action in self.actions
                                              ]
         # Exploitation
         else:
             estimates = np.asarray(
-                [self.qec.estimate(self.state, action, use_count_exploration=self.training)
+                [self.qec.estimate(self.state, action, use_count_exploration=self.count_weight)
                  for action in self.actions
                  ])
         Qs = estimates
+        #print([len(a) for a in self.qec.buffers])
+
+        #print(Qs)
         # print(rewards)
 
         # if self.traininQg:
@@ -137,7 +140,8 @@ class MFECAgent:
             else:
                 r = self.clipper(experience["reward"])
                 R += r
-                value = 0.5*experience["Qs"][experience["action"]] + 0.5*(0.5 * R + 0.5 * (r + max(last_Qs)))
+                #value = 0.5*experience["Qs"][experience["action"]] + 0.5*(0.5 * R + 0.5 * (r + max(last_Qs)))
+                value = R
                 # print(f"step {i},r:{r} R: {R}, 1-step bellman: {r + self.get_max_value(experience['state'])},
                 # value: {value} ")
 

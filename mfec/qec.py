@@ -23,24 +23,27 @@ class QEC:
         # Strip batch dim. Note dists is already ordered.
         dists = dists[0]
         neighbors = neighbors[0]
+        # print(dists)
 
-        #print(dists, neighbors, buffer.values_array, action)
+        # print(dists, neighbors, buffer.values_array, action)
         # Identical state found
         if dists[0] == 0:
             return buffer.values_array[neighbors[0]]
 
-
         # return sum(buffer.values[n] for n in neighbors)
         w = np.divide(1., dists)  # Get inverse distances as weights
-        weighted_reward = np.sum(w * buffer.values_array[neighbors]) / np.sum(w)
-        #dist_weighted_count = np.sum(w * buffer.counts_array[neighbors]) / np.sum(w)
 
+        # dist_weighted_count = np.sum(w * buffer.counts_array[neighbors]) / np.sum(w)
 
+        if use_count_exploration:
+            weighted_reward = np.sum(w * buffer.values_array[neighbors]) / np.sum(w)
+        else:
+            weighted_reward = np.sum(w * buffer.values_array[neighbors])
         # print(np.sqrt(dist_weighted_count ))
-        return weighted_reward #+ use_count_exploration / (np.sqrt(dist_weighted_count))
+        return weighted_reward  # + use_count_exploration / (np.sqrt(dist_weighted_count))
 
     def update(self, state, action, value):
-        #print("updating", action)
+        # print("updating", action)
         buffer = self.buffers[action]
         buffer.add(state, value)
 
@@ -147,7 +150,7 @@ class ActionBuffer:
         if dist < 1e-6 or np.isnan(dist):
             # Existing state, update and return
             self.counts_list[idx] += 1
-            self.values_list[idx] = value # max(value, self.values_list[idx])
+            self.values_list[idx] = max(value, self.values_list[idx])
         else:
             self.values_list.append(value)
             self._tree.add_items(state)
