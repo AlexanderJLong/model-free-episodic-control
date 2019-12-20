@@ -16,7 +16,7 @@ class QEC:
         buffer = self.buffers[action]
 
         if len(buffer) == 0:
-            return 1e7, 1e-6
+            return 0
 
         k = min(self.k, len(buffer))  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
@@ -24,20 +24,21 @@ class QEC:
         dists = dists[0]
         neighbors = neighbors[0]
 
+        #print(dists, neighbors, buffer.values_array, action)
         # Identical state found
         if dists[0] == 0:
-            return buffer.values_array[neighbors[0]], buffer.counts_array[neighbors[0]]
+            return buffer.values_array[neighbors[0]]
 
 
         # return sum(buffer.values[n] for n in neighbors)
         w = np.divide(1., dists)  # Get inverse distances as weights
         weighted_reward = np.sum(w * buffer.values_array[neighbors]) / np.sum(w)
 
-        avg_count = np.mean(buffer.counts_array[neighbors])
         # print(np.sqrt(dist_weighted_count ))
-        return weighted_reward, avg_count  # + use_count_exploration / (np.sqrt(dist_weighted_count ))
+        return weighted_reward # + use_count_exploration / (np.sqrt(dist_weighted_count ))
 
     def update(self, state, action, value):
+        #print("updating", action)
         buffer = self.buffers[action]
         buffer.add(state, value)
 
@@ -133,8 +134,8 @@ class ActionBuffer:
 
     def add(self, state, value):
         if not self.values_list:  # buffer empty, just add
-            self.values_list.append(value)
             self._tree.add_items(state)
+            self.values_list.append(value)
             self.counts_list.append(1)
             return
 
@@ -144,7 +145,7 @@ class ActionBuffer:
         if dist < 1e-6 or np.isnan(dist):
             # Existing state, update and return
             self.counts_list[idx] += 1
-            self.values_list[idx] =0.3 * value + self.values_list[idx]
+            self.values_list[idx] = value
         else:
             self.values_list.append(value)
             self._tree.add_items(state)
@@ -160,4 +161,4 @@ class ActionBuffer:
         return self._tree.get_items(range(0, len(self)))
 
     def __len__(self):
-        return len(self.values_list)
+        return len(self.values_array)

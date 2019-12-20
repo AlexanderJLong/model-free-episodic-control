@@ -71,38 +71,41 @@ class MFECAgent:
         # print(self.state.dtype)
         # self.state = observation
 
-        # Exploration
-        # if self.rs.random_sample() < self.epsilon and self.training:
-        #    self.action = self.rs.choice(self.actions)
-
+        #Exploration
+        if self.rs.random_sample() < self.epsilon and self.training:
+           self.action = self.rs.choice(self.actions)
+           return self.action, self.state, [self.qec.estimate(self.state, action, use_count_exploration=self.training)
+             for action in self.actions
+             ]
         # Exploitation
-        # else:
-        estimates = np.asarray(
+        else:
+            estimates = np.asarray(
             [self.qec.estimate(self.state, action, use_count_exploration=self.training)
              for action in self.actions
              ])
-        rewards = estimates[:, 0]
+        Qs = estimates
+        #print(rewards)
 
-        # if self.training:
+        # if self.traininQg:
         #    values = rewards
         # else:
-        counts = estimates[:, 1]
-        #print(f"raw dists {dists}")
-        #counts = np.sqrt(dists)
-        adj_counts = 1 + self.count_weight * counts / sum(counts)  # Convert to [1,count_weight]
-        #print(f"processed dists {dists}")
-        #print(rewards)
-        if self.training:
-            # Explor based on dist
-            vals = rewards + adj_counts
-            #print("explor")
-        else:
-            vals = rewards
+        # counts = estimates[:, 1]
+        # print(f"raw dists {dists}")
+        # counts = np.sqrt(dists)
+        # adj_counts = 1 + self.count_weight * counts / sum(counts)  # Convert to [1,count_weight]
+        # print(f"processed dists {dists}")
+        # print(rewards)
+        # if self.training:
+        #    # Explor based on dist
+        #    vals = rewards + adj_counts
+        #    #print("explor")
+        # else:
+        #    vals = rewards
 
-        #print([len(b) for b in self.qec.buffers])
+        # print([len(b) for b in self.qec.buffers])
 
-        maxes = np.where(vals == max(vals))
-        #if not np.all(np.equal(maxes, np.where(rewards == max(rewards)))): print("different action")
+        maxes = np.where(Qs == max(Qs))
+        # if not np.all(np.equal(maxes, np.where(rewards == max(rewards)))): print("different action")
         probs = np.zeros_like(self.actions)
         probs[maxes] = 1
         probs = probs / sum(probs)
@@ -110,22 +113,41 @@ class MFECAgent:
         # best_actions = np.argwhere(values == np.max(values)).flatten()
         self.action = self.rs.choice(self.actions, p=probs)
 
-        return self.action, self.state
+        return self.action, self.state, Qs
+
+    def get_max_value(self, state):
+        return np.max([self.qec.estimate(state, action, use_count_exploration=self.training)
+                       for action in self.actions
+                       ])
 
     def train(self, trace):
         # Takes trace object: a list of dicts {"state", "action", "reward"}
-        value = 0.0
-        for _ in range(len(trace)):
+        R = 0.0
+        #print(f"len trace {trace}")
+        for i in range(len(trace)):
             experience = trace.pop()
 
-            value = value * self.discount + self.clipper(experience["reward"])
+            if not i:
+                #last sample
+                R = experience["reward"]
+                value = R
+                #print(f"step {i}, R: {R}, current estimate: {experience['Qs'][experience['action']]}, maxQk+1 {0}, new estimate: {R}, value: {value} ")
+
+            else:
+                r = self.clipper(experience["reward"])
+                R += r
+                value = 0.5*(experience['Qs'][experience['action']]) + 0.5*R
+                #print(f"step {i},r:{r} R: {R}, current estimate: {experience['Qs'][experience['action']]}, maxQk+1 {np.max(last_Qs)}, new estimate: {np.max(last_Qs) + R}, value: {value} ")
+
             self.qec.update(
                 experience["state"],
                 experience["action"],
                 value,
             )
 
+            last_Qs = experience["Qs"]
         self.qec.solidify_values()
+
         # Decay e exponentially
         if self.epsilon > 0:
             self.epsilon /= 1 + self.epsilon_decay

@@ -131,7 +131,7 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 30_000
+eval_steps = 10_000
 total_steps = 1_000_000
 test_eps = 2
 
@@ -142,14 +142,14 @@ config = {
     "K": 16,
     "DISCOUNT": 1,
     "EPSILON": 0.0,
-    "EPS-DECAY": 0.001,
+    "EPS-DECAY": 0.05,
     "STATE-DIM": 100,
     "DISTANCE": "l2",
     "STICKY-ACTIONS": False,
     "STACKED-STATE": 4,
     "WEIGHTING": "none",
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": [0, 100, 1, 2, 5],
+    "COUNT-WEIGHT": 0,
     "SEED": list(range(3)),
 }
 """Projection type:
@@ -219,13 +219,14 @@ def main(cfg):
             # agent.qec.plot3d(both=True, diff=False)
 
         # Act, and add
-        action, state = agent.choose_action(observation)
+        action, state, Qs = agent.choose_action(observation)
         observation, reward, done = env.step(action)
         trace.append(
             {
                 "state": state,
                 "action": action,
                 "reward": reward,
+                "Qs": Qs,
             }
         )
 
@@ -249,7 +250,7 @@ def test_agent(agent, env, test_eps, utils, train_step):
         done = False
         R = 0
         while not done:
-            a, _ = agent.choose_action(s)
+            a, _, _ = agent.choose_action(s)
             s, r, done = env.step(a)
             R += r
 
