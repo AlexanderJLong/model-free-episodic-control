@@ -119,7 +119,7 @@ env_list = [
 
 small_env_list = [
     #"breakout",
-    #"gravitar",
+    "gravitar",
     "ms_pacman",
     "qbert",
     "seaquest",
@@ -141,8 +141,8 @@ config = {
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
-    "EPSILON": 0.0,
-    "EPS-DECAY": 0.05,
+    "EPSILON": 0.5,
+    "EPS-DECAY": 0.01,
     "STATE-DIM": 100,
     "DISTANCE": "l2",
     "STICKY-ACTIONS": False,

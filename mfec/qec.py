@@ -33,9 +33,11 @@ class QEC:
         # return sum(buffer.values[n] for n in neighbors)
         w = np.divide(1., dists)  # Get inverse distances as weights
         weighted_reward = np.sum(w * buffer.values_array[neighbors]) / np.sum(w)
+        #dist_weighted_count = np.sum(w * buffer.counts_array[neighbors]) / np.sum(w)
+
 
         # print(np.sqrt(dist_weighted_count ))
-        return weighted_reward # + use_count_exploration / (np.sqrt(dist_weighted_count ))
+        return weighted_reward #+ use_count_exploration / (np.sqrt(dist_weighted_count))
 
     def update(self, state, action, value):
         #print("updating", action)
@@ -145,7 +147,7 @@ class ActionBuffer:
         if dist < 1e-6 or np.isnan(dist):
             # Existing state, update and return
             self.counts_list[idx] += 1
-            self.values_list[idx] = value
+            self.values_list[idx] = value # max(value, self.values_list[idx])
         else:
             self.values_list.append(value)
             self._tree.add_items(state)

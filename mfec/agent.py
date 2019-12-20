@@ -71,20 +71,20 @@ class MFECAgent:
         # print(self.state.dtype)
         # self.state = observation
 
-        #Exploration
+        # Exploration
         if self.rs.random_sample() < self.epsilon and self.training:
-           self.action = self.rs.choice(self.actions)
-           return self.action, self.state, [self.qec.estimate(self.state, action, use_count_exploration=self.training)
-             for action in self.actions
-             ]
+            self.action = self.rs.choice(self.actions)
+            return self.action, self.state, [self.qec.estimate(self.state, action, use_count_exploration=self.training)
+                                             for action in self.actions
+                                             ]
         # Exploitation
         else:
             estimates = np.asarray(
-            [self.qec.estimate(self.state, action, use_count_exploration=self.training)
-             for action in self.actions
-             ])
+                [self.qec.estimate(self.state, action, use_count_exploration=self.training)
+                 for action in self.actions
+                 ])
         Qs = estimates
-        #print(rewards)
+        # print(rewards)
 
         # if self.traininQg:
         #    values = rewards
@@ -109,11 +109,11 @@ class MFECAgent:
         probs = np.zeros_like(self.actions)
         probs[maxes] = 1
         probs = probs / sum(probs)
-        #print(probs)
+        # print(probs)
         # best_actions = np.argwhere(values == np.max(values)).flatten()
         self.action = self.rs.choice(self.actions, p=probs)
 
-        return self.action, self.state, Qs
+        return self.action, self.state, estimates
 
     def get_max_value(self, state):
         return np.max([self.qec.estimate(state, action, use_count_exploration=self.training)
@@ -123,21 +123,23 @@ class MFECAgent:
     def train(self, trace):
         # Takes trace object: a list of dicts {"state", "action", "reward"}
         R = 0.0
-        #print(f"len trace {trace}")
+        # print(f"len trace {trace}")
         for i in range(len(trace)):
             experience = trace.pop()
 
             if not i:
-                #last sample
+                # last sample
                 R = experience["reward"]
                 value = R
-                #print(f"step {i}, R: {R}, current estimate: {experience['Qs'][experience['action']]}, maxQk+1 {0}, new estimate: {R}, value: {value} ")
+                # print(f"step {i}, R: {R}, current estimate: {experience['Qs'][experience['action']]}, maxQk+1 {0},
+                # new estimate: {R}, value: {value} ")
 
             else:
                 r = self.clipper(experience["reward"])
                 R += r
-                value = 0.5*(experience['Qs'][experience['action']]) + 0.5*R
-                #print(f"step {i},r:{r} R: {R}, current estimate: {experience['Qs'][experience['action']]}, maxQk+1 {np.max(last_Qs)}, new estimate: {np.max(last_Qs) + R}, value: {value} ")
+                value = 0.5*experience["Qs"][experience["action"]] + 0.5*(0.5 * R + 0.5 * (r + max(last_Qs)))
+                # print(f"step {i},r:{r} R: {R}, 1-step bellman: {r + self.get_max_value(experience['state'])},
+                # value: {value} ")
 
             self.qec.update(
                 experience["state"],
@@ -151,7 +153,7 @@ class MFECAgent:
         # Decay e exponentially
         if self.epsilon > 0:
             self.epsilon /= 1 + self.epsilon_decay
-            print(self.epsilon)
+            # print(self.epsilon)
 
     def save(self, results_dir):
         with open(os.path.join(results_dir, "agent.pkl"), "wb") as file:
