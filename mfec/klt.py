@@ -5,42 +5,53 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class QEC:
-    def __init__(self, actions, buffer_size, k, state_dim, distance, seed):
+class KLT:
+    def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, seed):
         self.buffers = tuple([ActionBuffer(buffer_size, state_dim, distance, seed) for _ in actions])
         self.k = k
+        self.obv_dim = obv_dim  # dimentionality of origional data
 
-    def estimate(self, state, action, use_count_exploration):
+    def estimate(self, state, action, count_weight, training):
         """Return the estimated value of the given state"""
 
         buffer = self.buffers[action]
 
         if len(buffer) == 0:
-            return 0
+            return 1e6
 
         k = min(self.k, len(buffer))  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
         # Strip batch dim. Note dists is already ordered.
         dists = dists[0]
         neighbors = neighbors[0]
-        # print(dists)
 
         # print(dists, neighbors, buffer.values_array, action)
-        # Identical state found
         if dists[0] == 0:
-            return buffer.values_array[neighbors[0]]
-
-        # return sum(buffer.values[n] for n in neighbors)
-        w = np.divide(1., dists)  # Get inverse distances as weights
-
-        # dist_weighted_count = np.sum(w * buffer.counts_array[neighbors]) / np.sum(w)
-
-        if use_count_exploration:
-            weighted_reward = np.sum(w * buffer.values_array[neighbors]) / np.sum(w)
+            # Identical state found
+            weighted_reward = buffer.values_array[neighbors[0]]
+            #weighted_count = 1./np.sqrt(buffer.counts_array[neighbors[0]])
+            # w = [0]
         else:
-            weighted_reward = np.sum(w * buffer.values_array[neighbors])
-        # print(np.sqrt(dist_weighted_count ))
-        return weighted_reward  # + use_count_exploration / (np.sqrt(dist_weighted_count))
+
+            # never seen before so estimate
+            values = buffer.values_array[neighbors]
+            #counts = buffer.counts_array[neighbors]
+
+            # Convert to l2norm, normalize by original dimensionality so dists have a consistent
+            # range, but make sure they're always still > 1 because of w=1/d
+            norms = np.sqrt(dists / self.obv_dim)
+
+            # return sum(buffer.values[n] for n in neighbors)
+            w = np.divide(1., norms)  # Get inverse distances as weights
+            # dist_weighted_count = np.sum(w * buffer.counts_array[neighbors]) / np.sum(w)
+
+            weighted_reward = np.sum(w * values) / np.sum(w)
+            # weighted_reward = np.sum(w * values)
+            #weighted_count = np.sum(w * np.power(counts, -0.5)) / np.sum(w)
+            #print(counts, weighted_count)
+
+        #print(f"r:{weighted_reward} + r'{weighted_count * training}, rd:{np.mean(w)}")
+        return weighted_reward #+ count_weight * ( weighted_count + np.mean(w)) * training # No exploration bonus on testing
 
     def update(self, state, action, value):
         # print("updating", action)
@@ -150,7 +161,8 @@ class ActionBuffer:
         if dist < 1e-6 or np.isnan(dist):
             # Existing state, update and return
             self.counts_list[idx] += 1
-            self.values_list[idx] = max(value, self.values_list[idx])
+            self.values_list[idx] = (1 - 1/self.counts_list[idx])*value + (1/self.counts_list[idx]) * self.values_list[idx]
+
         else:
             self.values_list.append(value)
             self._tree.add_items(state)

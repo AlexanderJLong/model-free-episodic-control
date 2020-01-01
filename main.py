@@ -118,11 +118,12 @@ env_list = [
 ]
 
 small_env_list = [
-    #"breakout",
-    "gravitar",
+    "breakout",
+    "freeway",
     "ms_pacman",
     "qbert",
-    "seaquest",
+    #"seaquest",
+    #"crazy_climber",
 ]
 
 # GLOBAl VARS FIXED FOR EACH RUN
@@ -137,19 +138,20 @@ test_eps = 3
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.01,
-    "STATE-DIM": 100,
+    "STATE-DIM": 16,
     "DISTANCE": "l2",
     "STICKY-ACTIONS": False,
     "STACKED-STATE": 4,
     "WEIGHTING": "none",
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": [True, False],
+    "COUNT-WEIGHT": 0,
+    "PROJECTION-DENSITY": 0.01,
     "SEED": list(range(3)),
 }
 """Projection type:
@@ -206,6 +208,7 @@ def main(cfg):
         epsilon_decay=cfg["EPS-DECAY"],
         clip_rewards=cfg["CLIP-REWARD"],
         count_weight=cfg["COUNT-WEIGHT"],
+        projection_density=cfg["PROJECTION-DENSITY"],
         distance=cfg["DISTANCE"],
     )
 

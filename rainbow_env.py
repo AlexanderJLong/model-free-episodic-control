@@ -68,6 +68,7 @@ class Env:
         self.state_buffer.append(observation)
         # Detect loss of life as terminal in training mode
         if self.training:
+            print("awd")
             lives = self.ale.lives()
             if self.lives > lives > 0:  # Lives > 0 for Q*bert
                 self.life_termination = not done  # Only set flag when not truly done
@@ -222,12 +223,12 @@ class EnvStacked(Env):
         observation = np.asarray(frame_buffer).max(0)
         self.state_buffer.append(observation)
         # Detect loss of life as terminal in training mode
-        if self.training:
-            #Can probably remove this
-            lives = self.ale.lives()
-            if self.lives > lives > 0:  # Lives > 0 for Q*bert
-                self.life_termination = not done  # Only set flag when not truly done
-                done = True
-            self.lives = lives
+        #if self.training:
+        #    #Can probably remove this
+        #    lives = self.ale.lives()
+        #    if self.lives > lives > 0:  # Lives > 0 for Q*bert
+        #        self.life_termination = not done  # Only set flag when not truly done
+        #        done = True
+        #    self.lives = lives
         # Return state, reward, done
         return np.asarray(self.state_buffer), reward, done

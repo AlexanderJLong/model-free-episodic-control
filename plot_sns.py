@@ -67,17 +67,24 @@ for i, env in enumerate(envs):
     except:
         continue
 
-print(df.to_string())
 sns.set_context("paper")
-sns.set(style="darkgrid")
+sns.set(style="ticks")
+sns.despine()
 sns.set_palette("colorblind")
-
 df["SEED"] = pd.to_numeric(df["SEED"])
+df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 
-compare_var = 'COUNT-WEIGHT'
-#df = df[(df["DISTANCE"] == "l2")]
+df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
+
+compare_var = 'PROJECTION-DENSITY'
+#compare_var = 'STATE-DIM'
+#df = df[(df["DISTANCE"] == "l2")]
+df = df[(df["STATE-DIM"] == 512)]
+
 cols = min(num_envs, 9)
+
+print(df.to_string())
 g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
 #g.set(xlim=(0, 1e5))
 try:
@@ -90,14 +97,15 @@ for ax in g.axes.flat:
     env_name = ax.get_title()
     if env_name in sota:
         ax.plot((0, max_frames), (sota[env_name][0], sota[env_name][0]), c="k", linewidth=1, ls=":", label="SimPLe")
-        # ax.plot((0, max_frames), (sota[env_name][1], sota[env_name][1]), c="k", linewidth=1, ls="--",
-        # label="Rainbow (OT)")
+        ax.plot((0, max_frames), (sota[env_name][1], sota[env_name][1]), c="k", linewidth=1, ls="--",
+        label="Rainbow (OT)")
 
 plt.legend()
 g.add_legend()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.savefig(f"./plots/full_run.png")
 plt.show()
+plt.figure()
 
 # human normalized median performance
 summary_scores = df.groupby(["ENV", "rounded_frames", compare_var, "SEED"], as_index=False).agg({"reward_avg": "mean"})
@@ -124,4 +132,6 @@ sns.lineplot("rounded_frames",
              hue=compare_var,
              palette=sns.color_palette("colorblind", num_lines)
              ).set_title(f"Median Human Normalized Reward Across {num_games} Games")
+
+plt.savefig(f"./plots/mhns.png")
 plt.show()

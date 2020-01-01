@@ -6,7 +6,7 @@ import pickle
 import numpy as np
 from sklearn import random_projection
 
-from mfec.qec import QEC
+from mfec.klt import KLT
 
 
 class MFECAgent:
@@ -23,26 +23,29 @@ class MFECAgent:
             epsilon_decay,
             clip_rewards,
             count_weight,
+            projection_density,
             distance,
     ):
         self.rs = np.random.RandomState(seed)
         self.actions = actions
         self.count_weight = count_weight
-        self.qec = QEC(actions=self.actions,
+        self.qec = KLT(actions=self.actions,
                        buffer_size=buffer_size,
                        k=k,
                        state_dim=state_dimension,
+                       obv_dim=observation_dim,
                        distance=distance,
                        seed=seed)
 
-        self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=True)
+        self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=True,
+                                                                    density=projection_density)
         self.transformer.fit(np.zeros([1, observation_dim]))
         # self.transformer.components_.data[np.where(self.transformer.components_.data < 0)] = -1
         # self.transformer.components_.data[np.where(self.transformer.components_.data > 0)] = 1
         # self.transformer.components_ = self.transformer.components_.astype(np.int8)
 
-        for r in self.transformer.components_:
-            print(r)
+        # for r in self.transformer.components_:
+        #    print(r)
 
         self.discount = discount
         self.epsilon = epsilon
@@ -56,66 +59,32 @@ class MFECAgent:
             self.clipper = lambda x: x
 
     def choose_action(self, observation):
-
         # Preprocess and project observation to state
         # print(observation)
         self.state = self.transformer.transform(observation.reshape(1, -1))
-        # self.state = observation.reshape(1, -1)
-
-        # print(self.state)
-        # print(self.state)
-        # self.state = observation.flatten()
-        # print(self.transformer.components_.dtype)
-        # self.state = np.asarray(self.state, dtype=np.int16)
-        # self.state = self.projection @ observation.flatten()
-        # print(self.state.dtype)
-        # self.state = observation
 
         # Exploration
-        if self.rs.random_sample() < self.epsilon and self.training:
-            self.action = self.rs.choice(self.actions)
-            return self.action, self.state, [self.qec.estimate(self.state, action, use_count_exploration=self.count_weight)
-                                             for action in self.actions
-                                             ]
-        # Exploitation
-        else:
-            estimates = np.asarray(
-                [self.qec.estimate(self.state, action, use_count_exploration=self.count_weight)
-                 for action in self.actions
-                 ])
+        # if self.rs.random_sample() < self.epsilon and self.training:
+        #    self.action = self.rs.choice(self.actions)
+        #    return self.action, self.state, [self.qec.estimate(self.state,
+        #                                                       action,
+        #                                                       count_weight=self.count_weight,
+        #                                                       training=self.training)
+        #                                     for action in self.actions]
+        ## Exploitation
+        # else:
+        estimates = np.asarray([self.qec.estimate(self.state,
+                                                  action,
+                                                  count_weight=self.count_weight,
+                                                  training=self.training)
+                                for action in self.actions])
         Qs = estimates
-        #print([len(a) for a in self.qec.buffers])
-
-        #print(Qs)
-        # print(rewards)
-
-        # if self.traininQg:
-        #    values = rewards
-        # else:
-        # counts = estimates[:, 1]
-        # print(f"raw dists {dists}")
-        # counts = np.sqrt(dists)
-        # adj_counts = 1 + self.count_weight * counts / sum(counts)  # Convert to [1,count_weight]
-        # print(f"processed dists {dists}")
-        # print(rewards)
-        # if self.training:
-        #    # Explor based on dist
-        #    vals = rewards + adj_counts
-        #    #print("explor")
-        # else:
-        #    vals = rewards
-
-        # print([len(b) for b in self.qec.buffers])
 
         maxes = np.where(Qs == max(Qs))
-        # if not np.all(np.equal(maxes, np.where(rewards == max(rewards)))): print("different action")
         probs = np.zeros_like(self.actions)
         probs[maxes] = 1
         probs = probs / sum(probs)
-        # print(probs)
-        # best_actions = np.argwhere(values == np.max(values)).flatten()
         self.action = self.rs.choice(self.actions, p=probs)
-
         return self.action, self.state, estimates
 
     def get_max_value(self, state):
@@ -140,7 +109,7 @@ class MFECAgent:
             else:
                 r = self.clipper(experience["reward"])
                 R += r
-                #value = 0.5*experience["Qs"][experience["action"]] + 0.5*(0.5 * R + 0.5 * (r + max(last_Qs)))
+                # value = 0.5*experience["Qs"][experience["action"]] + 0.5*(0.5 * R + 0.5 * (r + max(last_Qs)))
                 value = R
                 # print(f"step {i},r:{r} R: {R}, 1-step bellman: {r + self.get_max_value(experience['state'])},
                 # value: {value} ")
