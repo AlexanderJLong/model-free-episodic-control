@@ -73,19 +73,18 @@ class MFECAgent:
         #                                     for action in self.actions]
         ## Exploitation
         # else:
-        estimates = np.asarray([self.qec.estimate(self.state,
+        q_values = np.asarray([self.qec.estimate(self.state,
                                                   action,
                                                   count_weight=self.count_weight,
                                                   training=self.training)
                                 for action in self.actions])
-        Qs = estimates
 
-        maxes = np.where(Qs == max(Qs))
         probs = np.zeros_like(self.actions)
-        probs[maxes] = 1
+        probs[np.where(q_values == max(q_values))] = 1
         probs = probs / sum(probs)
+
         self.action = self.rs.choice(self.actions, p=probs)
-        return self.action, self.state, estimates
+        return self.action, self.state, q_values
 
     def get_max_value(self, state):
         return np.max([self.qec.estimate(state, action, use_count_exploration=self.training)

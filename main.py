@@ -138,7 +138,7 @@ test_eps = 3
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
@@ -146,7 +146,7 @@ config = {
     "EPS-DECAY": 0.01,
     "STATE-DIM": 16,
     "DISTANCE": "l2",
-    "STICKY-ACTIONS": False,
+    "STICKY-ACTIONS": [True, False],
     "STACKED-STATE": 4,
     "WEIGHTING": "none",
     "CLIP-REWARD": False,

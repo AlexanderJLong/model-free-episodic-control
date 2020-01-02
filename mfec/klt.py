@@ -44,13 +44,15 @@ class KLT:
             # return sum(buffer.values[n] for n in neighbors)
             w = np.divide(1., norms)  # Get inverse distances as weights
             # dist_weighted_count = np.sum(w * buffer.counts_array[neighbors]) / np.sum(w)
-
-            weighted_reward = np.sum(w * values) / np.sum(w)
+            #print(w)
+            weighted_reward = np.sum(w * values) / sum(w)
+            #print(weighted_reward)
             # weighted_reward = np.sum(w * values)
             #weighted_count = np.sum(w * np.power(counts, -0.5)) / np.sum(w)
             #print(counts, weighted_count)
 
         #print(f"r:{weighted_reward} + r'{weighted_count * training}, rd:{np.mean(w)}")
+
         return weighted_reward #+ count_weight * ( weighted_count + np.mean(w)) * training # No exploration bonus on testing
 
     def update(self, state, action, value):
@@ -161,7 +163,8 @@ class ActionBuffer:
         if dist < 1e-6 or np.isnan(dist):
             # Existing state, update and return
             self.counts_list[idx] += 1
-            self.values_list[idx] = (1 - 1/self.counts_list[idx])*value + (1/self.counts_list[idx]) * self.values_list[idx]
+            self.values_list[idx] = (1 - 1/self.counts_list[idx])*self.values_list[idx] + (1/self.counts_list[idx]) * value
+            #self.values_list[idx] = max(value, self.values_list[idx])
 
         else:
             self.values_list.append(value)

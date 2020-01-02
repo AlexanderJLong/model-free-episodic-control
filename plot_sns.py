@@ -77,10 +77,10 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = 'PROJECTION-DENSITY'
+compare_var = "STICKY-ACTIONS"
 #compare_var = 'STATE-DIM'
 #df = df[(df["DISTANCE"] == "l2")]
-df = df[(df["STATE-DIM"] == 512)]
+#df = df[(df["STATE-DIM"] == 512)]
 
 cols = min(num_envs, 9)
 
