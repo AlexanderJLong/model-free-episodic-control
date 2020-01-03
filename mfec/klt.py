@@ -6,8 +6,8 @@ import numpy as np
 
 
 class KLT:
-    def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, seed):
-        self.buffers = tuple([ActionBuffer(buffer_size, state_dim, distance, seed) for _ in actions])
+    def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, lr, seed):
+        self.buffers = tuple([ActionBuffer(buffer_size, state_dim, distance, lr,  seed) for _ in actions])
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
 
@@ -17,7 +17,7 @@ class KLT:
         buffer = self.buffers[action]
 
         if len(buffer) == 0:
-            return 1e6
+            return 0
 
         k = min(self.k, len(buffer))  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
@@ -40,12 +40,12 @@ class KLT:
             # Convert to l2norm, normalize by original dimensionality so dists have a consistent
             # range, but make sure they're always still > 1 because of w=1/d
             norms = np.sqrt(dists / self.obv_dim)
+            #norms = dists / self.obv_dim
 
             # return sum(buffer.values[n] for n in neighbors)
             w = np.divide(1., norms)  # Get inverse distances as weights
             # dist_weighted_count = np.sum(w * buffer.counts_array[neighbors]) / np.sum(w)
-            #print(w)
-            weighted_reward = np.sum(w * values) / sum(w)
+            weighted_reward = np.sum(w * values) / np.sum(w)
             #print(weighted_reward)
             # weighted_reward = np.sum(w * values)
             #weighted_count = np.sum(w * np.power(counts, -0.5)) / np.sum(w)
@@ -136,11 +136,12 @@ class KLT:
 
 
 class ActionBuffer:
-    def __init__(self, capacity, state_dim, distance, seed):
+    def __init__(self, capacity, state_dim, distance, lr, seed):
         self.state_dim = state_dim
+        self.lr = lr
         self.capacity = capacity
         self._tree = hnswlib.Index(space=distance, dim=state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=capacity, M=10, random_seed=seed)
+        self._tree.init_index(max_elements=capacity, M=20, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
         self.values_array = np.asarray([])  # For lookup. Update at train by converting values_list.
         self.counts_list = []
@@ -164,9 +165,12 @@ class ActionBuffer:
             # Existing state, update and return
             self.counts_list[idx] += 1
             self.values_list[idx] = (1 - 1/self.counts_list[idx])*self.values_list[idx] + (1/self.counts_list[idx]) * value
-            #self.values_list[idx] = max(value, self.values_list[idx])
+            #self.values_list[idx] = 0.7*self.values_list[idx] +0.3*value
+            #print(f"updating {self.values_list[idx]}")
+            #self.values_list[idx] = (1-self.lr)*self.values_list[idx] * self.lr*value
 
         else:
+            #print(f"adding {value}")
             self.values_list.append(value)
             self._tree.add_items(state)
             self.counts_list.append(1)

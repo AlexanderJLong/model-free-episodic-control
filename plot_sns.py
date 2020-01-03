@@ -77,9 +77,9 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "STICKY-ACTIONS"
+compare_var = "LR"
 #compare_var = 'STATE-DIM'
-#df = df[(df["DISTANCE"] == "l2")]
+#df = df[(df["UPDATE-TYPE"] == "TD")]
 #df = df[(df["STATE-DIM"] == 512)]
 
 cols = min(num_envs, 9)
@@ -100,7 +100,7 @@ for ax in g.axes.flat:
         ax.plot((0, max_frames), (sota[env_name][1], sota[env_name][1]), c="k", linewidth=1, ls="--",
         label="Rainbow (OT)")
 
-plt.legend()
+#plt.legend()
 g.add_legend()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.savefig(f"./plots/full_run.png")

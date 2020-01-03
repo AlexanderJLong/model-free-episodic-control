@@ -138,20 +138,22 @@ test_eps = 3
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": "ms_pacman",
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
-    "EPSILON": 0,
-    "EPS-DECAY": 0.01,
-    "STATE-DIM": 16,
+    "EPSILON": 0.6,
+    "EPS-DECAY": 0.06,
+    "STATE-DIM": 20,
     "DISTANCE": "l2",
-    "STICKY-ACTIONS": [True, False],
+    "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
     "WEIGHTING": "none",
     "CLIP-REWARD": False,
     "COUNT-WEIGHT": 0,
-    "PROJECTION-DENSITY": 0.01,
+    "PROJECTION-DENSITY": 0.3,
+    "UPDATE-TYPE": "MC",
+    "LR": [0.1, 0.2, 0.5, 0.75],
     "SEED": list(range(3)),
 }
 """Projection type:
@@ -210,6 +212,8 @@ def main(cfg):
         count_weight=cfg["COUNT-WEIGHT"],
         projection_density=cfg["PROJECTION-DENSITY"],
         distance=cfg["DISTANCE"],
+        update_type=cfg["UPDATE-TYPE"],
+        learning_rate=cfg["LR"],
     )
 
     env.train()  # turn on episodic life
