@@ -13,7 +13,7 @@ class Env:
         self.ale.setInt('random_seed', seed)
         self.ale.setInt('max_num_frames_per_episode', int(108e3))
         self.ale.setFloat('repeat_action_probability', 0.25 if sticky_actions else 0)  # Sticky actions
-        self.ale.setInt('frame_skip', 0)
+        self.ale.setInt('frame_skip', 5)
         self.ale.setBool('color_averaging', False)
         self.ale.loadROM(atari_py.get_game_path(game))  # ROM loading must be done after setting options
         actions = self.ale.getMinimalActionSet()
@@ -223,12 +223,12 @@ class EnvStacked(Env):
         observation = np.asarray(frame_buffer).max(0)
         self.state_buffer.append(observation)
         # Detect loss of life as terminal in training mode
-        #if self.training:
-        #    #Can probably remove this
-        #    lives = self.ale.lives()
-        #    if self.lives > lives > 0:  # Lives > 0 for Q*bert
-        #        self.life_termination = not done  # Only set flag when not truly done
-        #        done = True
-        #    self.lives = lives
+        if self.training:
+            #Can probably remove this
+            lives = self.ale.lives()
+            if self.lives > lives > 0:  # Lives > 0 for Q*bert
+                self.life_termination = not done  # Only set flag when not truly done
+                done = True
+            self.lives = lives
         # Return state, reward, done
         return np.asarray(self.state_buffer), reward, done

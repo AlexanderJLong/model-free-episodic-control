@@ -117,10 +117,11 @@ class MFECAgent:
 
             else:
                 r = self.clipper(experience["reward"])
-                R += r
+                R = r + self.discount*R
                 if self.update_type == "MC":
                     value = (1 - self.learning_rate) * experience["Qs"][experience["action"]] + \
                             self.learning_rate * R
+                    #value = R
                 elif self.update_type == "TD":
                     value = (1 - self.learning_rate) * experience["Qs"][experience["action"]] + \
                             self.learning_rate * (r + np.max(last_Qs))

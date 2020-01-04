@@ -141,7 +141,7 @@ class ActionBuffer:
         self.lr = lr
         self.capacity = capacity
         self._tree = hnswlib.Index(space=distance, dim=state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=capacity, M=20, random_seed=seed)
+        self._tree.init_index(max_elements=capacity, M=30, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
         self.values_array = np.asarray([])  # For lookup. Update at train by converting values_list.
         self.counts_list = []
@@ -165,6 +165,7 @@ class ActionBuffer:
             # Existing state, update and return
             self.counts_list[idx] += 1
             self.values_list[idx] = (1 - 1/self.counts_list[idx])*self.values_list[idx] + (1/self.counts_list[idx]) * value
+
             #self.values_list[idx] = 0.7*self.values_list[idx] +0.3*value
             #print(f"updating {self.values_list[idx]}")
             #self.values_list[idx] = (1-self.lr)*self.values_list[idx] * self.lr*value
@@ -174,6 +175,11 @@ class ActionBuffer:
             self.values_list.append(value)
             self._tree.add_items(state)
             self.counts_list.append(1)
+
+        ##update surrounding states as well
+        #norms = np.sqrt(dists / self.obv_dim)
+        #for d, id in zip(dists, idxs):
+        #    print(f"updating {id}={self.values_list[id]} dist {d} away to {d * value}")
 
         return
 
