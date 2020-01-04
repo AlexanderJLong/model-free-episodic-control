@@ -1,5 +1,5 @@
 from rainbow_env import EnvStacked
-env = EnvStacked(seed=1, game="ms_pacman")
+env = EnvStacked(seed=1, game="ms_pacman", sticky_actions=False, stacked_states=4)
 
 from tqdm import tqdm
 

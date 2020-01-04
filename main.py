@@ -133,14 +133,14 @@ EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
 eval_steps = 10_000
-total_steps = 1_000_000
+total_steps = 100_000
 test_eps = 3
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": "ms_pacman",
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 32,
+    "K": 16,
     "DISCOUNT": 1,
     "EPSILON": 0.6,
     "EPS-DECAY": 0.06,
@@ -151,7 +151,7 @@ config = {
     "WEIGHTING": "none",
     "CLIP-REWARD": False,
     "COUNT-WEIGHT": 0,
-    "PROJECTION-DENSITY": 0.3,
+    "PROJECTION-DENSITY": "auto",
     "UPDATE-TYPE": "MC",
     "LR": 1,
     "SEED": list(range(3)),

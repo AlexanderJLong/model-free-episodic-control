@@ -68,7 +68,6 @@ class Env:
         self.state_buffer.append(observation)
         # Detect loss of life as terminal in training mode
         if self.training:
-            print("awd")
             lives = self.ale.lives()
             if self.lives > lives > 0:  # Lives > 0 for Q*bert
                 self.life_termination = not done  # Only set flag when not truly done
@@ -109,7 +108,7 @@ class EnvLastFrameOnly:
         self.ale.setInt('frame_skip', 0)
         self.ale.setBool('color_averaging', False)
         self.ale.loadROM(atari_py.get_game_path(game))  # ROM loading must be done after setting options
-        actions = self.ale.getMinimalActionSet()
+        actions = self.ale.getFullActionSet()
         self.actions = dict([i, e] for i, e in zip(range(len(actions)), actions))
         self.lives = 0  # Life counter (used in DeepMind training)
         self.life_termination = False  # Used to check if resetting only from loss of life

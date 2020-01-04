@@ -136,14 +136,15 @@ class MFECAgent:
                 value,
             )
 
-            last_Qs = experience["Qs"]
-            last_a = experience["action"]
-            self.qec.solidify_values()
+            #last_Qs = experience["Qs"]
+        self.qec.solidify_values()
 
         # Decay e exponentially
-        if self.epsilon > 0.15:
+        if self.epsilon > 0.05:
             self.epsilon -= self.epsilon_decay
             print(self.epsilon)
+        else:
+            self.epsilon = 0.05
 
     def save(self, results_dir):
         with open(os.path.join(results_dir, "agent.pkl"), "wb") as file:
