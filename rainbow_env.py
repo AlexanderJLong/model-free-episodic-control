@@ -14,7 +14,7 @@ class Env:
         self.ale.setInt('max_num_frames_per_episode', int(108e3))
         self.ale.setFloat('repeat_action_probability', 0.25 if sticky_actions else 0)  # Sticky actions
         self.ale.setInt('frame_skip', 0)
-        self.algo_frameskip = 5
+        self.algo_frameskip = 4
         self.ale.setBool('color_averaging', False)
         self.ale.loadROM(atari_py.get_game_path(game))  # ROM loading must be done after setting options
         actions = self.ale.getMinimalActionSet()

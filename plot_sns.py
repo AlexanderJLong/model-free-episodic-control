@@ -85,11 +85,11 @@ print(df.to_string())
 g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
 # g.set(xlim=(0, 1e5))
 try:
-    (g.map(sns.lineplot, "rounded_frames", "reward_avg", ci=100, estimator=np.mean)).set_titles("{col_name}")
+    (g.map(sns.lineplot, "Step", "Reward", ci=100, estimator=np.mean)).set_titles("{col_name}")
 except:
-    (g.map(plt.plot, "rounded_frames", "reward_avg")).set_titles("{col_name}")
+    (g.map(plt.plot, "Step", "Reward")).set_titles("{col_name}")
 
-max_frames = max(df["rounded_frames"])
+max_frames = max(df["Step"])
 for ax in g.axes.flat:
     env_name = ax.get_title()
     if env_name in sota:
@@ -111,23 +111,23 @@ plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.savefig(f"./plots/full_run.png")
 plt.figure()
 # human normalized median performance
-summary_scores = df.groupby(["ENV", "rounded_frames", compare_var, "SEED"], as_index=False).agg({"reward_avg": "mean"})
+summary_scores = df.groupby(["ENV", "Step", compare_var, "SEED"], as_index=False).agg({"Reward": "mean"})
 """
 Create a new column by mapping env name to the sota dict, then convert this column of 
 tuples to seperate columns and rename.
 """
 summary_scores[["simple", "rainbow", "human", "random"]] = pd.DataFrame(summary_scores["ENV"].map(sota).tolist())
-summary_scores["reward_rnd_normed"] = summary_scores["reward_avg"] - summary_scores["random"]
+summary_scores["reward_rnd_normed"] = summary_scores["Reward"] - summary_scores["random"]
 summary_scores["human_rnd_normed"] = summary_scores["human"] - summary_scores["random"]
 summary_scores["normalized_reward"] = summary_scores["reward_rnd_normed"] / summary_scores["human_rnd_normed"]
-hns = summary_scores.groupby(["rounded_frames", compare_var, "SEED"], as_index=False).agg(
+hns = summary_scores.groupby(["Step", compare_var, "SEED"], as_index=False).agg(
     {"normalized_reward": "median"})
 
 num_games = summary_scores["ENV"].nunique()
 hns[compare_var] = hns[compare_var].astype('category')
 num_lines = hns[compare_var].nunique()
 print(hns[compare_var])
-sns.lineplot("rounded_frames",
+sns.lineplot("Step",
              "normalized_reward",
              ci='sd',
              estimator=np.mean,

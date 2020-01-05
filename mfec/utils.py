@@ -1,70 +1,34 @@
 #!/usr/bin/env python3
 
 import os.path
-
+from collections import deque
+import numpy as np
 
 class Utils:
-    def __init__(self, results_dir, frames_per_epoch, max_frames):
+    def __init__(self, results_dir, history_len):
         self.results_file = open(os.path.join(results_dir, "results.csv"), "w")
         self.results_file.write(
-            "epoch,episodes,frames,rounded_frames,reward_sum,reward_avg,reward_max\n"
+            "Step,Reward\n"
         )
-        self.frames_per_epoch = frames_per_epoch
-        self.max_frames = max_frames
-        self.total_frames = 0
-        self.epoch = 1
-        self.epoch_episodes = 0
-        self.epoch_frames = 0
-        self.epoch_reward_sum = 0
-        self.epoch_reward_max = 0
+        self.reward_history = deque([0], maxlen=history_len)
 
-    def end_episode(self, episode_frames, episode_reward):
+    def end_episode(self, episode_reward):
         """Should be always and only executed at the end of an episode."""
-        self.epoch_episodes += 1
-        self.epoch_frames += episode_frames
-        self.epoch_reward_sum += episode_reward
+        self.reward_history.append(episode_reward)
 
-        if episode_reward > self.epoch_reward_max:
-            self.epoch_reward_max = episode_reward
-        self.total_frames += episode_frames
-
-        message = "Epoch: {}\tEpisode: {}\tReward: {}\tEpoch-Frames: {}/{}"
-        results = [
-            self.epoch,
-            self.epoch_episodes,
-            int(episode_reward),
-            self.epoch_frames,
-            self.frames_per_epoch,
-        ]
-        #print(message.format(*results))
-
-    def end_epoch(self, steps):
+    def end_epoch(self, step):
         """Save the results for the given epoch in the results-file"""
         results = [
-            self.epoch,
-            self.epoch_episodes,
-            self.total_frames,
-            steps,
-            int(self.epoch_reward_sum),
-            round(self.epoch_reward_sum / self.epoch_episodes),
-            int(self.epoch_reward_max),
+            step,
+            np.mean(self.reward_history),
         ]
-        self.results_file.write("{},{},{},{},{},{},{}\n".format(*results))
+        self.results_file.write("{},{}\n".format(*results))
         self.results_file.flush()
 
         message = (
-            "\nEpoch: {}\tEpisodes: {}\tFrames: {}\tRound Frames: {}\t"
-            "Reward Sum: {}\tReward Avg: {}\tReward Max: {}\n"
+            "\nStep: {}\tReward: {}\n"
         )
-        results = results + [self.total_frames, self.max_frames]
-
-
-        self.epoch += 1
-        self.epoch_episodes = 0
-        self.epoch_frames = 0
-        self.epoch_reward_sum = 0
-        self.epoch_reward_max = 0
-        return message.format(*results)
+        print(message.format(*results))
 
     def close(self):
         self.results_file.close()

@@ -128,13 +128,13 @@ EPOCHS_TILL_VIS = 2000
 EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
-eval_steps = 10_000
+eval_steps = 2_000
 total_steps = 200_000
 test_eps = 3
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": "qbert",
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
@@ -178,20 +178,16 @@ def main(cfg):
     agent_dir = os.path.join("agents", config_string)
     os.makedirs(agent_dir)
 
-    # Initialize utils, environment and agent
-    utils = Utils(agent_dir, FRAMES_PER_EPOCH, EPOCHS * FRAMES_PER_EPOCH)
+    # Initialize utils and specify reporting params
+    utils = Utils(agent_dir, history_len=3)
 
     # FIX SEEDING
     np.random.seed(cfg["SEED"])
     random.seed(cfg["SEED"])
 
     # Create env
-    from rainbow_env import EnvStacked
-    env = EnvStacked(
-        seed=cfg["SEED"],
-        game=cfg["ENV"],
-        sticky_actions=cfg["STICKY-ACTIONS"],
-        stacked_states=cfg["STACKED-STATE"])
+    from dopamine_env import create_atari_environment
+    env = create_atari_environment(cfg["ENV"].title())
 
     obv_dim = np.prod(env.reset().shape)
     agent = MFECAgent(
@@ -216,16 +212,16 @@ def main(cfg):
     env.train()  # turn on episodic life
     observation = env.reset()
     trace = []
+    episode_reward = 0
     for step in tqdm(list(range(total_steps + 1))):
 
         if step % eval_steps == 0:
-            tqdm.write(test_agent(agent, env, test_eps=test_eps, utils=utils, train_step=step))
-
-            # agent.qec.plot3d(both=True, diff=False)
+            utils.end_epoch(step)
 
         # Act, and add
         action, state, Qs = agent.choose_action(observation)
         observation, reward, done = env.step(action)
+        episode_reward += reward
         trace.append(
             {
                 "state": state,
@@ -236,6 +232,8 @@ def main(cfg):
         )
 
         if done:
+            utils.end_episode(episode_reward)
+            episode_reward = 0
             agent.train(trace)
 
             # Reset agent and environment

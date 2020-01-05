@@ -133,7 +133,7 @@ class AtariPreprocessing(object):
         self.frame_skip = frame_skip
         self.screen_size = screen_size
         from collections import deque
-        self.state_stack = deque([], maxlen=4)
+        self.frame_stack = deque([], maxlen=4)
 
         obs_dims = self.environment.observation_space
         # Stores temporary observations used for pooling over two successive
@@ -147,9 +147,11 @@ class AtariPreprocessing(object):
         self.lives = 0  # Will need to be set by reset().
 
     def train(self):
-        return # make apis consistent
+        """Compatibility with rainbow env"""
+        return
 
     def eval(self):
+        """Compatibility with rainbow env"""
         return
 
     def observation_space(self):
@@ -183,9 +185,8 @@ class AtariPreprocessing(object):
         self.screen_buffer[1].fill(0)
 
         #CHANGED
-        for i in range(4):
-            self.state_stack.append(np.zeros([84, 84]))
-
+        for _ in range(self.frame_stack.maxlen-1):
+            self.frame_stack.append(np.zeros([84, 84]))
 
         return self._pool_and_resize()
 
@@ -253,7 +254,7 @@ class AtariPreprocessing(object):
         observation = self._pool_and_resize()
 
         self.game_over = game_over
-        return observation, accumulated_reward, is_terminal, info
+        return observation, accumulated_reward, is_terminal
 
     def _fetch_grayscale_observation(self, output):
         """Returns the current observation in grayscale.
@@ -288,5 +289,5 @@ class AtariPreprocessing(object):
 
         #CHANGED. NORMALIZED AND STACKED.
         int_image = np.asarray(transformed_image, dtype=np.uint8)-128
-        self.state_stack.append(int_image)
-        return np.asarray(self.state_stack)
+        self.frame_stack.append(int_image)
+        return np.asarray(self.frame_stack)
