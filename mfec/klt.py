@@ -7,9 +7,9 @@ import pickle as pkl
 
 
 class KLT:
-    def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, lr, seed):
+    def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, lr, agg_dist, seed):
         self.buffer_size = buffer_size
-        self.buffers = tuple([ActionBuffer(a, self.buffer_size, state_dim, distance, lr,  seed) for a in actions])
+        self.buffers = tuple([ActionBuffer(a, self.buffer_size, state_dim, distance, lr, agg_dist, seed) for a in actions])
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
 
@@ -152,13 +152,14 @@ class KLT:
 
 
 class ActionBuffer:
-    def __init__(self, id, capacity, state_dim, distance, lr, seed):
+    def __init__(self, id, capacity, state_dim, distance, lr, agg_dist, seed):
         self.id = id
+        self.agg_dist = agg_dist
         self.state_dim = state_dim
         self.lr = lr
         self.capacity = capacity
         self.distance = distance
-        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim )  # possible options are l2, cosine or ip
+        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=capacity, M=10, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
         self.values_array = np.asarray([])  # For lookup. Update at train by converting values_list.
@@ -189,7 +190,7 @@ class ActionBuffer:
         idx, dist = self.find_neighbors(state, 1)
         idx = idx[0][0]
         dist = dist[0][0]
-        if dist < 1e-6 or np.isnan(dist):
+        if dist < self.agg_dist or np.isnan(dist):
             # Existing state, update and return
             self.counts_list[idx] += 1
             self.values_list[idx] = (1 - 1/self.counts_list[idx])*self.values_list[idx] + (1/self.counts_list[idx]) * value

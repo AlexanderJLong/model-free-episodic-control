@@ -27,66 +27,62 @@ from tqdm import tqdm
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
-
-
 full_env_list = [
-"alien",
-"amidar",
-"assault",
-"asterix",
-"astroids",
-"atlantis",
-"bank_heist",
-"battle_zone",
-"beam_rider",
-"berzerk",
-"bowling",
-"boxing",
-"carnival",
-"centipede",
-"chopper_command",
-"crazy_climber",
-"demon_attack",
-"double_dunk",
-"elevator_action",
-"enduro",
-"fishing_derby",
-"freeway",
-"frostbite",
-"gopher",
-"gravitar",
-"hero",
-"ice_hockey",
-"jamesbond",
-"journey_escape",
-"kangaroo",
-"krull",
-"kung_fu_master",
-"montezuma_revenge",
-"ms_pacman",
-"name_this_game",
-"phoenix",
-"pitfall",
-"pitfall2",
-"pooyan",
-"private_eye",
-"riverraid",
-"road_runnerr",
-"robotank",
-"seaquest",
-"skiing",
-"solaris",
-"space_invaders",
-"star_gunner",
-"tennis",
-"time_pilot",
-"tutankham",
-"up_n_down",
-"video_pinball",
-"zaxxon",
-    ]
-
-
+    "alien",
+    "amidar",
+    "assault",
+    "asterix",
+    "astroids",
+    "atlantis",
+    "bank_heist",
+    "battle_zone",
+    "beam_rider",
+    "berzerk",
+    "bowling",
+    "boxing",
+    "carnival",
+    "centipede",
+    "chopper_command",
+    "crazy_climber",
+    "demon_attack",
+    "double_dunk",
+    "elevator_action",
+    "enduro",
+    "fishing_derby",
+    "freeway",
+    "frostbite",
+    "gopher",
+    "gravitar",
+    "hero",
+    "ice_hockey",
+    "jamesbond",
+    "journey_escape",
+    "kangaroo",
+    "krull",
+    "kung_fu_master",
+    "montezuma_revenge",
+    "ms_pacman",
+    "name_this_game",
+    "phoenix",
+    "pitfall",
+    "pitfall2",
+    "pooyan",
+    "private_eye",
+    "riverraid",
+    "road_runnerr",
+    "robotank",
+    "seaquest",
+    "skiing",
+    "solaris",
+    "space_invaders",
+    "star_gunner",
+    "tennis",
+    "time_pilot",
+    "tutankham",
+    "up_n_down",
+    "video_pinball",
+    "zaxxon",
+]
 
 env_list = [
     "alien",
@@ -122,8 +118,8 @@ small_env_list = [
     "freeway",
     "ms_pacman",
     "qbert",
-    #"seaquest",
-    #"crazy_climber",
+    # "seaquest",
+    # "crazy_climber",
 ]
 
 # GLOBAl VARS FIXED FOR EACH RUN
@@ -136,9 +132,9 @@ eval_steps = 10_000
 total_steps = 100_000
 test_eps = 3
 
-#SEED MUST BE LAST IN LIST
+# SEED MUST BE LAST IN LIST
 config = {
-    "ENV": "frostbite",
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
@@ -148,12 +144,12 @@ config = {
     "DISTANCE": "l2",
     "STICKY-ACTIONS": [True, False],
     "STACKED-STATE": 4,
-    "WEIGHTING": "none",
     "CLIP-REWARD": False,
     "COUNT-WEIGHT": 0,
     "PROJECTION-DENSITY": "auto",
     "UPDATE-TYPE": "MC",
     "LR": 1,
+    "AGG-DIST": 1,
     "SEED": list(range(3)),
 }
 """Projection type:
@@ -213,6 +209,7 @@ def main(cfg):
         projection_density=cfg["PROJECTION-DENSITY"],
         distance=cfg["DISTANCE"],
         update_type=cfg["UPDATE-TYPE"],
+        agg_dist=cfg["AGG-DIST"],
         learning_rate=cfg["LR"],
     )
 
@@ -224,8 +221,6 @@ def main(cfg):
         if step % eval_steps == 0:
             tqdm.write(test_agent(agent, env, test_eps=test_eps, utils=utils, train_step=step))
 
-            print("saving...")
-            agent.save("./saves")
             # agent.qec.plot3d(both=True, diff=False)
 
         # Act, and add
@@ -246,7 +241,8 @@ def main(cfg):
             # Reset agent and environment
             observation = env.reset()
 
-
+    #print("saving...")
+    #agent.save("./saves")
 
 def test_agent(agent, env, test_eps, utils, train_step):
     """
@@ -291,8 +287,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    main(all_configs[0])
-    exit()
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)
