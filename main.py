@@ -26,115 +26,21 @@ from tqdm import tqdm
 
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
-
-full_env_list = [
-    "alien",
-    "amidar",
-    "assault",
-    "asterix",
-    "astroids",
-    "atlantis",
-    "bank_heist",
-    "battle_zone",
-    "beam_rider",
-    "berzerk",
-    "bowling",
-    "boxing",
-    "carnival",
-    "centipede",
-    "chopper_command",
-    "crazy_climber",
-    "demon_attack",
-    "double_dunk",
-    "elevator_action",
-    "enduro",
-    "fishing_derby",
-    "freeway",
-    "frostbite",
-    "gopher",
-    "gravitar",
-    "hero",
-    "ice_hockey",
-    "jamesbond",
-    "journey_escape",
-    "kangaroo",
-    "krull",
-    "kung_fu_master",
-    "montezuma_revenge",
-    "ms_pacman",
-    "name_this_game",
-    "phoenix",
-    "pitfall",
-    "pitfall2",
-    "pooyan",
-    "private_eye",
-    "riverraid",
-    "road_runnerr",
-    "robotank",
-    "seaquest",
-    "skiing",
-    "solaris",
-    "space_invaders",
-    "star_gunner",
-    "tennis",
-    "time_pilot",
-    "tutankham",
-    "up_n_down",
-    "video_pinball",
-    "zaxxon",
-]
-
-env_list = [
-    "alien",
-    "amidar",
-    "assault",
-    "asterix",
-    "bank_heist",
-    "battle_zone",
-    "boxing",
-    "breakout",
-    "chopper_command",
-    "crazy_climber",
-    "demon_attack",
-    "freeway",
-    "frostbite",
-    "gopher",
-    "hero",
-    "jamesbond",
-    "kangaroo",
-    "krull",
-    "kung_fu_master",
-    "ms_pacman",
-    "pong",
-    "private_eye",
-    "qbert",
-    "road_runner",
-    "seaquest",
-    "up_n_down",
-]
-
-small_env_list = [
-    "breakout",
-    # "freeway",
-    "ms_pacman",
-    "qbert",
-    # "seaquest",
-    # "crazy_climber",
-]
+from env_names import small_env_list, env_list, full_env_list
 
 # GLOBAl VARS FIXED FOR EACH RUN
 eval_steps = 2_000
-total_steps = 200_000
+total_steps = 100_000
 reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": "qbert",
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
     "EPSILON": 0.6,
-    "EPS-DECAY": 0.06,
+    "EPS-DECAY": 0.03,
     "STATE-DIM": 64,
     "DISTANCE": "l2",
     "STICKY-ACTIONS": True,
@@ -144,7 +50,7 @@ config = {
     "PROJECTION-DENSITY": "auto",
     "UPDATE-TYPE": "MC",
     "LR": 1,
-    "AGG-DIST": [1, 1.1],
+    "AGG-DIST": 1,
     "SEED": list(range(3)),
 }
 """Projection type:
@@ -182,7 +88,11 @@ def main(cfg):
 
     # Create env
     from dopamine_env import create_atari_environment
-    env = create_atari_environment(cfg["ENV"].title(), seed=cfg["SEED"])
+    camelcase_title = cfg["ENV"].title().replace("_", "")
+    env = create_atari_environment(
+        game_name=camelcase_title,
+        sticky_actions=cfg["STICKY-ACTIONS"],
+        seed=cfg["SEED"])
 
     obv_dim = np.prod(env.reset().shape)
     agent = MFECAgent(

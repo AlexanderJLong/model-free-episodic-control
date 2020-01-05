@@ -135,6 +135,6 @@ sns.lineplot("Step",
              hue=compare_var,
              palette=sns.color_palette("colorblind", num_lines)
              ).set_title(f"Median Human Normalized Reward Across {num_games} Games")
-
+plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.savefig(f"./plots/mhns.png")
 plt.show()

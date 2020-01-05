@@ -145,7 +145,7 @@ class MFECAgent:
         # Decay e exponentially
         if self.epsilon > 0.05:
             self.epsilon -= self.epsilon_decay
-            print(self.epsilon)
+            print(f"eps={self.epsilon:.2f}")
         else:
             self.epsilon = 0.05
 
