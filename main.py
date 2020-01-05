@@ -119,7 +119,7 @@ def main(cfg):
     trace = []
     for step in tqdm(list(range(total_steps + 1))):
 
-        if step % eval_steps == 0:
+        if step % eval_steps == 0 and step:
             utils.end_epoch(step)
 
         # Act, and add

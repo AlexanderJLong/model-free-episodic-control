@@ -11,7 +11,7 @@ class Utils:
         self.results_file.write(
             "Step,Reward\n"
         )
-        self.reward_history = deque([0], maxlen=history_len)
+        self.reward_history = deque([], maxlen=history_len)
         self.episode_reward = 0
 
     def log_reward(self, r):
