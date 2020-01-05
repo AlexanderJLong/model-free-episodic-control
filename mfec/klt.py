@@ -3,11 +3,13 @@
 import hnswlib
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle as pkl
 
 
 class KLT:
     def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, lr, seed):
-        self.buffers = tuple([ActionBuffer(buffer_size, state_dim, distance, lr,  seed) for _ in actions])
+        self.buffer_size = buffer_size
+        self.buffers = tuple([ActionBuffer(a, self.buffer_size, state_dim, distance, lr,  seed) for a in actions])
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
 
@@ -63,6 +65,20 @@ class KLT:
     def solidify_values(self):
         for b in self.buffers:
             b.solidify_values()
+
+    def save_indexes(self, save_dir):
+        """
+        Serialize the index and values. Must be done this way because hnswlib index's cannot be pickled
+        """
+        for i, buff in enumerate(self.buffers):
+            buff._tree.save_index(f"{save_dir}/buff_{i}.bin")
+
+    def load_indexes(self, save_dir):
+        """
+        Load the index and values. Assumes index has already been initialized
+        """
+        for i, buff in enumerate(self.buffers):
+            buff._tree.load_index(f"{save_dir}/buff_{i}.bin", max_elements=self.buffer_size)
 
     def plot3d(self, both, diff):
         fig = plt.figure()
@@ -136,16 +152,28 @@ class KLT:
 
 
 class ActionBuffer:
-    def __init__(self, capacity, state_dim, distance, lr, seed):
+    def __init__(self, id, capacity, state_dim, distance, lr, seed):
+        self.id = id
         self.state_dim = state_dim
         self.lr = lr
         self.capacity = capacity
-        self._tree = hnswlib.Index(space=distance, dim=state_dim)  # possible options are l2, cosine or ip
+        self.distance = distance
+        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim )  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=capacity, M=10, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
         self.values_array = np.asarray([])  # For lookup. Update at train by converting values_list.
         self.counts_list = []
         self.counts_array = np.asarray([])
+
+    def __getstate__(self):
+        # pickle everything but the hnswlib indexes
+        self._tree.save_index(f"saves/index_{self.id}.bin")
+        return dict((k, v) for (k, v) in self.__dict__.items() if k != "_tree")
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim )
+        self._tree.load_index(f"saves/index_{self.id}.bin")
 
     def find_neighbors(self, state, k):
         """Return idx, dists"""

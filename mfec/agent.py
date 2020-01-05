@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-import os.path
-import pickle
+import cloudpickle as pkl
 
 import numpy as np
 from sklearn import random_projection
@@ -33,7 +32,7 @@ class MFECAgent:
         self.count_weight = count_weight
         self.update_type = update_type
         self.learning_rate = learning_rate
-        self.qec = KLT(actions=self.actions,
+        self.klt = KLT(actions=self.actions,
                        buffer_size=buffer_size,
                        k=k,
                        state_dim=state_dimension,
@@ -70,20 +69,20 @@ class MFECAgent:
 
         # Exploration
         if self.rs.random_sample() < self.epsilon and self.training:
-           self.action = self.rs.choice(self.actions)
-           return self.action, self.state, [self.qec.estimate(self.state,
-                                                              action,
-                                                              count_weight=self.count_weight,
-                                                              training=self.training)
-                                            for action in self.actions]
+            self.action = self.rs.choice(self.actions)
+            return self.action, self.state, [self.klt.estimate(self.state,
+                                                               action,
+                                                               count_weight=self.count_weight,
+                                                               training=self.training)
+                                             for action in self.actions]
         # Exploitation
         else:
-            q_values = np.asarray([self.qec.estimate(self.state,
+            q_values = np.asarray([self.klt.estimate(self.state,
                                                      action,
                                                      count_weight=self.count_weight,
                                                      training=self.training)
                                    for action in self.actions])
-            #print(q_values)
+            # print(q_values)
             # print([len(buff) for buff in self.qec.buffers])
             probs = np.zeros_like(self.actions)
             probs[np.where(q_values == max(q_values))] = 1
@@ -97,7 +96,7 @@ class MFECAgent:
             return self.action, self.state, q_values
 
     def get_max_value(self, state):
-        return np.max([self.qec.estimate(state, action, count_weight=0, training=True)
+        return np.max([self.klt.estimate(state, action, count_weight=0, training=True)
                        for action in self.actions
                        ])
 
@@ -117,27 +116,28 @@ class MFECAgent:
 
             else:
                 r = self.clipper(experience["reward"])
-                R = r + self.discount*R
+                R = r + self.discount * R
                 if self.update_type == "MC":
                     value = (1 - self.learning_rate) * experience["Qs"][experience["action"]] + \
                             self.learning_rate * R
-                    #value = R
+                    # value = R
                 elif self.update_type == "TD":
                     value = (1 - self.learning_rate) * experience["Qs"][experience["action"]] + \
                             self.learning_rate * (r + np.max(last_Qs))
-                    #print(f"r:{r} val:{value}, current:{experience['Qs'][experience['action']]} target:{r + np.max(last_Qs)}")
+                    # print(f"r:{r} val:{value}, current:{experience['Qs'][experience['action']]} target:{r + np.max(
+                    # last_Qs)}")
 
             # print(f"step {i},r:{r} R: {R}, 1-step bellman: {r + self.get_max_value(experience['state'])},
             # value: {value} ")
 
-            self.qec.update(
+            self.klt.update(
                 experience["state"],
                 experience["action"],
                 value,
             )
 
-            #last_Qs = experience["Qs"]
-        self.qec.solidify_values()
+            # last_Qs = experience["Qs"]
+        self.klt.solidify_values()
 
         # Decay e exponentially
         if self.epsilon > 0.05:
@@ -146,11 +146,6 @@ class MFECAgent:
         else:
             self.epsilon = 0.05
 
-    def save(self, results_dir):
-        with open(os.path.join(results_dir, "agent.pkl"), "wb") as file:
-            pickle.dump(self, file, 2)
-
-    @staticmethod
-    def load(path):
-        with open(path, "rb") as file:
-            return pickle.load(file)
+    def save(self, save_dir):
+        with open(f"{save_dir}/agent.pkl", "wb") as f:
+            pkl.dump(self, f)

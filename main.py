@@ -138,7 +138,7 @@ test_eps = 3
 
 #SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": "frostbite",
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
@@ -223,6 +223,9 @@ def main(cfg):
 
         if step % eval_steps == 0:
             tqdm.write(test_agent(agent, env, test_eps=test_eps, utils=utils, train_step=step))
+
+            print("saving...")
+            agent.save("./saves")
             # agent.qec.plot3d(both=True, diff=False)
 
         # Act, and add
@@ -242,6 +245,7 @@ def main(cfg):
 
             # Reset agent and environment
             observation = env.reset()
+
 
 
 def test_agent(agent, env, test_eps, utils, train_step):
@@ -287,8 +291,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    main(all_configs[0])
+    exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)
