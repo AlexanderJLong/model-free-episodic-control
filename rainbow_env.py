@@ -13,7 +13,8 @@ class Env:
         self.ale.setInt('random_seed', seed)
         self.ale.setInt('max_num_frames_per_episode', int(108e3))
         self.ale.setFloat('repeat_action_probability', 0.25 if sticky_actions else 0)  # Sticky actions
-        self.ale.setInt('frame_skip', 5)
+        self.ale.setInt('frame_skip', 0)
+        self.algo_frameskip = 5
         self.ale.setBool('color_averaging', False)
         self.ale.loadROM(atari_py.get_game_path(game))  # ROM loading must be done after setting options
         actions = self.ale.getMinimalActionSet()
@@ -55,11 +56,11 @@ class Env:
         # Repeat action 4 times, max pool over last 2 frames
         frame_buffer = np.zeros([2, 84, 84])
         reward, done = 0, False
-        for t in range(4):
+        for t in range(self.algo_frameskip):
             reward += self.ale.act(self.actions.get(action))
-            if t == 2:
+            if t == self.algo_frameskip-2:
                 frame_buffer[0] = self._get_state()
-            elif t == 3:
+            elif t == self.algo_frameskip-1:
                 frame_buffer[1] = self._get_state()
             done = self.ale.game_over()
             if done:
@@ -107,7 +108,7 @@ class EnvStacked(Env):
         # Repeat action 4 times, max pool over last 2 frames
         frame_buffer = np.zeros([2, 84, 84], dtype=np.int8)
         reward, done = 0, False
-        for t in range(4):
+        for t in range(2):
             reward += self.ale.act(self.actions.get(action))
             if t == 2:
                 frame_buffer[0] = self._get_state()

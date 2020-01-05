@@ -32,7 +32,7 @@ trace_id = 0
 trace_ids = []
 traces = []
 
-for step in tqdm(list(range(100))):
+for step in tqdm(list(range(200))):
     # Act, and record
     action, state, Qs = agent.choose_action(observation)
     observations.append(observation.flatten())
@@ -51,14 +51,13 @@ print(trace_id)
 trace_ends = []  # index of last value in trace
 for i, _ in enumerate(trace_ids[:-1]):
     if trace_ids[i] != trace_ids[i + 1]:
-        trace_ends.append(i+1)
+        trace_ends.append(i + 1)
 trace_ends.append(len(trace_ids))
 
 sns.set(context="paper", style="white")
 
-reducer = umap.UMAP(n_neighbors=49)
+reducer = umap.UMAP(n_neighbors=200)
 
-embedding = reducer.fit_transform(observations)
 
 def plot_traces(data, name):
     embedding = reducer.fit_transform(data)
@@ -73,6 +72,6 @@ def plot_traces(data, name):
     plt.show()
     plt.savefig(f"plots/{name}.png")
 
+
 plot_traces(observations, "obvs")
 plot_traces(states, "states")
-

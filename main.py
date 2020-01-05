@@ -115,7 +115,7 @@ env_list = [
 
 small_env_list = [
     "breakout",
-    "freeway",
+    #"freeway",
     "ms_pacman",
     "qbert",
     # "seaquest",
@@ -129,12 +129,12 @@ EPOCHS = 3000
 FRAMES_PER_EPOCH = 5_000
 
 eval_steps = 10_000
-total_steps = 100_000
+total_steps = 200_000
 test_eps = 3
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 16,
     "DISCOUNT": 1,
@@ -142,7 +142,7 @@ config = {
     "EPS-DECAY": 0.06,
     "STATE-DIM": 64,
     "DISTANCE": "l2",
-    "STICKY-ACTIONS": [True, False],
+    "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
     "CLIP-REWARD": False,
     "COUNT-WEIGHT": 0,
