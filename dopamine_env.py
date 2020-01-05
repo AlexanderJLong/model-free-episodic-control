@@ -54,7 +54,7 @@ NATURE_DQN_STACK_SIZE = 4  # Number of frames in the state stack.
 
 
 
-def create_atari_environment(game_name=None, sticky_actions=True):
+def create_atari_environment(game_name=None, sticky_actions=True, seed=0):
     """Wraps an Atari 2600 Gym environment with some basic preprocessing.
 
     This preprocessing matches the guidelines proposed in Machado et al. (2017),
@@ -81,6 +81,7 @@ def create_atari_environment(game_name=None, sticky_actions=True):
     game_version = 'v0' if sticky_actions else 'v4'
     full_game_name = '{}NoFrameskip-{}'.format(game_name, game_version)
     env = gym.make(full_game_name)
+    env.seed(seed)
     # Strip out the TimeLimit wrapper from Gym, which caps us at 100k frames. We
     # handle this time limit internally instead, which lets us cap at 108k frames
     # (30 minutes). The TimeLimit wrapper also plays poorly with saving and

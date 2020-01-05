@@ -4,6 +4,7 @@ import os.path
 from collections import deque
 import numpy as np
 
+
 class Utils:
     def __init__(self, results_dir, history_len):
         self.results_file = open(os.path.join(results_dir, "results.csv"), "w")
@@ -16,8 +17,8 @@ class Utils:
     def log_reward(self, r):
         self.episode_reward += r
 
-    def end_episode(self,):
-        """Should be always and only executed at the end of an episode."""
+    def end_episode(self, ):
+        """Should always and only be executed at the end of an episode."""
         self.reward_history.append(self.episode_reward)
         self.episode_reward = 0
 

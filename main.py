@@ -115,7 +115,7 @@ env_list = [
 
 small_env_list = [
     "breakout",
-    #"freeway",
+    # "freeway",
     "ms_pacman",
     "qbert",
     # "seaquest",
@@ -123,13 +123,9 @@ small_env_list = [
 ]
 
 # GLOBAl VARS FIXED FOR EACH RUN
-TITLE = "knn"
-EPOCHS_TILL_VIS = 2000
-EPOCHS = 3000
-FRAMES_PER_EPOCH = 5_000
-
 eval_steps = 2_000
 total_steps = 200_000
+reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
@@ -148,7 +144,7 @@ config = {
     "PROJECTION-DENSITY": "auto",
     "UPDATE-TYPE": "MC",
     "LR": 1,
-    "AGG-DIST": 1,
+    "AGG-DIST": [1, 1.1],
     "SEED": list(range(3)),
 }
 """Projection type:
@@ -178,7 +174,7 @@ def main(cfg):
     os.makedirs(agent_dir)
 
     # Initialize utils and specify reporting params
-    utils = Utils(agent_dir, history_len=10)
+    utils = Utils(agent_dir, history_len=reward_history_len)
 
     # FIX SEEDING
     np.random.seed(cfg["SEED"])
@@ -186,7 +182,7 @@ def main(cfg):
 
     # Create env
     from dopamine_env import create_atari_environment
-    env = create_atari_environment(cfg["ENV"].title())
+    env = create_atari_environment(cfg["ENV"].title(), seed=cfg["SEED"])
 
     obv_dim = np.prod(env.reset().shape)
     agent = MFECAgent(
@@ -236,8 +232,9 @@ def main(cfg):
             # Reset agent and environment
             observation = env.reset()
 
-    #print("saving...")
-    #agent.save("./saves")
+    # print("saving...")
+    # agent.save("./saves")
+
 
 if __name__ == "__main__":
 
@@ -256,8 +253,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    # main(all_configs[0])
+    # exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)
