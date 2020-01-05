@@ -130,7 +130,6 @@ FRAMES_PER_EPOCH = 5_000
 
 eval_steps = 2_000
 total_steps = 200_000
-test_eps = 3
 
 # SEED MUST BE LAST IN LIST
 config = {
@@ -179,7 +178,7 @@ def main(cfg):
     os.makedirs(agent_dir)
 
     # Initialize utils and specify reporting params
-    utils = Utils(agent_dir, history_len=3)
+    utils = Utils(agent_dir, history_len=10)
 
     # FIX SEEDING
     np.random.seed(cfg["SEED"])
@@ -212,28 +211,26 @@ def main(cfg):
     env.train()  # turn on episodic life
     observation = env.reset()
     trace = []
-    episode_reward = 0
     for step in tqdm(list(range(total_steps + 1))):
 
         if step % eval_steps == 0:
             utils.end_epoch(step)
 
         # Act, and add
-        action, state, Qs = agent.choose_action(observation)
+        action, state, q_vals = agent.choose_action(observation)
         observation, reward, done = env.step(action)
-        episode_reward += reward
+        utils.log_reward(reward)
         trace.append(
             {
                 "state": state,
                 "action": action,
                 "reward": reward,
-                "Qs": Qs,
+                "Qs": q_vals,
             }
         )
 
         if done:
-            utils.end_episode(episode_reward)
-            episode_reward = 0
+            utils.end_episode()
             agent.train(trace)
 
             # Reset agent and environment
@@ -241,32 +238,6 @@ def main(cfg):
 
     #print("saving...")
     #agent.save("./saves")
-
-def test_agent(agent, env, test_eps, utils, train_step):
-    """
-    Test the main agent, as well as its two sub-agents over 1 episode
-    """
-    # No exploration and no episodic life
-    agent.training = False
-    env.eval()
-
-    for e in range(test_eps):
-        s = env.reset()
-        done = False
-        R = 0
-        while not done:
-            a, _, _ = agent.choose_action(s)
-            s, r, done = env.step(a)
-            R += r
-
-        utils.end_episode(0, R)
-    msg = utils.end_epoch(train_step)
-    # Revert to training
-    agent.training = True
-    env.train()
-
-    return msg
-
 
 if __name__ == "__main__":
 

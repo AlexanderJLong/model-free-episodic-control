@@ -11,10 +11,15 @@ class Utils:
             "Step,Reward\n"
         )
         self.reward_history = deque([0], maxlen=history_len)
+        self.episode_reward = 0
 
-    def end_episode(self, episode_reward):
+    def log_reward(self, r):
+        self.episode_reward += r
+
+    def end_episode(self,):
         """Should be always and only executed at the end of an episode."""
-        self.reward_history.append(episode_reward)
+        self.reward_history.append(self.episode_reward)
+        self.episode_reward = 0
 
     def end_epoch(self, step):
         """Save the results for the given epoch in the results-file"""
@@ -26,7 +31,7 @@ class Utils:
         self.results_file.flush()
 
         message = (
-            "\nStep: {}\tReward: {}\n"
+            "\nStep: {}\tReward: {:.2f}\n"
         )
         print(message.format(*results))
 

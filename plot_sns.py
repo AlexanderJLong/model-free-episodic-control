@@ -102,7 +102,7 @@ sns.set(style="ticks")
 sns.despine()
 sns.set_palette("colorblind")
 
-plt.legend()
+#plt.legend()
 g.add_legend()
 
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
