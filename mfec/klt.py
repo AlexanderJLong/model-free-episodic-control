@@ -48,10 +48,10 @@ class KLT:
             # print(weighted_count)
             # print(weighted_count)
             weighted_reward = np.sum(w * values) / np.sum(w)
-        weighted_count = 1 / np.sum(buffer.counts_array[neighbors])
+        weighted_count = 1 / np.sqrt(np.sum(buffer.counts_array[neighbors]))
         #print(weighted_reward, 0.1*weighted_count)
 
-        return weighted_reward + 0.1*weighted_count
+        return (1+weighted_reward)*(1+weighted_count)
 
     def update(self, state, action, value):
         # print("updating", action)
@@ -156,7 +156,7 @@ class ActionBuffer:
         self.capacity = capacity
         self.distance = distance
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=capacity, M=10, random_seed=seed)
+        self._tree.init_index(max_elements=capacity, M=30, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
         self.values_array = np.asarray([])  # For lookup. Update at train by converting values_list.
         self.counts_list = []

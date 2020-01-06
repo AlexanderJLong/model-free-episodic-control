@@ -36,7 +36,7 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": "freeway",
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 160,
     "DISCOUNT": 0.99,
@@ -166,8 +166,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    main(all_configs[0])
-    exit()
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)
