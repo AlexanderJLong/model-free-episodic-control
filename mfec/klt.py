@@ -3,17 +3,17 @@
 import hnswlib
 import matplotlib.pyplot as plt
 import numpy as np
-import pickle as pkl
 
 
 class KLT:
     def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, lr, agg_dist, seed):
         self.buffer_size = buffer_size
-        self.buffers = tuple([ActionBuffer(a, self.buffer_size, state_dim, distance, lr, agg_dist, seed) for a in actions])
+        self.buffers = tuple(
+            [ActionBuffer(a, self.buffer_size, state_dim, distance, lr, agg_dist, seed) for a in actions])
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
 
-    def estimate(self, state, action, count_weight, training):
+    def estimate(self, state, action, count_weight):
         """Return the estimated value of the given state"""
 
         buffer = self.buffers[action]
@@ -30,32 +30,28 @@ class KLT:
         # print(dists, neighbors, buffer.values_array, action)
         if dists[0] == 0:
             # Identical state found
+            #weighted_count = 1 / np.sqrt(buffer.counts_array[neighbors[0]])
             weighted_reward = buffer.values_array[neighbors[0]]
-            #weighted_count = 1./np.sqrt(buffer.counts_array[neighbors[0]])
-            # w = [0]
         else:
 
             # never seen before so estimate
             values = buffer.values_array[neighbors]
-            #counts = buffer.counts_array[neighbors]
+            # counts = buffer.counts_array[neighbors]
 
             # Convert to l2norm, normalize by original dimensionality so dists have a consistent
             # range, but make sure they're always still > 1 because of w=1/d
             norms = np.sqrt(dists / self.obv_dim)
-            #norms = dists / self.obv_dim
+            #print(max(norms), min(norms))
 
             # return sum(buffer.values[n] for n in neighbors)
             w = np.divide(1., norms)  # Get inverse distances as weights
-            # dist_weighted_count = np.sum(w * buffer.counts_array[neighbors]) / np.sum(w)
+            # print(weighted_count)
+            # print(weighted_count)
             weighted_reward = np.sum(w * values) / np.sum(w)
-            #print(weighted_reward)
-            # weighted_reward = np.sum(w * values)
-            #weighted_count = np.sum(w * np.power(counts, -0.5)) / np.sum(w)
-            #print(counts, weighted_count)
+        weighted_count = 1 / np.sum(buffer.counts_array[neighbors])
+        #print(weighted_reward, 0.1*weighted_count)
 
-        #print(f"r:{weighted_reward} + r'{weighted_count * training}, rd:{np.mean(w)}")
-
-        return weighted_reward #+ count_weight * ( weighted_count + np.mean(w)) * training # No exploration bonus on testing
+        return weighted_reward + 0.1*weighted_count
 
     def update(self, state, action, value):
         # print("updating", action)
@@ -152,8 +148,8 @@ class KLT:
 
 
 class ActionBuffer:
-    def __init__(self, id, capacity, state_dim, distance, lr, agg_dist, seed):
-        self.id = id
+    def __init__(self, n, capacity, state_dim, distance, lr, agg_dist, seed):
+        self.id = n
         self.agg_dist = agg_dist
         self.state_dim = state_dim
         self.lr = lr
@@ -173,7 +169,7 @@ class ActionBuffer:
 
     def __setstate__(self, d):
         self.__dict__ = d
-        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim )
+        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)
         self._tree.load_index(f"saves/index_{self.id}.bin")
 
     def find_neighbors(self, state, k):
@@ -193,21 +189,22 @@ class ActionBuffer:
         if dist < self.agg_dist or np.isnan(dist):
             # Existing state, update and return
             self.counts_list[idx] += 1
-            self.values_list[idx] = (1 - 1/self.counts_list[idx])*self.values_list[idx] + (1/self.counts_list[idx]) * value
+            #self.values_list[idx] = (1 - 1 / self.counts_list[idx]) * self.values_list[idx] + (
+            #        1 / self.counts_list[idx]) * value
 
-            #self.values_list[idx] = 0.7*self.values_list[idx] +0.3*value
-            #print(f"updating {self.values_list[idx]}")
-            #self.values_list[idx] = (1-self.lr)*self.values_list[idx] * self.lr*value
+            self.values_list[idx] = 0.9*self.values_list[idx] +0.1*value
+            # print(f"updating {self.values_list[idx]}")
+            # self.values_list[idx] = (1-self.lr)*self.values_list[idx] * self.lr*value
 
         else:
-            #print(f"adding {value}")
+            # print(f"adding {value}")
             self.values_list.append(value)
             self._tree.add_items(state)
             self.counts_list.append(1)
 
         ##update surrounding states as well
-        #norms = np.sqrt(dists / self.obv_dim)
-        #for d, id in zip(dists, idxs):
+        # norms = np.sqrt(dists / self.obv_dim)
+        # for d, id in zip(dists, idxs):
         #    print(f"updating {id}={self.values_list[id]} dist {d} away to {d * value}")
 
         return

@@ -13,11 +13,12 @@ with open("saves/agent.pkl", "rb") as f:
 print('awd')
 print([len(b) for b in agent.klt.buffers])
 
-env = EnvStacked(
-    seed=0,
-    game="frostbite",
+from dopamine_env import create_atari_environment
+
+env = create_atari_environment(
+    game_name="Qbert",
     sticky_actions=True,
-    stacked_states=4)
+    seed=0)
 
 env.training = True
 agent.training = False
@@ -32,7 +33,7 @@ trace_id = 0
 trace_ids = []
 traces = []
 
-for step in tqdm(list(range(200))):
+for step in tqdm(list(range(3000))):
     # Act, and record
     action, state, Qs = agent.choose_action(observation)
     observations.append(observation.flatten())
@@ -42,6 +43,7 @@ for step in tqdm(list(range(200))):
     observation, reward, done = env.step(action)
     ep_reward += reward
     if done:
+        print(ep_reward)
         trace_id += 1
         rewards.append(ep_reward)
         ep_reward = 0
@@ -69,9 +71,9 @@ def plot_traces(data, name):
         plt.plot(embedding[last_e:e, 0], embedding[last_e:e, 1], alpha=0.3)
         last_e = e
     plt.setp(ax, xticks=[], yticks=[])
-    plt.show()
     plt.savefig(f"plots/{name}.png")
 
 
 plot_traces(observations, "obvs")
 plot_traces(states, "states")
+plt.show()

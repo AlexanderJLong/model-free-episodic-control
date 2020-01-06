@@ -24,23 +24,24 @@ from multiprocessing import Pool
 import numpy as np
 from tqdm import tqdm
 
+from env_names import small_env_list
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
-from env_names import small_env_list, env_list, full_env_list
+import time
 
 # GLOBAl VARS FIXED FOR EACH RUN
-eval_steps = 2_000
+eval_steps = 2_500
 total_steps = 100_000
 reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": "freeway",
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 16,
-    "DISCOUNT": 1,
-    "EPSILON": 0.6,
-    "EPS-DECAY": 0.03,
+    "K": 160,
+    "DISCOUNT": 0.99,
+    "EPSILON": 0,
+    "EPS-DECAY": 0.05,
     "STATE-DIM": 64,
     "DISTANCE": "l2",
     "STICKY-ACTIONS": True,
@@ -125,6 +126,8 @@ def main(cfg):
         # Act, and add
         action, state, q_vals = agent.choose_action(observation)
         observation, reward, done = env.step(action)
+        #env.render(mode="human")
+        #time.sleep(0.01)
         utils.log_reward(reward)
         trace.append(
             {
@@ -134,8 +137,8 @@ def main(cfg):
                 "Qs": q_vals,
             }
         )
-
-        if done:
+        no_recent_reward = len(trace) > 500 and not sum([e["reward"] for e in trace[-500:]])
+        if done or no_recent_reward:
             utils.end_episode()
             agent.train(trace)
 
@@ -163,8 +166,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    # main(all_configs[0])
-    # exit()
+    main(all_configs[0])
+    exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)
