@@ -195,6 +195,7 @@ class ActionBuffer:
             #        1 / self.counts_list[idx]) * value
 
             self.values_list[idx] = 0.9 * self.values_list[idx] + 0.1 * value
+            #self.values_list[idx] =  value
             # print(f"updating {self.values_list[idx]}")
             # self.values_list[idx] = (1-self.lr)*self.values_list[idx] * self.lr*value
 

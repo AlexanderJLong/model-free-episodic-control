@@ -86,7 +86,7 @@ class MFECAgent:
             ]
             buffer_out = np.asarray(q_values)
             r_estimate = buffer_out[:, 0]
-            count_bonus = 1 / (buffer_out[:, 1] + 0.01)
+            count_bonus = 1 / (buffer_out[:, 1] + 0.01) #TODO CHANGE TO SQRT
             dist_bonus = buffer_out[:, 2]
 
             count_bonus -= np.min(count_bonus) - 0.01
@@ -122,46 +122,35 @@ class MFECAgent:
 
     def get_state_value_and_max_q(self, state):
         vals = [self.klt.estimate(state, action, count_weight=0)
-                        for action in self.actions]
+                for action in self.actions]
         return np.mean(vals), np.max(vals)
 
     def train(self, trace):
         # Takes trace object: a list of dicts {"state", "action", "reward"}
         R = 0.0
         # print(f"len trace {trace}")
+        lr = self.learning_rate
+
         for i in range(len(trace)):
             experience = trace.pop()
             s = experience["state"]
             r = self.clipper(experience["reward"])
-            if not i:
+            if i == 0:
                 # last sample
                 R = r
-                value_mc = R
-                value_td, _ = self.get_state_value_and_max_q(s)
-
+                value = R
             else:
+                value = r + self.discount * (lr * R + (1 - lr) * np.mean(last_qs))
                 R = r + self.discount * R
-                value_mc = R
-                V, _ = self.get_state_value_and_max_q(s)
-                value_td = (1 - self.learning_rate) * V + \
-                           self.learning_rate * (r + self.discount * np.mean(last_q_values))
 
-            # All-buffer Value update
-            for a in self.actions:
-                if a != experience["action"]:
-                    self.klt.update(
-                        s,
-                        a,
-                        value_td,
-                    )
 
-            # Episodic Reward propogation
+
             self.klt.update(
                 s,
                 experience["action"],
-                value_mc,
+                value,
             )
-            last_q_values = experience["Qs"]
+            last_qs = experience["Qs"]
             self.klt.solidify_values()
 
         # Decay e exponentially
