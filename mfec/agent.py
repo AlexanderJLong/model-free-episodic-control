@@ -73,10 +73,10 @@ class MFECAgent:
         if self.rs.random_sample() < self.epsilon:
             # don't change current action
             q_values = [
-                self.klt.estimate(self.state, action, count_weight=self.count_weight)
+                0
                 for action in self.actions
             ]
-            return self.action, self.state, np.asarray(q_values)
+            return self.action, self.state, q_values
 
         # Exploitation
         else:

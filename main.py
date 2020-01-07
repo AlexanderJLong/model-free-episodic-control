@@ -24,7 +24,7 @@ from multiprocessing import Pool
 import numpy as np
 from tqdm import tqdm
 
-from env_names import small_env_list
+from env_names import small_env_list, env_list
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 import time
@@ -36,9 +36,9 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 160,
+    "K": 175,
     "DISCOUNT": 0.99,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
