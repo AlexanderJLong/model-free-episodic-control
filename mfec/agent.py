@@ -120,37 +120,46 @@ class MFECAgent:
                        for action in self.actions
                        ])
 
+    def get_state_value_and_max_q(self, state):
+        vals = [self.klt.estimate(state, action, count_weight=0)
+                        for action in self.actions]
+        return np.mean(vals), np.max(vals)
+
     def train(self, trace):
         # Takes trace object: a list of dicts {"state", "action", "reward"}
         R = 0.0
         # print(f"len trace {trace}")
         for i in range(len(trace)):
             experience = trace.pop()
-
+            s = experience["state"]
+            r = self.clipper(experience["reward"])
             if not i:
                 # last sample
-                R = self.clipper(experience["reward"])
-                value = R
-                # print(f"step {i}, R: {R}, current estimate: {experience['Qs'][experience['action']]}, maxQk+1 {0},
-                # new estimate: {R}, value: {value} ")
+                R = r
+                value_mc = R
+                value_td, _ = self.get_state_value_and_max_q(s)
 
             else:
-                r = self.clipper(experience["reward"])
                 R = r + self.discount * R
-                if self.update_type == "MC":
-                    value_mc = R
-                    value_td = r + self.discount*np.mean(last_q_values)
-                    value = (1 - self.learning_rate) * value_mc + (self.learning_rate) * value_td
+                value_mc = R
+                V, _ = self.get_state_value_and_max_q(s)
+                value_td = (1 - self.learning_rate) * V + \
+                           self.learning_rate * (r + self.discount * np.mean(last_q_values))
 
+            # All-buffer Value update
+            for a in self.actions:
+                if a != experience["action"]:
+                    self.klt.update(
+                        s,
+                        a,
+                        value_td,
+                    )
 
-                elif self.update_type == "TD":
-                    value = (1 - self.learning_rate) * experience["Qs"][experience["action"]] + \
-                            self.learning_rate * (r + self.get_max_value(experience["state"]))
-
+            # Episodic Reward propogation
             self.klt.update(
-                experience["state"],
+                s,
                 experience["action"],
-                value,
+                value_mc,
             )
             last_q_values = experience["Qs"]
             self.klt.solidify_values()
@@ -160,6 +169,7 @@ class MFECAgent:
             self.epsilon -= self.epsilon_decay
             print(f"eps={self.epsilon:.2f}")
 
-    def save(self, save_dir):
-        with open(f"{save_dir}/agent.pkl", "wb") as f:
-            pkl.dump(self, f)
+
+def save(self, save_dir):
+    with open(f"{save_dir}/agent.pkl", "wb") as f:
+        pkl.dump(self, f)
