@@ -19,7 +19,7 @@ class KLT:
         buffer = self.buffers[action]
 
         if len(buffer) == 0:
-            return 0
+            return 0, 0, 1e6
 
         k = min(self.k, len(buffer))  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
@@ -30,8 +30,9 @@ class KLT:
         # print(dists, neighbors, buffer.values_array, action)
         if dists[0] == 0:
             # Identical state found
-            #weighted_count = 1 / np.sqrt(buffer.counts_array[neighbors[0]])
+            weighted_count = buffer.counts_array[neighbors[0]]
             weighted_reward = buffer.values_array[neighbors[0]]
+            avg_dist = 0
         else:
 
             # never seen before so estimate
@@ -41,17 +42,18 @@ class KLT:
             # Convert to l2norm, normalize by original dimensionality so dists have a consistent
             # range, but make sure they're always still > 1 because of w=1/d
             norms = np.sqrt(dists / self.obv_dim)
-            #print(max(norms), min(norms))
+            # print(max(norms), min(norms))
 
             # return sum(buffer.values[n] for n in neighbors)
             w = np.divide(1., norms)  # Get inverse distances as weights
             # print(weighted_count)
             # print(weighted_count)
             weighted_reward = np.sum(w * values) / np.sum(w)
-        weighted_count = 1 / np.sqrt(np.sum(buffer.counts_array[neighbors]))
-        #print(weighted_reward, 0.1*weighted_count)
+            weighted_count = np.sum(w*buffer.counts_array[neighbors])/np.sum(w)
+            avg_dist = np.mean(norms)
+        #print(weighted_reward, weighted_count)
 
-        return (1+weighted_reward)*(1+weighted_count)
+        return weighted_reward, weighted_count, avg_dist
 
     def update(self, state, action, value):
         # print("updating", action)
@@ -189,10 +191,10 @@ class ActionBuffer:
         if dist < self.agg_dist or np.isnan(dist):
             # Existing state, update and return
             self.counts_list[idx] += 1
-            #self.values_list[idx] = (1 - 1 / self.counts_list[idx]) * self.values_list[idx] + (
+            # self.values_list[idx] = (1 - 1 / self.counts_list[idx]) * self.values_list[idx] + (
             #        1 / self.counts_list[idx]) * value
 
-            self.values_list[idx] = 0.9*self.values_list[idx] +0.1*value
+            self.values_list[idx] = 0.9 * self.values_list[idx] + 0.1 * value
             # print(f"updating {self.values_list[idx]}")
             # self.values_list[idx] = (1-self.lr)*self.values_list[idx] * self.lr*value
 

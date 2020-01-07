@@ -73,7 +73,7 @@ class MFECAgent:
         if self.rs.random_sample() < self.epsilon:
             # don't change current action
             q_values = [
-                0
+                self.klt.estimate(self.state, action, count_weight=self.count_weight)
                 for action in self.actions
             ]
             return self.action, self.state, q_values
@@ -84,12 +84,28 @@ class MFECAgent:
                 self.klt.estimate(self.state, action, count_weight=self.count_weight)
                 for action in self.actions
             ]
-            q_values = np.asarray(q_values)
+            buffer_out = np.asarray(q_values)
+            r_estimate = buffer_out[:, 0]
+            count_bonus = 1 / (buffer_out[:, 1] + 0.01)
+            dist_bonus = buffer_out[:, 2]
+
+            count_bonus -= np.min(count_bonus) - 0.01
+            count_bonus = count_bonus / np.max(count_bonus)
+
+            dist_bonus -= np.min(dist_bonus) - 0.01
+            dist_bonus = dist_bonus / np.max(dist_bonus)
+
+            r_bonus = r_estimate
+            r_bonus -= np.min(r_bonus) - 0.01
+            r_bonus = r_bonus / np.max(r_bonus)
+            # print(r_bonus, count_bonus, dist_bonus)
+
+            total_estimate = 0.0 * dist_bonus + self.count_weight * count_bonus + r_bonus
 
             # print(q_values)
-            #print([len(buff) for buff in self.klt.buffers])
+            # print([len(buff) for buff in self.klt.buffers])
             probs = np.zeros_like(self.actions)
-            probs[np.where(q_values == max(q_values))] = 1
+            probs[np.where(total_estimate == max(total_estimate))] = 1
             probs = probs / sum(probs)
 
             # probs = q_values
@@ -97,7 +113,7 @@ class MFECAgent:
             # probs=probs/sum(probs)
 
             self.action = self.rs.choice(self.actions, p=probs)
-            return self.action, self.state, q_values
+            return self.action, self.state, r_estimate
 
     def get_max_value(self, state):
         return np.max([self.klt.estimate(state, action, count_weight=0)
@@ -122,11 +138,14 @@ class MFECAgent:
                 r = self.clipper(experience["reward"])
                 R = r + self.discount * R
                 if self.update_type == "MC":
-                    value = (1 - self.learning_rate) * experience["Qs"][experience["action"]] + \
-                            self.learning_rate * R
+                    value_mc = R
+                    value_td = r + self.discount*np.mean(last_q_values)
+                    value = (1 - self.learning_rate) * value_mc + (self.learning_rate) * value_td
+
+
                 elif self.update_type == "TD":
                     value = (1 - self.learning_rate) * experience["Qs"][experience["action"]] + \
-                            self.learning_rate * (r + np.max(last_q_values))
+                            self.learning_rate * (r + self.get_max_value(experience["state"]))
 
             self.klt.update(
                 experience["state"],
@@ -134,14 +153,12 @@ class MFECAgent:
                 value,
             )
             last_q_values = experience["Qs"]
-        self.klt.solidify_values()
+            self.klt.solidify_values()
 
         # Decay e exponentially
         if self.epsilon > 0.05:
-           self.epsilon -= self.epsilon_decay
-           print(f"eps={self.epsilon:.2f}")
-        else:
-           self.epsilon = 0.05
+            self.epsilon -= self.epsilon_decay
+            print(f"eps={self.epsilon:.2f}")
 
     def save(self, save_dir):
         with open(f"{save_dir}/agent.pkl", "wb") as f:

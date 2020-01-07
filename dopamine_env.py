@@ -286,9 +286,10 @@ class AtariPreprocessing(object):
 
         transformed_image = cv2.resize(self.screen_buffer[0],
                                        (self.screen_size, self.screen_size),
-                                       interpolation=cv2.INTER_LINEAR)
+                                       interpolation=cv2.INTER_AREA)
 
         #CHANGED. NORMALIZED AND STACKED.
-        int_image = np.asarray(transformed_image, dtype=np.uint8)-128
+        int_image = np.asarray(transformed_image-128, dtype=np.int8)
+        #print(np.max(int_image), np.min(int_image))
         self.frame_stack.append(int_image)
         return np.asarray(self.frame_stack)
