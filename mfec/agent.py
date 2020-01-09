@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from collections import deque
+
 import cloudpickle as pkl
 import numpy as np
 from sklearn import random_projection
@@ -69,56 +71,44 @@ class MFECAgent:
         # print(observation)
         self.state = self.transformer.transform(observation.reshape(1, -1))
 
+        #print(np.max(self.state), np.min(self.state))
+
         # Exploration
         if self.rs.random_sample() < self.epsilon:
             # don't change current action
-            q_values = [
+            lookup_results = [
                 self.klt.estimate(self.state, action, count_weight=self.count_weight)
                 for action in self.actions
             ]
-            return self.action, self.state, q_values
+            return self.action, self.state, lookup_results
 
         # Exploitation
         else:
-            q_values = [
+            lookup_results = np.asarray([
                 self.klt.estimate(self.state, action, count_weight=self.count_weight)
                 for action in self.actions
-            ]
-            buffer_out = np.asarray(q_values)
-            r_estimate = buffer_out[:, 0]
-            count_bonus = 1 / (buffer_out[:, 1] + 0.01) #TODO CHANGE TO SQRT
-            dist_bonus = buffer_out[:, 2]
+            ])
+            r_estimates = lookup_results[:, 0]
+            count_estimates = lookup_results[:, 1]  # count can be < 1. range
+            # assert max(count_bonuses) <= 1
+            # dist_bonus = buffer_out[:, 2]
 
-            count_bonus -= np.min(count_bonus) - 0.01
-            count_bonus = count_bonus / np.max(count_bonus)
-
-            dist_bonus -= np.min(dist_bonus) - 0.01
-            dist_bonus = dist_bonus / np.max(dist_bonus)
-
-            r_bonus = r_estimate
-            r_bonus -= np.min(r_bonus) - 0.01
-            r_bonus = r_bonus / np.max(r_bonus)
+            # dist_bonus -= np.min(dist_bonus) - 0.01
+            # dist_bonus = dist_bonus / np.max(dist_bonus)
             # print(r_bonus, count_bonus, dist_bonus)
 
-            total_estimate = 0.0 * dist_bonus + self.count_weight * count_bonus + r_bonus
+            total_estimates = r_estimates
 
-            # print(q_values)
-            # print([len(buff) for buff in self.klt.buffers])
             probs = np.zeros_like(self.actions)
-            probs[np.where(total_estimate == max(total_estimate))] = 1
+            probs[np.where(total_estimates == max(total_estimates))] = 1
             probs = probs / sum(probs)
-
-            # probs = q_values
-            # probs[np.where(probs==0)] = 1
-            # probs=probs/sum(probs)
-
             self.action = self.rs.choice(self.actions, p=probs)
-            return self.action, self.state, r_estimate
 
-    def get_max_value(self, state):
-        return np.max([self.klt.estimate(state, action, count_weight=0)
-                       for action in self.actions
-                       ])
+            count_bonus = 1 / np.sqrt(count_estimates[self.action] + 1)
+            return self.action, self.state, r_estimates, count_bonus * self.count_weight
+
+    def get_qas(self, state, action):
+        return self.klt.estimate(state, action, count_weight=0)[0]
 
     def get_state_value_and_max_q(self, state):
         vals = [self.klt.estimate(state, action, count_weight=0)
@@ -140,18 +130,41 @@ class MFECAgent:
                 R = r
                 value = R
             else:
-                value = r + self.discount * (lr * R + (1 - lr) * np.mean(last_qs))
+                value = r + self.discount * (lr * R + (1 - lr) * last_qs)
                 R = r + self.discount * R
-
-
 
             self.klt.update(
                 s,
                 experience["action"],
                 value,
             )
-            last_qs = experience["Qs"]
-            self.klt.solidify_values()
+            last_qs = experience["Qs"][experience["action"]]
+        self.klt.solidify_values()
+
+        if False:
+            """n-step update code"""
+            N = self.learning_rate
+            reward_hist = deque([], maxlen=N)  # store recent rewards most recent last. Oldest first
+            qsa_hist = deque([0], maxlen=N)  # store q_as most recent last. Oldest first. Want one past the last reward
+
+            for _ in range(len(trace)):
+                experience = trace.pop()
+                s = experience["state"]
+                a = experience["action"]
+                r = self.clipper(experience["reward"])
+
+                n_step_r = 0
+                reward_hist.append(r)
+                for i, r_i in enumerate(list(reward_hist)[::-1]):
+                    n_step_r += r_i * np.power(self.discount, i)
+
+                n_step_r += qsa_hist[0] * np.power(self.discount, i + 1)
+                self.klt.update(
+                    s,
+                    a,
+                    n_step_r,
+                )
+                qsa_hist.append(experience["Qs"][a])
 
         # Decay e exponentially
         if self.epsilon > 0.05:

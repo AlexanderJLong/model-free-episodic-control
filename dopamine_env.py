@@ -147,6 +147,20 @@ class AtariPreprocessing(object):
         self.game_over = False
         self.lives = 0  # Will need to be set by reset().
 
+        # Get median pixel val
+        #self.median_pixels = np.zeros([84, 84])
+        #self.reset()
+        #observations = []
+        #for _ in range(100):
+        #    o, *_ = self.step(0)
+        #    observations.append(o[0])
+        #self.median_pixels = np.median(observations, axis=0)
+        #print(self.median_pixels)
+
+
+
+
+
     def train(self):
         """Compatibility with rainbow env"""
         return

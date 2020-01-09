@@ -1,4 +1,0 @@
-Qbert-v0
-MsPacman-v0
-SpaceInvaders-v0
-Frostbite-v0

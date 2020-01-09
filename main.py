@@ -24,19 +24,19 @@ from multiprocessing import Pool
 import numpy as np
 from tqdm import tqdm
 
-from env_names import small_env_list, env_list
+from env_names import small_env_list, env_list, full_env_list
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 import time
 
 # GLOBAl VARS FIXED FOR EACH RUN
-eval_steps = 2_500
+eval_steps = 2500
 total_steps = 100_000
 reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": full_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 175,
     "DISCOUNT": 0.99,
@@ -47,7 +47,7 @@ config = {
     "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": 0.05,
+    "COUNT-WEIGHT": [0.01, 0.02, 0.05], #exploration bonus beta
     "PROJECTION-DENSITY": "auto",
     "UPDATE-TYPE": "MC",
     "LR": 0.9,
@@ -124,16 +124,17 @@ def main(cfg):
             utils.end_epoch(step)
 
         # Act, and add
-        action, state, q_vals = agent.choose_action(observation)
+        action, state, q_vals, exp_bonus = agent.choose_action(observation)
         observation, reward, done = env.step(action)
         #env.render(mode="human")
         #time.sleep(0.01)
         utils.log_reward(reward)
+        #print(exp_bonus)
         trace.append(
             {
                 "state": state,
                 "action": action,
-                "reward": reward,
+                "reward": reward+exp_bonus,
                 "Qs": q_vals,
             }
         )

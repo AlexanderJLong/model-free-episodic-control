@@ -8,6 +8,7 @@ import numpy as np
 class KLT:
     def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, lr, agg_dist, seed):
         self.buffer_size = buffer_size
+        self.state_dim = state_dim
         self.buffers = tuple(
             [ActionBuffer(a, self.buffer_size, state_dim, distance, lr, agg_dist, seed) for a in actions])
         self.k = k
@@ -19,7 +20,7 @@ class KLT:
         buffer = self.buffers[action]
 
         if len(buffer) == 0:
-            return 0, 0, 1e6
+            return 0, 0, 0
 
         k = min(self.k, len(buffer))  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
@@ -32,28 +33,25 @@ class KLT:
             # Identical state found
             weighted_count = buffer.counts_array[neighbors[0]]
             weighted_reward = buffer.values_array[neighbors[0]]
-            avg_dist = 0
+            #avg_dist = 0
         else:
 
             # never seen before so estimate
             values = buffer.values_array[neighbors]
-            # counts = buffer.counts_array[neighbors]
+            counts = buffer.counts_array[neighbors]
 
-            # Convert to l2norm, normalize by original dimensionality so dists have a consistent
+            # Convert to l2norm, normalize by state dimensionality so dists have a consistent
             # range, but make sure they're always still > 1 because of w=1/d
-            norms = np.sqrt(dists / self.obv_dim)
-            # print(max(norms), min(norms))
+            norms = np.sqrt(dists)
+            #assert min(norms) >= 1  # range is ~[1, 255]
 
-            # return sum(buffer.values[n] for n in neighbors)
             w = np.divide(1., norms)  # Get inverse distances as weights
-            # print(weighted_count)
-            # print(weighted_count)
             weighted_reward = np.sum(w * values) / np.sum(w)
-            weighted_count = np.sum(w*buffer.counts_array[neighbors])/np.sum(w)
-            avg_dist = np.mean(norms)
+            weighted_count = np.sum(w * counts)
+            #avg_dist = np.median(norms)
         #print(weighted_reward, weighted_count)
 
-        return weighted_reward, weighted_count, avg_dist
+        return weighted_reward, weighted_count, 0
 
     def update(self, state, action, value):
         # print("updating", action)
@@ -195,7 +193,7 @@ class ActionBuffer:
             #        1 / self.counts_list[idx]) * value
 
             self.values_list[idx] = 0.9 * self.values_list[idx] + 0.1 * value
-            #self.values_list[idx] =  value
+            # self.values_list[idx] =  value
             # print(f"updating {self.values_list[idx]}")
             # self.values_list[idx] = (1-self.lr)*self.values_list[idx] * self.lr*value
 

@@ -74,7 +74,12 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "LR"
+
+
+compare_var = "COUNT-WEIGHT"
+
+
+
 # compare_var = 'STATE-DIM'
 # df = df[(df["UPDATE-TYPE"] == "TD")]
 # df = df[(df["STATE-DIM"] == 512)]
@@ -85,7 +90,7 @@ print(df.to_string())
 g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
 # g.set(xlim=(0, 1e5))
 try:
-    (g.map(sns.lineplot, "Step", "Reward", ci=100, estimator=np.mean)).set_titles("{col_name}")
+    (g.map(sns.lineplot, "Step", "Reward", ci=100, estimator=np.mean, linewidth=1)).set_titles("{col_name}")
 except:
     (g.map(plt.plot, "Step", "Reward")).set_titles("{col_name}")
 
@@ -133,7 +138,8 @@ sns.lineplot("Step",
              estimator=np.mean,
              data=hns,
              hue=compare_var,
-             palette=sns.color_palette("colorblind", num_lines)
+             palette=sns.color_palette("colorblind", num_lines),
+             linewidth=1
              ).set_title(f"Median Human Normalized Reward Across {num_games} Games")
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.savefig(f"./plots/mhns.png")
