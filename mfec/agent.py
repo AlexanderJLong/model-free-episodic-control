@@ -86,7 +86,7 @@ class MFECAgent:
             ]
             buffer_out = np.asarray(q_values)
             r_estimate = buffer_out[:, 0]
-            count_bonus = 1 / (buffer_out[:, 1] + 0.01)  # TODO CHANGE TO SQRT
+            count_bonus = 1 / np.sqrt((buffer_out[:, 1] + 0.01))  # TODO CHANGE TO SQRT
             dist_bonus = buffer_out[:, 2]
 
             count_bonus -= np.min(count_bonus) - 0.01

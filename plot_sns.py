@@ -74,11 +74,11 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "COUNT-WEIGHT"
+compare_var = "LR"
 # compare_var = 'STATE-DIM'
 df = df[(df["LR"] == 0.9)]
+df = df[(df["COUNT-WEIGHT"] == 0.05)]
 df = df[(df["STATE-DIM"] == 64)]
-# df = df[(df["STATE-DIM"] == 512)]
 
 cols = min(num_envs, 9)
 

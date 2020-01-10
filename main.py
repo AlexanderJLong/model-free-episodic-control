@@ -36,21 +36,21 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 175,
     "DISCOUNT": 0.99,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
-    "STATE-DIM": [64, 200],
+    "STATE-DIM": 64,
     "DISTANCE": "l2",
     "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": [0.05, 0.1, 0.001],
+    "COUNT-WEIGHT": 0.05,
     "PROJECTION-DENSITY": "auto",
     "UPDATE-TYPE": "MC",
-    "LR": [0.9, 0.99, 0.85],
+    "LR": 0.9,
     "AGG-DIST": 1,
     "SEED": list(range(3)),
 }
