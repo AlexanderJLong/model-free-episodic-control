@@ -14,9 +14,6 @@ class KLT:
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
 
-    def gaus(self, x):
-        return np.exp(-np.power(x / self.sig, 2.) / 2)
-
     def estimate(self, state, action):
         """
         Return:
@@ -39,21 +36,24 @@ class KLT:
         dists = np.sqrt(dists[0])
         neighbors = neighbors[0]
 
-        mean_dist = np.mean(dists)
+        counts = np.sum(dists == 0)
 
         values = [buffer.values_list[n] for n in neighbors]
         weighted_reward = np.mean(values)
 
         # If all dists are 0, need to forget earliest estimate in that buffer to continue learning
-        if mean_dist == 0:
+        if counts == self.k:
             buffer.remove(neighbors[0])  # smallest id is earliest sample and neighbours is ordered
-        return weighted_reward, mean_dist
+        if counts == 0:
+            # never visited so return mean of dists inverse.
+            counts = 1/np.min(dists)
+
+        return weighted_reward, counts
 
     def update(self, state, action, value):
         # print("updating", action)
         buffer = self.buffers[action]
         buffer.add(state, value)
-
 
     def save_indexes(self, save_dir):
         """
@@ -148,7 +148,7 @@ class ActionBuffer:
         self.capacity = capacity
         self.distance = distance
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=capacity, M=10, random_seed=seed)
+        self._tree.init_index(max_elements=capacity, M=100, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
 
     def __getstate__(self):
@@ -173,7 +173,6 @@ class ActionBuffer:
     def remove(self, idx):
         """Remove a sample"""
         self._tree.mark_deleted(idx)
-
 
     def get_states(self):
         return self._tree.get_items(range(0, len(self)))

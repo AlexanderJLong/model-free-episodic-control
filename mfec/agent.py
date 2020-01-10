@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-from collections import deque
-
 import cloudpickle as pkl
 import numpy as np
 from sklearn import random_projection
@@ -70,7 +68,7 @@ class MFECAgent:
                 self.klt.estimate(self.state, action)
                 for action in self.actions
             ]
-            return self.action, self.state, lookup_results[: 0]
+            return self.action, self.state, 0
 
         # Exploitation
         else:
@@ -79,8 +77,13 @@ class MFECAgent:
                 for action in self.actions
             ])
             reward_estimates = lookup_results[:, 0]
-            mean_dists = lookup_results[:, 1]
-            total_estimates = reward_estimates
+            counts = lookup_results[:, 1]
+            #print(exp_bonus)
+            exp_bonus = np.divide(self.count_weight, np.sqrt(counts),
+                                  out=np.zeros_like(counts, dtype=np.float), where=counts != 0)
+
+
+            total_estimates = reward_estimates + exp_bonus
 
             # Tiebreak same rewards randomly
             probs = np.zeros_like(self.actions)
@@ -88,9 +91,8 @@ class MFECAgent:
             probs = probs / sum(probs)
             self.action = self.rs.choice(self.actions, p=probs)
 
-            exploration_bonus = self.count_weight*mean_dists[self.action]
-            #print(exploration_bonus)
-            return self.action, self.state, reward_estimates, exploration_bonus
+            #print(exp_bonus)
+            return self.action, self.state, reward_estimates, 0
 
     def get_qas(self, state, action):
         return self.klt.estimate(state, action)[0]
