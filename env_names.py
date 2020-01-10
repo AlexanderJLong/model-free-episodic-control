@@ -89,6 +89,6 @@ small_env_list = [
     "freeway",
     "ms_pacman",
     "qbert",
-    # "seaquest",
+    "frostbite",
     # "crazy_climber",
 ]

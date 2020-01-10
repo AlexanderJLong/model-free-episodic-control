@@ -30,39 +30,29 @@ class KLT:
         # print(dists, neighbors, buffer.values_array, action)
         if dists[0] == 0:
             # Identical state found
-            weighted_count = buffer.counts_array[neighbors[0]]
-            weighted_reward = buffer.values_array[neighbors[0]]
-            avg_dist = 0
+            weighted_count = buffer.counts_list[neighbors[0]]
+            weighted_reward = buffer.values_list[neighbors[0]]
         else:
-
             # never seen before so estimate
-            values = buffer.values_array[neighbors]
+            values = np.asarray([buffer.values_list[n] for n in neighbors])
+            counts = np.asarray([buffer.counts_list[n] for n in neighbors])
             # counts = buffer.counts_array[neighbors]
 
             # Convert to l2norm, normalize by original dimensionality so dists have a consistent
             # range, but make sure they're always still > 1 because of w=1/d
-            norms = np.sqrt(dists / self.obv_dim)
-            # print(max(norms), min(norms))
+            norms = np.sqrt(dists)
 
-            # return sum(buffer.values[n] for n in neighbors)
             w = np.divide(1., norms)  # Get inverse distances as weights
-            # print(weighted_count)
-            # print(weighted_count)
-            weighted_reward = np.sum(w * values) / np.sum(w)
-            weighted_count = np.sum(w*buffer.counts_array[neighbors])/np.sum(w)
-            avg_dist = np.mean(norms)
-        #print(weighted_reward, weighted_count)
 
-        return weighted_reward, weighted_count, avg_dist
+            weighted_reward = np.sum(w * values) / np.sum(w)
+            weighted_count = np.sum(w*counts)/np.sum(w)
+
+        return weighted_reward, weighted_count, 0
 
     def update(self, state, action, value):
         # print("updating", action)
         buffer = self.buffers[action]
         buffer.add(state, value)
-
-    def solidify_values(self):
-        for b in self.buffers:
-            b.solidify_values()
 
     def save_indexes(self, save_dir):
         """
@@ -160,9 +150,7 @@ class ActionBuffer:
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=capacity, M=30, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
-        self.values_array = np.asarray([])  # For lookup. Update at train by converting values_list.
         self.counts_list = []
-        self.counts_array = np.asarray([])
 
     def __getstate__(self):
         # pickle everything but the hnswlib indexes
@@ -191,33 +179,17 @@ class ActionBuffer:
         if dist < self.agg_dist or np.isnan(dist):
             # Existing state, update and return
             self.counts_list[idx] += 1
-            # self.values_list[idx] = (1 - 1 / self.counts_list[idx]) * self.values_list[idx] + (
-            #        1 / self.counts_list[idx]) * value
-
             self.values_list[idx] = 0.9 * self.values_list[idx] + 0.1 * value
-            #self.values_list[idx] =  value
-            # print(f"updating {self.values_list[idx]}")
-            # self.values_list[idx] = (1-self.lr)*self.values_list[idx] * self.lr*value
-
         else:
-            # print(f"adding {value}")
             self.values_list.append(value)
             self._tree.add_items(state)
             self.counts_list.append(1)
 
-        ##update surrounding states as well
-        # norms = np.sqrt(dists / self.obv_dim)
-        # for d, id in zip(dists, idxs):
-        #    print(f"updating {id}={self.values_list[id]} dist {d} away to {d * value}")
-
         return
 
-    def solidify_values(self):
-        self.values_array = np.asarray(self.values_list)
-        self.counts_array = np.asarray(self.counts_list)
 
     def get_states(self):
         return self._tree.get_items(range(0, len(self)))
 
     def __len__(self):
-        return len(self.values_array)
+        return len(self.values_list)
