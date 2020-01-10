@@ -76,7 +76,7 @@ num_envs = df["ENV"].nunique()
 
 
 
-compare_var = "COUNT-WEIGHT"
+compare_var = "K"
 
 
 
@@ -134,7 +134,7 @@ num_lines = hns[compare_var].nunique()
 print(hns[compare_var])
 sns.lineplot("Step",
              "normalized_reward",
-             ci='sd',
+             ci=100,
              estimator=np.mean,
              data=hns,
              hue=compare_var,

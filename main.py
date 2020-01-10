@@ -36,9 +36,9 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": full_env_list,
+    "ENV": "ms_pacman",
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 175,
+    "K": [3, 16, 32, 64],
     "DISCOUNT": 0.99,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
@@ -47,10 +47,10 @@ config = {
     "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": [0.01, 0.02, 0.05], #exploration bonus beta
+    "COUNT-WEIGHT": 0, #exploration bonus beta
     "PROJECTION-DENSITY": "auto",
     "UPDATE-TYPE": "MC",
-    "LR": 0.9,
+    "LR": 1,
     "AGG-DIST": 1,
     "SEED": list(range(3)),
 }

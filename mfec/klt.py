@@ -6,61 +6,54 @@ import numpy as np
 
 
 class KLT:
-    def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, lr, agg_dist, seed):
+    def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, agg_dist, seed):
         self.buffer_size = buffer_size
         self.state_dim = state_dim
         self.buffers = tuple(
-            [ActionBuffer(a, self.buffer_size, state_dim, distance, lr, agg_dist, seed) for a in actions])
+            [ActionBuffer(a, self.buffer_size, state_dim, distance, agg_dist, seed) for a in actions])
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
 
-    def estimate(self, state, action, count_weight):
-        """Return the estimated value of the given state"""
+    def gaus(self, x):
+        return np.exp(-np.power(x / self.sig, 2.) / 2)
+
+    def estimate(self, state, action):
+        """
+        Return:
+         1) the estimated value of the given state
+         2) a measure of distance to surrounding samples
+
+         According to this measure we don't care once we have more than k samples on a point, it just gets treated
+         the same as we add more. So need a reasonably high k.
+         """
 
         buffer = self.buffers[action]
+        current_size = len(buffer)
+        if current_size == 0:
+            return 0, 0  # Maybe better to just signal the buffer is empty than assigning large dist
 
-        if len(buffer) == 0:
-            return 0, 0, 0
-
-        k = min(self.k, len(buffer))  # the len call might slow it down a bit
+        k = min(self.k, current_size)
         neighbors, dists = buffer.find_neighbors(state, k)
-        # Strip batch dim. Note dists is already ordered.
-        dists = dists[0]
+        # Strip batch dim. dists is already ordered. Note it is square of l2 norm.
+
+        dists = np.sqrt(dists[0])
         neighbors = neighbors[0]
 
-        # print(dists, neighbors, buffer.values_array, action)
-        if dists[0] == 0:
-            # Identical state found
-            weighted_count = buffer.counts_array[neighbors[0]]
-            weighted_reward = buffer.values_array[neighbors[0]]
-            #avg_dist = 0
-        else:
+        mean_dist = np.mean(dists)
 
-            # never seen before so estimate
-            values = buffer.values_array[neighbors]
-            counts = buffer.counts_array[neighbors]
+        values = [buffer.values_list[n] for n in neighbors]
+        weighted_reward = np.mean(values)
 
-            # Convert to l2norm, normalize by state dimensionality so dists have a consistent
-            # range, but make sure they're always still > 1 because of w=1/d
-            norms = np.sqrt(dists)
-            #assert min(norms) >= 1  # range is ~[1, 255]
-
-            w = np.divide(1., norms)  # Get inverse distances as weights
-            weighted_reward = np.sum(w * values) / np.sum(w)
-            weighted_count = np.sum(w * counts)
-            #avg_dist = np.median(norms)
-        #print(weighted_reward, weighted_count)
-
-        return weighted_reward, weighted_count, 0
+        # If all dists are 0, need to forget earliest estimate in that buffer to continue learning
+        if mean_dist == 0:
+            buffer.remove(neighbors[0])  # smallest id is earliest sample and neighbours is ordered
+        return weighted_reward, mean_dist
 
     def update(self, state, action, value):
         # print("updating", action)
         buffer = self.buffers[action]
         buffer.add(state, value)
 
-    def solidify_values(self):
-        for b in self.buffers:
-            b.solidify_values()
 
     def save_indexes(self, save_dir):
         """
@@ -148,19 +141,15 @@ class KLT:
 
 
 class ActionBuffer:
-    def __init__(self, n, capacity, state_dim, distance, lr, agg_dist, seed):
+    def __init__(self, n, capacity, state_dim, distance, agg_dist, seed):
         self.id = n
         self.agg_dist = agg_dist
         self.state_dim = state_dim
-        self.lr = lr
         self.capacity = capacity
         self.distance = distance
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=capacity, M=30, random_seed=seed)
+        self._tree.init_index(max_elements=capacity, M=10, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
-        self.values_array = np.asarray([])  # For lookup. Update at train by converting values_list.
-        self.counts_list = []
-        self.counts_array = np.asarray([])
 
     def __getstate__(self):
         # pickle everything but the hnswlib indexes
@@ -177,45 +166,17 @@ class ActionBuffer:
         return self._tree.knn_query(state, k=k)
 
     def add(self, state, value):
-        if not self.values_list:  # buffer empty, just add
-            self._tree.add_items(state)
-            self.values_list.append(value)
-            self.counts_list.append(1)
-            return
-
-        idx, dist = self.find_neighbors(state, 1)
-        idx = idx[0][0]
-        dist = dist[0][0]
-        if dist < self.agg_dist or np.isnan(dist):
-            # Existing state, update and return
-            self.counts_list[idx] += 1
-            # self.values_list[idx] = (1 - 1 / self.counts_list[idx]) * self.values_list[idx] + (
-            #        1 / self.counts_list[idx]) * value
-
-            self.values_list[idx] = 0.9 * self.values_list[idx] + 0.1 * value
-            # self.values_list[idx] =  value
-            # print(f"updating {self.values_list[idx]}")
-            # self.values_list[idx] = (1-self.lr)*self.values_list[idx] * self.lr*value
-
-        else:
-            # print(f"adding {value}")
-            self.values_list.append(value)
-            self._tree.add_items(state)
-            self.counts_list.append(1)
-
-        ##update surrounding states as well
-        # norms = np.sqrt(dists / self.obv_dim)
-        # for d, id in zip(dists, idxs):
-        #    print(f"updating {id}={self.values_list[id]} dist {d} away to {d * value}")
-
+        self.values_list.append(value)
+        self._tree.add_items(state)
         return
 
-    def solidify_values(self):
-        self.values_array = np.asarray(self.values_list)
-        self.counts_array = np.asarray(self.counts_list)
+    def remove(self, idx):
+        """Remove a sample"""
+        self._tree.mark_deleted(idx)
+
 
     def get_states(self):
         return self._tree.get_items(range(0, len(self)))
 
     def __len__(self):
-        return len(self.values_array)
+        return len(self.values_list)
