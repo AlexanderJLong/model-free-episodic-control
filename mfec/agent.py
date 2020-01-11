@@ -67,13 +67,10 @@ class MFECAgent:
             for action in self.actions
         ])
         reward_estimates = lookup_results[:, 0]
-        counts = lookup_results[:, 1]
-        #print(exp_bonus)
-        exp_bonus = np.divide(self.count_weight, np.sqrt(counts),
-                              out=np.zeros_like(counts, dtype=np.float), where=counts != 0)
+        density = lookup_results[:, 1]
+        exp_bonuses = np.sqrt(density) * self.count_weight
 
-
-        total_estimates = reward_estimates + exp_bonus
+        total_estimates = reward_estimates + exp_bonuses
 
         # Tiebreak same rewards randomly
         probs = np.zeros_like(self.actions)

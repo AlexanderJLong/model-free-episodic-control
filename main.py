@@ -47,7 +47,7 @@ config = {
     "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": 0.001,  # exploration bonus beta
+    "COUNT-WEIGHT": 0.01,  # exploration bonus beta
     "PROJECTION-DENSITY": "auto",
     "LR": 1,
     "QUANTIZE": 32,

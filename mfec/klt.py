@@ -36,15 +36,15 @@ class KLT:
         neighbors, dists = buffer.find_neighbors(state, k)
         # Strip batch dim. dists is already ordered. Note it is square of l2 norm.
 
-        dists = np.sqrt(dists[0])
+        dists = np.sqrt(dists[0]) #TODO: normalize?
         neighbors = neighbors[0]
 
-        counts = np.sum(dists == 0)
+        mean_dist = np.mean(dists)
 
         values = [buffer.values_list[n] for n in neighbors]
 
         # If all dists are 0, need to forget earliest estimate in that buffer to continue learning
-        if counts == self.k:
+        if mean_dist == 0:
             # All visited, just return mean since dists is 0
             weighted_reward = np.mean(values)
             buffer.remove(neighbors[0])  # smallest id is earliest sample and neighbours is ordered
@@ -54,11 +54,7 @@ class KLT:
             w = self.gaus(dists, sig=np.mean(dists)*1.5)
             weighted_reward = np.sum(w * values) / sum(w)
 
-        if counts == 0:
-            # never visited so return mean of dists inverse and keep the weighted reward
-            counts = 1/np.mean(dists) #TODO mean
-
-        return weighted_reward, counts
+        return weighted_reward, mean_dist
 
     def update(self, state, action, value):
         # print("updating", action)
