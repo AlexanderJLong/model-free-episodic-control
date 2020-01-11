@@ -13,7 +13,7 @@ class KLT:
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
 
-    def estimate(self, state, action, count_weight):
+    def estimate(self, state, action):
         """Return the estimated value of the given state"""
 
         buffer = self.buffers[action]
@@ -176,6 +176,7 @@ class ActionBuffer:
         idx, dist = self.find_neighbors(state, 1)
         idx = idx[0][0]
         dist = dist[0][0]
+        #print(dist)
         if dist < self.agg_dist or np.isnan(dist):
             # Existing state, update and return
             self.counts_list[idx] += 1

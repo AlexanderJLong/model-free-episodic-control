@@ -292,4 +292,4 @@ class AtariPreprocessing(object):
         int_image = np.asarray(transformed_image-128, dtype=np.int8)
         #print(np.max(int_image), np.min(int_image))
         self.frame_stack.append(int_image)
-        return np.asarray(self.frame_stack)
+        return np.asarray(self.frame_stack, dtype=np.int8)

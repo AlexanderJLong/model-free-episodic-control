@@ -42,8 +42,9 @@ time, frames, episodes, reward_avg, reward_max
 filenames are: ..._K=1_SEED=1
  """
 
-env_dirs = glob("./agents/*SEED=1*/")
+env_dirs = glob("./agents/*SEED=0*/")
 envs = sorted(list(set([d.replace("=", ":").split(":")[1] for d in env_dirs])))
+
 data = []
 df = pd.DataFrame()
 for i, env in enumerate(envs):
@@ -74,13 +75,13 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "LR"
+compare_var = "K"
 # compare_var = 'STATE-DIM'
-df = df[(df["LR"] == 0.9)]
-df = df[(df["COUNT-WEIGHT"] == 0.05)]
-df = df[(df["STATE-DIM"] == 64)]
+#df = df[(df["LR"] == 0.9)]
+#df = df[(df["COUNT-WEIGHT"] == 0.05)]
+#df = df[(df["STATE-DIM"] == 64)]
 
-cols = min(num_envs, 9)
+cols = min(num_envs, 7)
 
 print(df.to_string())
 g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )

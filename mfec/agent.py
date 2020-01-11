@@ -46,12 +46,6 @@ class MFECAgent:
         self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=True,
                                                                     density=projection_density)
         self.transformer.fit(np.zeros([1, observation_dim]))
-        # self.transformer.components_.data[np.where(self.transformer.components_.data < 0)] = -1
-        # self.transformer.components_.data[np.where(self.transformer.components_.data > 0)] = 1
-        # self.transformer.components_ = self.transformer.components_.astype(np.int8)
-
-        # for r in self.transformer.components_:
-        #    print(r)
 
         self.discount = discount
         self.epsilon = epsilon
@@ -68,12 +62,14 @@ class MFECAgent:
         # Preprocess and project observation to state
         # print(observation)
         self.state = self.transformer.transform(observation.reshape(1, -1))
-
+        self.state /= 400
+        self.state = self.state.astype(np.int8)
+        #print(np.max(self.state), np.min(self.state))
         # Exploration
         if self.rs.random_sample() < self.epsilon:
             # don't change current action
             q_values = [
-                self.klt.estimate(self.state, action, count_weight=self.count_weight)
+                self.klt.estimate(self.state, action)
                 for action in self.actions
             ]
             return self.action, self.state, q_values
@@ -81,26 +77,22 @@ class MFECAgent:
         # Exploitation
         else:
             q_values = [
-                self.klt.estimate(self.state, action, count_weight=self.count_weight)
+                self.klt.estimate(self.state, action)
                 for action in self.actions
             ]
             buffer_out = np.asarray(q_values)
             r_estimate = buffer_out[:, 0]
-            count_bonus = 1 / np.sqrt((buffer_out[:, 1] + 0.01))  # TODO CHANGE TO SQRT
-            dist_bonus = buffer_out[:, 2]
+            count_bonus = 1 / np.sqrt((buffer_out[:, 1] + 0.01))
 
             count_bonus -= np.min(count_bonus) - 0.01
             count_bonus = count_bonus / np.max(count_bonus)
-
-            dist_bonus -= np.min(dist_bonus) - 0.01
-            dist_bonus = dist_bonus / np.max(dist_bonus)
 
             r_bonus = r_estimate
             r_bonus -= np.min(r_bonus) - 0.01
             r_bonus = r_bonus / np.max(r_bonus)
             # print(r_bonus, count_bonus, dist_bonus)
 
-            total_estimate = 0.0 * dist_bonus + self.count_weight * count_bonus + r_bonus
+            total_estimate = self.count_weight * count_bonus + r_bonus
 
             # print(q_values)
             # print([len(buff) for buff in self.klt.buffers])
@@ -108,20 +100,16 @@ class MFECAgent:
             probs[np.where(total_estimate == max(total_estimate))] = 1
             probs = probs / sum(probs)
 
-            # probs = q_values
-            # probs[np.where(probs==0)] = 1
-            # probs=probs/sum(probs)
-
             self.action = self.rs.choice(self.actions, p=probs)
             return self.action, self.state, r_estimate
 
     def get_max_value(self, state):
-        return np.max([self.klt.estimate(state, action, count_weight=0)
+        return np.max([self.klt.estimate(state, action)
                        for action in self.actions
                        ])
 
     def get_state_value_and_max_q(self, state):
-        vals = [self.klt.estimate(state, action, count_weight=0)
+        vals = [self.klt.estimate(state, action)
                 for action in self.actions]
         return np.mean(vals), np.max(vals)
 

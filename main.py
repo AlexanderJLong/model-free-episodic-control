@@ -36,9 +36,9 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": "frostbite",
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 175,
+    "K": [16, 64, 175],
     "DISCOUNT": 0.99,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
@@ -52,7 +52,7 @@ config = {
     "UPDATE-TYPE": "MC",
     "LR": 0.9,
     "AGG-DIST": 1,
-    "SEED": list(range(3)),
+    "SEED": list(range(5)),
 }
 """Projection type:
 0: Identity
