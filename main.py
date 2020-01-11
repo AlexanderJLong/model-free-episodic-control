@@ -36,23 +36,22 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 32,
     "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
-    "STATE-DIM": 200,
+    "STATE-DIM": [64, 100, 200],
     "DISTANCE": "l2",
     "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": 0.0005, #exploration bonus beta
+    "COUNT-WEIGHT": 0.001, #exploration bonus beta
     "PROJECTION-DENSITY": "auto",
-    "UPDATE-TYPE": "MC",
     "LR": 1,
-    "QUANTIZE": [10, 90, 150],
-    "SEED": list(range(3)),
+    "QUANTIZE": [2, 32, 50],
+    "SEED": list(range(5)),
 }
 """Projection type:
 0: Identity
@@ -94,6 +93,8 @@ def main(cfg):
         game_name=camelcase_title,
         sticky_actions=cfg["STICKY-ACTIONS"],
         seed=cfg["SEED"])
+    env.reset()
+    lives = env.lives
 
     obv_dim = np.prod(env.reset().shape)
     agent = MFECAgent(
@@ -110,14 +111,14 @@ def main(cfg):
         count_weight=cfg["COUNT-WEIGHT"],
         projection_density=cfg["PROJECTION-DENSITY"],
         distance=cfg["DISTANCE"],
-        update_type=cfg["UPDATE-TYPE"],
-        agg_dist=cfg["AGG-DIST"],
+        quantize=cfg["QUANTIZE"],
         learning_rate=cfg["LR"],
     )
 
     env.train()  # turn on episodic life
     observation = env.reset()
     trace = []
+    episode_traces = []
     for step in tqdm(list(range(total_steps + 1))):
 
         if step % eval_steps == 0 and step:
@@ -125,10 +126,10 @@ def main(cfg):
 
         # Act, and add
         action, state, q_vals, exp_bonus = agent.choose_action(observation)
-        observation, reward, done = env.step(action)
+        observation, reward, done, life_lost = env.step(action)
         #env.render(mode="human")
         #time.sleep(0.005)
-        utils.log_reward(reward)
+        utils.log_reward(reward*lives)
         #print(exp_bonus)
         trace.append(
             {
@@ -138,10 +139,19 @@ def main(cfg):
                 "Qs": q_vals,
             }
         )
-        no_recent_reward = len(trace) > 500 and not sum([e["reward"] for e in trace[-500:]])
+        if life_lost:
+            #start a new trace
+            episode_traces.append(trace)
+            trace = []
+            print("new trace")
+
+        no_recent_reward = len(trace) > 500 and \
+                           not sum([e["reward"] for e in trace[-500:]])
         if done or no_recent_reward:
+            print("episode over")
             utils.end_episode()
-            agent.train(trace)
+            for t in episode_traces:
+                agent.train(t)
 
             # Reset agent and environment
             observation = env.reset()

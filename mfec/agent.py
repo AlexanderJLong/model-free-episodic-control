@@ -22,7 +22,6 @@ class MFECAgent:
             clip_rewards,
             count_weight,
             projection_density,
-            update_type,
             learning_rate,
             quantize,
             distance,
@@ -30,7 +29,6 @@ class MFECAgent:
         self.rs = np.random.RandomState(seed)
         self.actions = actions
         self.count_weight = count_weight
-        self.update_type = update_type
         self.learning_rate = learning_rate
         self.quantize = quantize
 
@@ -64,38 +62,27 @@ class MFECAgent:
         self.state = self.state.astype(np.int8)
 
         #print(np.max(self.state), np.min(self.state))
-        # Exploration
-        if self.rs.random_sample() < self.epsilon:
-            # don't change current action
-            lookup_results = [
-                self.klt.estimate(self.state, action)
-                for action in self.actions
-            ]
-            return self.action, self.state, 0
-
-        # Exploitation
-        else:
-            lookup_results = np.asarray([
-                self.klt.estimate(self.state, action)
-                for action in self.actions
-            ])
-            reward_estimates = lookup_results[:, 0]
-            counts = lookup_results[:, 1]
-            #print(exp_bonus)
-            exp_bonus = np.divide(self.count_weight, np.sqrt(counts),
-                                  out=np.zeros_like(counts, dtype=np.float), where=counts != 0)
+        lookup_results = np.asarray([
+            self.klt.estimate(self.state, action)
+            for action in self.actions
+        ])
+        reward_estimates = lookup_results[:, 0]
+        counts = lookup_results[:, 1]
+        #print(exp_bonus)
+        exp_bonus = np.divide(self.count_weight, np.sqrt(counts),
+                              out=np.zeros_like(counts, dtype=np.float), where=counts != 0)
 
 
-            total_estimates = reward_estimates + exp_bonus
+        total_estimates = reward_estimates + exp_bonus
 
-            # Tiebreak same rewards randomly
-            probs = np.zeros_like(self.actions)
-            probs[np.where(total_estimates == max(total_estimates))] = 1
-            probs = probs / sum(probs)
-            self.action = self.rs.choice(self.actions, p=probs)
+        # Tiebreak same rewards randomly
+        probs = np.zeros_like(self.actions)
+        probs[np.where(total_estimates == max(total_estimates))] = 1
+        probs = probs / sum(probs)
+        self.action = self.rs.choice(self.actions, p=probs)
 
-            #print(exp_bonus)
-            return self.action, self.state, reward_estimates, 0
+        #print(exp_bonus)
+        return self.action, self.state, reward_estimates, 0
 
     def get_qas(self, state, action):
         return self.klt.estimate(state, action)[0]

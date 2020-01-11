@@ -39,7 +39,7 @@ class KLT:
         counts = np.sum(dists == 0)
 
         values = [buffer.values_list[n] for n in neighbors]
-        weighted_reward = np.mean(values)
+        weighted_reward = np.mean(values) #TODO: should use guas. Makes sense it'd be better
 
         # If all dists are 0, need to forget earliest estimate in that buffer to continue learning
         if counts == self.k:

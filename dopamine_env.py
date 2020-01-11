@@ -107,15 +107,12 @@ class AtariPreprocessing(object):
     Evaluation Protocols and Open Problems for General Agents".
     """
 
-    def __init__(self, environment, frame_skip=4, terminal_on_life_loss=False,
-                 screen_size=84):
+    def __init__(self, environment, frame_skip=4, screen_size=84):
         """Constructor for an Atari 2600 preprocessor.
 
         Args:
           environment: Gym environment whose observations are preprocessed.
           frame_skip: int, the frequency at which the agent experiences the game.
-          terminal_on_life_loss: bool, If True, the step() method returns
-            is_terminal=True whenever a life is lost. See Mnih et al. 2015.
           screen_size: int, size of a resized Atari 2600 frame.
 
         Raises:
@@ -130,7 +127,6 @@ class AtariPreprocessing(object):
 
         self.environment = environment
         self.actions = range(self.environment.action_space.n)
-        self.terminal_on_life_loss = terminal_on_life_loss
         self.frame_skip = frame_skip
         self.screen_size = screen_size
         from collections import deque
@@ -248,15 +244,12 @@ class AtariPreprocessing(object):
         for time_step in range(self.frame_skip):
             # We bypass the Gym observation altogether and directly fetch the
             # grayscale image from the ALE. This is a little faster.
-            _, reward, game_over, info = self.environment.step(action)
+            _, reward, is_terminal, info = self.environment.step(action)
             accumulated_reward += reward
 
-            if self.terminal_on_life_loss:
-                new_lives = self.environment.ale.lives()
-                is_terminal = game_over or new_lives < self.lives
-                self.lives = new_lives
-            else:
-                is_terminal = game_over
+            new_lives = self.environment.ale.lives()
+            life_lost = new_lives < self.lives
+            self.lives = new_lives
 
             if is_terminal:
                 break
@@ -268,8 +261,7 @@ class AtariPreprocessing(object):
         # Pool the last two observations.
         observation = self._pool_and_resize()
 
-        self.game_over = game_over
-        return observation, accumulated_reward, is_terminal
+        return observation, accumulated_reward, is_terminal, life_lost
 
     def _fetch_grayscale_observation(self, output):
         """Returns the current observation in grayscale.

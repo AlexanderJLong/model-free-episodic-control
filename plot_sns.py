@@ -76,15 +76,16 @@ num_envs = df["ENV"].nunique()
 
 
 
-compare_var = "K"
+compare_var = "QUANTIZE"
 
 
 
 # compare_var = 'STATE-DIM'
-# df = df[(df["UPDATE-TYPE"] == "TD")]
-# df = df[(df["STATE-DIM"] == 512)]
+#df = df[(df["UPDATE-TYPE"] == "TD")]
+df = df[(df["STATE-DIM"] == 100)]
+df = df[(df["QUANTIZE"] == 32)]
 
-cols = min(num_envs, 9)
+cols = min(num_envs, 4)
 
 print(df.to_string())
 g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
