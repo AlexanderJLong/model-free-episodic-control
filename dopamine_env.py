@@ -251,7 +251,7 @@ class AtariPreprocessing(object):
             life_lost = new_lives < self.lives
             self.lives = new_lives
 
-            if is_terminal:
+            if is_terminal or life_lost:
                 break
             # We max-pool over the last two frames, in grayscale.
             elif time_step >= self.frame_skip - 2:
