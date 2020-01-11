@@ -21,13 +21,13 @@ import shutil
 from glob import glob
 from multiprocessing import Pool
 
+import time
 import numpy as np
 from tqdm import tqdm
 
-from env_names import small_env_list, env_list, full_env_list
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
-import time
+from env_names import small_env_list, env_list, full_env_list
 
 # GLOBAl VARS FIXED FOR EACH RUN
 eval_steps = 2500
@@ -39,7 +39,7 @@ config = {
     "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 32,
-    "DISCOUNT": 1,
+    "DISCOUNT": 0.99,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
     "STATE-DIM": 100,
@@ -47,7 +47,7 @@ config = {
     "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": 0.001, #exploration bonus beta
+    "COUNT-WEIGHT": 0.001,  # exploration bonus beta
     "PROJECTION-DENSITY": "auto",
     "LR": 1,
     "QUANTIZE": 32,
@@ -93,8 +93,6 @@ def main(cfg):
         game_name=camelcase_title,
         sticky_actions=cfg["STICKY-ACTIONS"],
         seed=cfg["SEED"])
-    env.reset()
-    lives = env.lives
 
     obv_dim = np.prod(env.reset().shape)
     agent = MFECAgent(
@@ -122,6 +120,7 @@ def main(cfg):
     for step in tqdm(list(range(total_steps + 1))):
 
         if step % eval_steps == 0 and step:
+            # Log last k episode rewards
             utils.end_epoch(step)
 
         # Act, and add
@@ -134,12 +133,12 @@ def main(cfg):
             {
                 "state": state,
                 "action": action,
-                "reward": reward+exp_bonus,
+                "reward": reward + exp_bonus,
                 "Qs": q_vals,
             }
         )
         if life_lost:
-            #start a new trace
+            # start a new trace
             episode_traces.append(trace)
             trace = []
 
@@ -153,7 +152,6 @@ def main(cfg):
             episode_traces = []
             # Reset agent and environment
             observation = env.reset()
-
 
     # print("saving...")
     # agent.save("./saves")

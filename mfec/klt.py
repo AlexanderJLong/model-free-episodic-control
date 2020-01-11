@@ -14,6 +14,9 @@ class KLT:
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
 
+    def gaus(self, x, sig):
+        return np.exp(-np.square(x/sig)/2)
+
     def estimate(self, state, action):
         """
         Return:
@@ -39,14 +42,21 @@ class KLT:
         counts = np.sum(dists == 0)
 
         values = [buffer.values_list[n] for n in neighbors]
-        weighted_reward = np.mean(values) #TODO: should use guas. Makes sense it'd be better
 
         # If all dists are 0, need to forget earliest estimate in that buffer to continue learning
         if counts == self.k:
+            # All visited, just return mean since dists is 0
+            weighted_reward = np.mean(values)
             buffer.remove(neighbors[0])  # smallest id is earliest sample and neighbours is ordered
+            # TODO isn't it ordered by dist?
+        else:
+            # Not all visited so do a weighted mean
+            w = self.gaus(dists, sig=np.mean(dists)*1.5)
+            weighted_reward = np.sum(w * values) / sum(w)
+
         if counts == 0:
-            # never visited so return mean of dists inverse.
-            counts = 1/np.min(dists)
+            # never visited so return mean of dists inverse and keep the weighted reward
+            counts = 1/np.mean(dists) #TODO mean
 
         return weighted_reward, counts
 

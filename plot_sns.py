@@ -78,8 +78,6 @@ num_envs = df["ENV"].nunique()
 
 compare_var = "QUANTIZE"
 
-
-
 # compare_var = 'STATE-DIM'
 #df = df[(df["UPDATE-TYPE"] == "TD")]
 df = df[(df["STATE-DIM"] == 100)]
