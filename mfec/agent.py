@@ -24,7 +24,7 @@ class MFECAgent:
             projection_density,
             update_type,
             learning_rate,
-            agg_dist,
+            quantize,
             distance,
     ):
         self.rs = np.random.RandomState(seed)
@@ -32,6 +32,7 @@ class MFECAgent:
         self.count_weight = count_weight
         self.update_type = update_type
         self.learning_rate = learning_rate
+        self.quantize = quantize
 
         self.klt = KLT(actions=self.actions,
                        buffer_size=buffer_size,
@@ -39,7 +40,6 @@ class MFECAgent:
                        state_dim=state_dimension,
                        obv_dim=observation_dim,
                        distance=distance,
-                       agg_dist=agg_dist,
                        seed=seed)
 
         self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=True,
@@ -60,7 +60,10 @@ class MFECAgent:
     def choose_action(self, observation):
         # Preprocess and project observation to state
         self.state = self.transformer.transform(observation.reshape(1, -1))
+        self.state /= self.quantize
+        self.state = self.state.astype(np.int8)
 
+        #print(np.max(self.state), np.min(self.state))
         # Exploration
         if self.rs.random_sample() < self.epsilon:
             # don't change current action

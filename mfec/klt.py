@@ -6,11 +6,11 @@ import numpy as np
 
 
 class KLT:
-    def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, agg_dist, seed):
+    def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, seed):
         self.buffer_size = buffer_size
         self.state_dim = state_dim
         self.buffers = tuple(
-            [ActionBuffer(a, self.buffer_size, state_dim, distance, agg_dist, seed) for a in actions])
+            [ActionBuffer(a, self.buffer_size, state_dim, distance, seed) for a in actions])
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
 
@@ -141,9 +141,8 @@ class KLT:
 
 
 class ActionBuffer:
-    def __init__(self, n, capacity, state_dim, distance, agg_dist, seed):
+    def __init__(self, n, capacity, state_dim, distance, seed):
         self.id = n
-        self.agg_dist = agg_dist
         self.state_dim = state_dim
         self.capacity = capacity
         self.distance = distance
