@@ -36,9 +36,9 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": "frostbite",
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 32,
+    "K": 50,
     "DISCOUNT": 0.99,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
@@ -126,8 +126,8 @@ def main(cfg):
         # Act, and add
         action, state, q_vals, exp_bonus = agent.choose_action(observation)
         observation, reward, done, life_lost = env.step(action)
-        #env.render(mode="human")
-        #time.sleep(0.005)
+        env.render(mode="human")
+        time.sleep(0.005)
         utils.log_reward(reward)
         trace.append(
             {

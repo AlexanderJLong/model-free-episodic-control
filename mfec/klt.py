@@ -30,7 +30,7 @@ class KLT:
         buffer = self.buffers[action]
         current_size = len(buffer)
         if current_size == 0:
-            return 0, 0  # Maybe better to just signal the buffer is empty than assigning large dist
+            return 0, 1e6  # Maybe better to just signal the buffer is empty than assigning large dist
 
         k = min(self.k, current_size)
         neighbors, dists = buffer.find_neighbors(state, k)
@@ -39,22 +39,25 @@ class KLT:
         dists = np.sqrt(dists[0]) #TODO: normalize?
         neighbors = neighbors[0]
 
-        mean_dist = np.mean(dists)
+
+
 
         values = [buffer.values_list[n] for n in neighbors]
 
         # If all dists are 0, need to forget earliest estimate in that buffer to continue learning
-        if mean_dist == 0:
+        if np.all(dists == 0):
             # All visited, just return mean since dists is 0
             weighted_reward = np.mean(values)
+            weighted_dist = 0
             buffer.remove(neighbors[0])  # smallest id is earliest sample and neighbours is ordered
             # TODO isn't it ordered by dist?
         else:
             # Not all visited so do a weighted mean
-            w = self.gaus(dists, sig=np.mean(dists)*1.5)
+            w = self.gaus(dists, sig=np.mean(dists) * 1.5)
+            weighted_dist = np.sum(w * dists) / sum(w)
             weighted_reward = np.sum(w * values) / sum(w)
 
-        return weighted_reward, mean_dist
+        return weighted_reward, weighted_dist
 
     def update(self, state, action, value):
         # print("updating", action)

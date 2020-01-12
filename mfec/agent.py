@@ -67,10 +67,9 @@ class MFECAgent:
             for action in self.actions
         ])
         reward_estimates = lookup_results[:, 0]
-        density = lookup_results[:, 1]
-        exp_bonuses = np.sqrt(density) * self.count_weight
-
-        total_estimates = reward_estimates + exp_bonuses
+        densities = lookup_results[:, 1]
+        print(densities*self.count_weight + 1, reward_estimates)
+        total_estimates = reward_estimates*(densities*self.count_weight + 1)
 
         # Tiebreak same rewards randomly
         probs = np.zeros_like(self.actions)
@@ -78,7 +77,8 @@ class MFECAgent:
         probs = probs / sum(probs)
         self.action = self.rs.choice(self.actions, p=probs)
 
-        #print(exp_bonus)
+        #exp_bonus = densities[self.action] * self.count_weight + 0.001
+
         return self.action, self.state, reward_estimates, 0
 
     def get_qas(self, state, action):
@@ -112,7 +112,7 @@ class MFECAgent:
                 experience["action"],
                 value,
             )
-            last_qs = np.mean(experience["Qs"])
+            last_qs = experience["Qs"][experience["action"]]
 
         # Decay e exponentially
         if self.epsilon > 0.05:
