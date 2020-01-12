@@ -121,14 +121,13 @@ def main(cfg):
 
         if step % eval_steps == 0 and step:
             # Log last k episode rewards
-            utils.end_epoch(step)
+            test(env, agent, step, utils)
 
         # Act, and add
         action, state, q_vals, exp_bonus = agent.choose_action(observation)
         observation, reward, done, life_lost = env.step(action)
         #env.render(mode="human")
         #time.sleep(0.005)
-        utils.log_reward(reward)
         trace.append(
             {
                 "state": state,
@@ -137,17 +136,10 @@ def main(cfg):
                 "Qs": q_vals,
             }
         )
-        if life_lost:
-            # start a new trace
-            episode_traces.append(trace)
-            trace = []
-
         no_recent_reward = len(trace) > 500 and \
                            not sum([e["reward"] for e in trace[-500:]])
-        if done or no_recent_reward:
-            utils.end_episode()
-            for t in episode_traces:
-                agent.train(t)
+        if done or no_recent_reward or life_lost:
+            agent.train(trace)
 
             episode_traces = []
             # Reset agent and environment
@@ -156,6 +148,18 @@ def main(cfg):
     # print("saving...")
     # agent.save("./saves")
 
+
+def test(env, agent, step, utils):
+    # run 5 episodes and report result
+    for _ in range(5):
+        o = env.reset()
+        done = False
+        while not done:
+            a, *_ = agent.choose_action(o)
+            o, r, done, _ = env.step(a)
+            utils.log_reward(r)
+        utils.end_episode()
+    utils.end_epoch(step)
 
 if __name__ == "__main__":
 
