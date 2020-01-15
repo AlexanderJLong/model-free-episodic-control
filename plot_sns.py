@@ -42,7 +42,7 @@ time, frames, episodes, reward_avg, reward_max
 filenames are: ..._K=1_SEED=1
  """
 
-env_dirs = glob("./agents/*SEED=1*/")
+env_dirs = glob("./agents/*SEED=0*/")
 envs = sorted(list(set([d.replace("=", ":").split(":")[1] for d in env_dirs])))
 data = []
 df = pd.DataFrame()
@@ -52,7 +52,7 @@ for i, env in enumerate(envs):
     print(env)
     try:
         for bd in base_dirs:
-            base_dir = bd[:-4]  # get current run and strip off the seed
+            base_dir = bd[:-4]  # get current run 15and strip off the seed
             files = glob(base_dir + "*/results.csv")
             for f in files:
                 table = pd.read_csv(f, sep=',', header=0)
@@ -74,11 +74,11 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "QUANTIZE"
+compare_var = "K"
 
 # compare_var = 'STATE-DIM'
-#df = df[(df["UPDATE-TYPE"] == "TD")]
-#df = df[(df["QUANTIZE"] == 32)]
+#df = df[(df["STATE-DIM"] == 150)]
+#df = df[(df["DISCOUNT"] == 1)]
 
 cols = min(num_envs, 4)
 

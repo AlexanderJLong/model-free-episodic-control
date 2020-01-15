@@ -31,6 +31,7 @@ class MFECAgent:
         self.count_weight = count_weight
         self.learning_rate = learning_rate
         self.quantize = quantize
+        self.k = k
 
         self.klt = KLT(actions=self.actions,
                        buffer_size=buffer_size,
@@ -58,8 +59,8 @@ class MFECAgent:
     def choose_action(self, observation):
         # Preprocess and project observation to state
         self.state = self.transformer.transform(observation.reshape(1, -1))
-        self.state /= self.quantize
-        self.state = self.state.astype(np.int8)
+        #self.state /= self.quantize
+        #self.state = self.state.astype(np.int8)
 
         #print(np.max(self.state), np.min(self.state))
         lookup_results = np.asarray([
@@ -67,18 +68,19 @@ class MFECAgent:
             for action in self.actions
         ])
         reward_estimates = lookup_results[:, 0]
-        densities = lookup_results[:, 1]
-        print(densities*self.count_weight + 1, reward_estimates)
-        total_estimates = reward_estimates*(densities*self.count_weight + 1)
+        distances = lookup_results[:, 1]
+
+        #print(densities*self.count_weight + 1, reward_estimates)
+        #total_estimates = reward_estimates*(densities*self.count_weight + 1)
 
         # Tiebreak same rewards randomly
         probs = np.zeros_like(self.actions)
-        probs[np.where(total_estimates == max(total_estimates))] = 1
+        probs[np.where(reward_estimates == max(reward_estimates))] = 1
+
         probs = probs / sum(probs)
         self.action = self.rs.choice(self.actions, p=probs)
 
-        #exp_bonus = densities[self.action] * self.count_weight + 0.001
-
+        #exp_bonus = distances[self.action] * self.count_weight/self.k + 0.001
         return self.action, self.state, reward_estimates, 0
 
     def get_qas(self, state, action):

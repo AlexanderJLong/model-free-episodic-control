@@ -3,6 +3,7 @@
 import hnswlib
 import matplotlib.pyplot as plt
 import numpy as np
+import umap
 
 
 class KLT:
@@ -30,17 +31,15 @@ class KLT:
         buffer = self.buffers[action]
         current_size = len(buffer)
         if current_size == 0:
-            return 0, 1e6  # Maybe better to just signal the buffer is empty than assigning large dist
+            return 0, 0  # Maybe better to just signal the buffer is empty than assigning large dist
 
-        k = min(self.k, current_size)
+        k = np.sqrt(current_size)//1
+        k = int(max(k, 1))
         neighbors, dists = buffer.find_neighbors(state, k)
         # Strip batch dim. dists is already ordered. Note it is square of l2 norm.
 
         dists = np.sqrt(dists[0]) #TODO: normalize?
         neighbors = neighbors[0]
-
-
-
 
         values = [buffer.values_list[n] for n in neighbors]
 
@@ -53,9 +52,9 @@ class KLT:
             # TODO isn't it ordered by dist?
         else:
             # Not all visited so do a weighted mean
-            w = self.gaus(dists, sig=np.mean(dists) * 1.5)
-            weighted_dist = np.sum(w * dists) / sum(w)
-            weighted_reward = np.sum(w * values) / sum(w)
+            weighted_dist = np.mean(dists)
+            w = self.gaus(dists, sig=weighted_dist * 1.5)
+            weighted_reward = np.mean(values*w) / sum(w)
 
         return weighted_reward, weighted_dist
 
@@ -63,6 +62,7 @@ class KLT:
         # print("updating", action)
         buffer = self.buffers[action]
         buffer.add(state, value)
+
 
     def save_indexes(self, save_dir):
         """
@@ -78,75 +78,26 @@ class KLT:
         for i, buff in enumerate(self.buffers):
             buff._tree.load_index(f"{save_dir}/buff_{i}.bin", max_elements=self.buffer_size)
 
-    def plot3d(self, both, diff):
+    def plot3d(self,):
         fig = plt.figure()
+        reducer = umap.UMAP(n_neighbors=200, n_components=2)
+
         fig.set_tight_layout(True)
-        if diff and both:
-            ax1 = fig.add_subplot(131, projection='3d')
-            ax2 = fig.add_subplot(132, projection='3d')
-            ax3 = fig.add_subplot(133, projection='3d')
-            axes = [ax1, ax2]
-            for i, ax in enumerate(axes):
-                data = self.buffers[i]
-                states = np.asarray(data.get_states())
-                vals = np.asarray(data.values)
-                ax.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals)
-                ax.set(xlabel="Vel")
-                ax.set(ylabel="Angle")
-                ax.set(zlabel="Position")
+        rows = 4
+        for i, buffer in enumerate(self.buffers):
+            ax = fig.add_subplot(rows, len(self.buffers)//rows+1, i+1)
 
-                ax.set(title=f"max r={max(vals)}")
-
-            states = np.random.rand(5000, 4) * 5 - 2
-            states[:, -1] = 0
-            vals = []
-            for s in states:
-                vals.append(self.estimate(s, 1, 0) - self.estimate(s, 0, 0))
-
-            # force normalization between certain range and make sure its symetric
-            vals[0] = max(max(vals), -min(vals))
-            vals[1] = min(-max(vals), min(vals))
-            ax3.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals, cmap="bwr")
-            ax3.set(xlabel="Vel")
-            ax3.set(ylabel="Angle")
-            ax3.set(zlabel="Position")
-            ax3.set(title=f"max={max(vals):.2f}, min={min(vals):.2f}")
-            plt.show()
-            return
-
-        elif diff:
-            ax = fig.add_subplot(111, projection='3d')
-            states = np.random.rand(5000, 4) * 5 - 2
-            vals = []
-            for s in states:
-                vals.append(self.estimate(s, 1, 0))
-            ax.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals)
-
+            states = np.asarray(buffer.get_states())
+            embeddings = reducer.fit_transform(states)
+            vals = np.asarray(buffer.values_list)
+            ax.scatter(embeddings[:, 1], embeddings[:, 0], c=vals)
             ax.set(xlabel="Vel")
             ax.set(ylabel="Angle")
-            ax.set(zlabel="Position")
-            plt.show()
-            return
 
-        else:
-            if len(self.buffers[0].values_list) < 10:
-                return
-            num_actions = len(self.buffers)
-            cols = 4
-            rows = num_actions // cols + 1
-            max_r = max([max(b.values_list) for b in self.buffers])
-            for i in range(num_actions):
-                ax = fig.add_subplot(rows, cols, i + 1, projection='3d')
-
-                data = self.buffers[i]
-                states = np.asarray(data.get_states())[::]
-                if len(states) < 1:
-                    return
-                vals = np.asarray(data.values)[::]
-                ax.scatter(states[:, 0], states[:, 1], states[:, 2], c=vals, vmax=max_r)
-
-            plt.show()
+            ax.set(title=f"max r={max(vals)}")
+        plt.show()
         return
+
 
 
 class ActionBuffer:

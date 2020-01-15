@@ -18,17 +18,19 @@ import itertools
 import os
 import random
 import shutil
+import time
 from glob import glob
 from multiprocessing import Pool
 
-import time
 import numpy as np
 from tqdm import tqdm
 
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
-from env_names import small_env_list, env_list, full_env_list
 
+from env_names import *
+
+from env_names import env_list
 # GLOBAl VARS FIXED FOR EACH RUN
 eval_steps = 2500
 total_steps = 100_000
@@ -36,10 +38,10 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": "frostbite",
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 50,
-    "DISCOUNT": 0.99,
+    "K": 0,
+    "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
     "STATE-DIM": 100,
@@ -47,10 +49,10 @@ config = {
     "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": 0.01,  # exploration bonus beta
+    "COUNT-WEIGHT": 0.05,  # exploration bonus beta
     "PROJECTION-DENSITY": "auto",
     "LR": 1,
-    "QUANTIZE": 32,
+    "QUANTIZE": 1,
     "SEED": list(range(5)),
 }
 """Projection type:
@@ -118,7 +120,6 @@ def main(cfg):
     trace = []
     episode_traces = []
     for step in tqdm(list(range(total_steps + 1))):
-
         if step % eval_steps == 0 and step:
             # Log last k episode rewards
             utils.end_epoch(step)
@@ -126,8 +127,8 @@ def main(cfg):
         # Act, and add
         action, state, q_vals, exp_bonus = agent.choose_action(observation)
         observation, reward, done, life_lost = env.step(action)
-        env.render(mode="human")
-        time.sleep(0.005)
+        #env.render(mode="human")
+        #time.sleep(0.005)
         utils.log_reward(reward)
         trace.append(
             {
@@ -150,8 +151,12 @@ def main(cfg):
                 agent.train(t)
 
             episode_traces = []
+            trace = []
             # Reset agent and environment
             observation = env.reset()
+            if step>100_000:
+                agent.klt.plot3d()
+
 
     # print("saving...")
     # agent.save("./saves")
