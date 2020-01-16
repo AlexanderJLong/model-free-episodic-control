@@ -29,34 +29,33 @@ class KLT:
          """
 
         buffer = self.buffers[action]
-        current_size = len(buffer)
-        if current_size == 0:
+        if buffer.length == 0:
             return 0, 0  # Maybe better to just signal the buffer is empty than assigning large dist
 
-        k = np.sqrt(current_size)//1
-        k = int(max(k, 1))
+        k = min(buffer.length, self.k)
         neighbors, dists = buffer.find_neighbors(state, k)
         # Strip batch dim. dists is already ordered. Note it is square of l2 norm.
 
-        dists = np.sqrt(dists[0]) #TODO: normalize?
+        #dists = np.sqrt(dists[0]) #TODO: normalize?
         neighbors = neighbors[0]
 
         values = [buffer.values_list[n] for n in neighbors]
 
         # If all dists are 0, need to forget earliest estimate in that buffer to continue learning
-        if np.all(dists == 0):
-            # All visited, just return mean since dists is 0
-            weighted_reward = np.mean(values)
-            weighted_dist = 0
-            buffer.remove(neighbors[0])  # smallest id is earliest sample and neighbours is ordered
-            # TODO isn't it ordered by dist?
-        else:
-            # Not all visited so do a weighted mean
-            weighted_dist = np.mean(dists)
-            w = self.gaus(dists, sig=weighted_dist * 1.5)
-            weighted_reward = np.mean(values*w) / sum(w)
+        #if np.all(dists == 0):
+        #    # All visited, just return mean since dists is 0
+        #    weighted_reward = np.mean(values)
+        #    weighted_dist = 0
+        #    #buffer.remove(neighbors[0])  # smallest id is earliest sample and neighbours is ordered
+        #    # TODO isn't it ordered by dist?
+        #else:
+        #    # Not all visited so do a weighted mean
+        #    weighted_dist = np.mean(dists)
+        #    #w = self.gaus(dists, sig=weighted_dist * 1.5)
+        #    #weighted_reward = np.mean(values*w) / sum(w)
+        #    weighted_reward = np.mean(values)
 
-        return weighted_reward, weighted_dist
+        return np.mean(values), [0,0]
 
     def update(self, state, action, value):
         # print("updating", action)
@@ -109,6 +108,7 @@ class ActionBuffer:
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=capacity, M=100, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
+        self.length = 0
 
     def __getstate__(self):
         # pickle everything but the hnswlib indexes
@@ -125,16 +125,27 @@ class ActionBuffer:
         return self._tree.knn_query(state, k=k)
 
     def add(self, state, value):
-        self.values_list.append(value)
-        self._tree.add_items(state)
-        return
+        if not self.values_list:  # buffer empty, just add
+            self._tree.add_items(state)
+            self.values_list.append(value)
+            return
+
+        idx, dist = self.find_neighbors(state, 1)
+        idx = idx[0][0]
+        dist = dist[0][0]
+        if dist < 1:
+            # Existing state, update and return
+            self.values_list[idx] = 0.2*value + 0.8*self.values_list[idx]
+        else:
+            # print(f"adding {value}")
+            self.values_list.append(value)
+            self._tree.add_items(state)
+        self.length = len(self.values_list)
 
     def remove(self, idx):
         """Remove a sample"""
         self._tree.mark_deleted(idx)
 
     def get_states(self):
-        return self._tree.get_items(range(0, len(self)))
+        return self._tree.get_items(range(0, self.length))
 
-    def __len__(self):
-        return len(self.values_list)

@@ -196,7 +196,7 @@ class AtariPreprocessing(object):
         self.screen_buffer[1].fill(0)
 
         #CHANGED
-        for _ in range(30):
+        for _ in range(self.frame_stack.maxlen):
             self.frame_stack.append(np.zeros([84, 84]))
 
         return self._pool_and_resize()
