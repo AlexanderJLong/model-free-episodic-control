@@ -59,19 +59,12 @@ class MFECAgent:
     def choose_action(self, observation):
         # Preprocess and project observation to state
         self.state = self.transformer.transform(observation.reshape(1, -1))
-        #self.state /= self.quantize
-        #self.state = self.state.astype(np.int8)
 
-        #print(np.max(self.state), np.min(self.state))
         lookup_results = np.asarray([
             self.klt.estimate(self.state, action)
             for action in self.actions
         ])
         reward_estimates = lookup_results[:, 0]
-        distances = lookup_results[:, 1]
-
-        #print(densities*self.count_weight + 1, reward_estimates)
-        #total_estimates = reward_estimates*(densities*self.count_weight + 1)
 
         # Tiebreak same rewards randomly
         probs = np.zeros_like(self.actions)
@@ -80,7 +73,6 @@ class MFECAgent:
         probs = probs / sum(probs)
         self.action = self.rs.choice(self.actions, p=probs)
 
-        #exp_bonus = distances[self.action] * self.count_weight/self.k + 0.001
         return self.action, self.state, reward_estimates, 0
 
     def get_qas(self, state, action):
@@ -95,7 +87,7 @@ class MFECAgent:
         # Takes trace object: a list of dicts {"state", "action", "reward"}
         R = 0.0
         # print(f"len trace {trace}")
-        lr = self.learning_rate
+        #lr = self.learning_rate
 
         for i in range(len(trace)):
             experience = trace.pop()
@@ -106,15 +98,15 @@ class MFECAgent:
                 R = r
                 value = R
             else:
-                value = r + self.discount * (lr * R + (1 - lr) * last_qs)
                 R = r + self.discount * R
+                value = R
 
             self.klt.update(
                 s,
                 experience["action"],
                 value,
+                experience["time"],
             )
-            last_qs = experience["Qs"][experience["action"]]
 
         # Decay e exponentially
         if self.epsilon > 0.05:

@@ -35,32 +35,16 @@ class KLT:
         k = min(buffer.length, self.k)
         neighbors, dists = buffer.find_neighbors(state, k)
         # Strip batch dim. dists is already ordered. Note it is square of l2 norm.
-
-        #dists = np.sqrt(dists[0]) #TODO: normalize?
         neighbors = neighbors[0]
 
         values = [buffer.values_list[n] for n in neighbors]
 
-        # If all dists are 0, need to forget earliest estimate in that buffer to continue learning
-        #if np.all(dists == 0):
-        #    # All visited, just return mean since dists is 0
-        #    weighted_reward = np.mean(values)
-        #    weighted_dist = 0
-        #    #buffer.remove(neighbors[0])  # smallest id is earliest sample and neighbours is ordered
-        #    # TODO isn't it ordered by dist?
-        #else:
-        #    # Not all visited so do a weighted mean
-        #    weighted_dist = np.mean(dists)
-        #    #w = self.gaus(dists, sig=weighted_dist * 1.5)
-        #    #weighted_reward = np.mean(values*w) / sum(w)
-        #    weighted_reward = np.mean(values)
-
         return np.mean(values), [0,0]
 
-    def update(self, state, action, value):
+    def update(self, state, action, value, time):
         # print("updating", action)
         buffer = self.buffers[action]
-        buffer.add(state, value)
+        buffer.add(state, value, time)
 
 
     def save_indexes(self, save_dir):
@@ -89,7 +73,7 @@ class KLT:
             states = np.asarray(buffer.get_states())
             embeddings = reducer.fit_transform(states)
             vals = np.asarray(buffer.values_list)
-            ax.scatter(embeddings[:, 1], embeddings[:, 0], c=vals)
+            ax.scatter(embeddings[:, 1], embeddings[:, 0], c=vals, s=1)
             ax.set(xlabel="Vel")
             ax.set(ylabel="Angle")
 
@@ -108,7 +92,9 @@ class ActionBuffer:
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=capacity, M=100, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
+        self.time_list = []
         self.length = 0
+        self.agg_dist = 1e6
 
     def __getstate__(self):
         # pickle everything but the hnswlib indexes
@@ -124,22 +110,25 @@ class ActionBuffer:
         """Return idx, dists"""
         return self._tree.knn_query(state, k=k)
 
-    def add(self, state, value):
+    def add(self, state, value, time):
         if not self.values_list:  # buffer empty, just add
             self._tree.add_items(state)
             self.values_list.append(value)
+            self.time_list.append(time)
             return
 
         idx, dist = self.find_neighbors(state, 1)
         idx = idx[0][0]
         dist = dist[0][0]
-        if dist < 1:
+        if dist < self.agg_dist or dist < 1:
             # Existing state, update and return
-            self.values_list[idx] = 0.2*value + 0.8*self.values_list[idx]
+            self.values_list[idx] = 0.5*value + 0.5*self.values_list[idx]
+            self.time_list[idx] = time
         else:
-            # print(f"adding {value}")
             self.values_list.append(value)
+            self.time_list.append(time)
             self._tree.add_items(state)
+
         self.length = len(self.values_list)
 
     def remove(self, idx):

@@ -38,13 +38,13 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": [20, 64, 200],
+    "K": 32,
     "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
-    "STATE-DIM": 100,
+    "STATE-DIM": 200,
     "DISTANCE": "l2",
     "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
@@ -136,6 +136,7 @@ def main(cfg):
                 "action": action,
                 "reward": reward + exp_bonus,
                 "Qs": q_vals,
+                "time": step,
             }
         )
         if life_lost:

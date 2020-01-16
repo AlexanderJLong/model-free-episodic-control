@@ -20,6 +20,10 @@ p = hnswlib.Index(space='l2', dim=3)  # possible options are l2, cosine or ip
 # Initing index - the maximum number of elements should be known beforehand
 p.init_index(max_elements=100, ef_construction=200, M=16)
 
+add_data = np.asarray(
+    [1, 2, 3],
+)
+p.add_items(add_data)
 # Element insertion (can be called several times):
 print(p.get_ids_list())
 
@@ -33,6 +37,6 @@ print(p.get_items([1, 1, 3]))
 
 
 # Query dataset, k - number of closest elements (returns 2 numpy arrays)
-labels, distances = p.knn_query([1, 1, 3], k=10)
+labels, distances = p.knn_query([1, 1, 3], k=4)
 print(labels)
 print(distances)
