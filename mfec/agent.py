@@ -56,12 +56,12 @@ class MFECAgent:
         else:
             self.clipper = lambda x: x
 
-    def choose_action(self, observation):
+    def choose_action(self, observation, time):
         # Preprocess and project observation to state
         self.state = self.transformer.transform(observation.reshape(1, -1))
 
         lookup_results = np.asarray([
-            self.klt.estimate(self.state, action)
+            self.klt.estimate(self.state, action, time)
             for action in self.actions
         ])
         reward_estimates = lookup_results[:, 0]

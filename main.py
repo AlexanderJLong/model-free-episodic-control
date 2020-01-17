@@ -18,19 +18,16 @@ import itertools
 import os
 import random
 import shutil
-import time
 from glob import glob
 from multiprocessing import Pool
 
 import numpy as np
 from tqdm import tqdm
 
+from env_names import *
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
-from env_names import *
-
-from env_names import env_list
 # GLOBAl VARS FIXED FOR EACH RUN
 eval_steps = 2500
 total_steps = 100_000
@@ -40,7 +37,7 @@ reward_history_len = 5  # At publication time should be 100.
 config = {
     "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 32,
+    "K": 64,
     "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
@@ -125,10 +122,10 @@ def main(cfg):
             utils.end_epoch(step)
 
         # Act, and add
-        action, state, q_vals, exp_bonus = agent.choose_action(observation)
+        action, state, q_vals, exp_bonus = agent.choose_action(observation, time=step)
         observation, reward, done, life_lost = env.step(action)
-        #env.render(mode="human")
-        #time.sleep(0.005)
+        # env.render(mode="human")
+        # time.sleep(0.005)
         utils.log_reward(reward)
         trace.append(
             {
@@ -141,23 +138,21 @@ def main(cfg):
         )
         if life_lost:
             # start a new trace
-            episode_traces.append(trace)
+            agent.train(trace)
             trace = []
 
         no_recent_reward = len(trace) > 500 and \
                            not sum([e["reward"] for e in trace[-500:]])
-        if done or no_recent_reward:
-            utils.end_episode()
-            for t in episode_traces:
-                agent.train(t)
-
-            episode_traces = []
+        if no_recent_reward:
+            agent.train(trace)
             trace = []
+            done = True
+        if done:
+            utils.end_episode()
             # Reset agent and environment
             observation = env.reset()
-            if step>100_000:
-                agent.klt.plot3d()
-
+        if step > 100_000:
+            agent.klt.plot3d()
 
     # print("saving...")
     # agent.save("./saves")
@@ -180,8 +175,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    # main(all_configs[0])
+    # exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

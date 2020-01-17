@@ -18,7 +18,7 @@ class KLT:
     def gaus(self, x, sig):
         return np.exp(-np.square(x/sig)/2)
 
-    def estimate(self, state, action):
+    def estimate(self, state, action, time):
         """
         Return:
          1) the estimated value of the given state
@@ -36,10 +36,26 @@ class KLT:
         neighbors, dists = buffer.find_neighbors(state, k)
         # Strip batch dim. dists is already ordered. Note it is square of l2 norm.
         neighbors = neighbors[0]
+        dists = np.sqrt(dists[0])
 
         values = [buffer.values_list[n] for n in neighbors]
+        times = [buffer.time_list[n] for n in neighbors]
 
-        return np.mean(values), [0,0]
+        z = 1/np.sqrt((time-np.asarray(times)))
+
+        if dists[0] == 0:
+            time_weighted = values[0]
+        else:
+            w = 1/np.sqrt(dists)
+            #print(w, z)
+            w = w/np.max(w)
+            z = z/np.max(z)
+            c = 1*w + 0.0*z
+            time_weighted = np.dot(values, c) / np.sum(c)
+        #print(time_weighted)
+        #print(np.mean(values))
+
+        return time_weighted, [0,0]
 
     def update(self, state, action, value, time):
         # print("updating", action)
