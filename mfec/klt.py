@@ -44,10 +44,9 @@ class KLT:
         norms = np.sqrt(dists)
         #norms[norms == 0] = 1
         #w = np.divide(1., norms)  # Get inverse distances as weights
-
-        h = np.max(norms) / 2 if np.max(norms) else 1
-        #h = 100
-        w = self.gaus_2d(norms, times, sig1=h, sig2=20_000)
+        #h = np.max(norms) / 2 if np.max(norms) else 1
+        h = 200
+        w = self.gaus_2d(norms, times, sig1=h, sig2=50_000)
 
         if not np.sum(w):
             w = np.ones_like(w)

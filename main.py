@@ -37,7 +37,7 @@ reward_history_len = 5  # At publication time should be 100.
 config = {
     "ENV": "qbert",
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": [5, 20, 200],
+    "K": [5, 20, 100, 200],
     "DISCOUNT": 0.99,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
