@@ -13,14 +13,16 @@ class KLT:
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
 
+    def gaus(self, x, sig):
+        return np.exp(-np.square(x / sig) / 2)
+
     def estimate(self, state, action, count_weight):
         """Return the estimated value of the given state"""
 
         buffer = self.buffers[action]
 
         if len(buffer) == 0:
-            return 0, 0, 1e6
-
+            return 1e6, 0, 0
         k = min(self.k, len(buffer))  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
         # Strip batch dim. Note dists is already ordered.
@@ -28,24 +30,24 @@ class KLT:
         neighbors = neighbors[0]
 
         # print(dists, neighbors, buffer.values_array, action)
-        if dists[0] == 0:
-            # Identical state found
-            weighted_count = buffer.counts_list[neighbors[0]]
-            weighted_reward = buffer.values_list[neighbors[0]]
-        else:
-            # never seen before so estimate
-            values = np.asarray([buffer.values_list[n] for n in neighbors])
-            counts = np.asarray([buffer.counts_list[n] for n in neighbors])
-            # counts = buffer.counts_array[neighbors]
+        # never seen before so estimate
+        values = np.asarray([buffer.values_list[n] for n in neighbors])
+        counts = np.asarray([buffer.counts_list[n] for n in neighbors])
+        # counts = buffer.counts_array[neighbors]
 
-            # Convert to l2norm, normalize by original dimensionality so dists have a consistent
-            # range, but make sure they're always still > 1 because of w=1/d
-            norms = np.sqrt(dists)
+        # Convert to l2norm, normalize by original dimensionality so dists have a consistent
+        # range, but make sure they're always still > 1 because of w=1/d
+        norms = np.sqrt(dists)
+        #norms[norms == 0] = 1
+        #w = np.divide(1., norms)  # Get inverse distances as weights
 
-            w = np.divide(1., norms)  # Get inverse distances as weights
+        h = np.max(norms) / 10 if np.max(norms) else 1
+        w = self.gaus(norms, sig=h)
 
-            weighted_reward = np.sum(w * values) / np.sum(w)
-            weighted_count = np.sum(w*counts)/np.sum(w)
+        if not np.sum(w):
+            w = np.ones_like(w)
+        weighted_reward = np.dot(w, values) / np.sum(w)
+        weighted_count = np.dot(w, counts) / np.sum(w)
 
         return weighted_reward, weighted_count, 0
 
@@ -186,7 +188,6 @@ class ActionBuffer:
             self.counts_list.append(1)
 
         return
-
 
     def get_states(self):
         return self._tree.get_items(range(0, len(self)))

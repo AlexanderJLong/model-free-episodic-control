@@ -87,30 +87,19 @@ class MFECAgent:
             buffer_out = np.asarray(q_values)
             r_estimate = buffer_out[:, 0]
             count_bonus = 1 / (buffer_out[:, 1] + 0.01)  # TODO CHANGE TO SQRT
-            dist_bonus = buffer_out[:, 2]
 
-            count_bonus -= np.min(count_bonus) - 0.01
+            count_bonus -= np.min(count_bonus) + 0.01
             count_bonus = count_bonus / np.max(count_bonus)
 
-            dist_bonus -= np.min(dist_bonus) - 0.01
-            dist_bonus = dist_bonus / np.max(dist_bonus)
-
             r_bonus = r_estimate
-            r_bonus -= np.min(r_bonus) - 0.01
+            r_bonus -= np.min(r_bonus) + 0.01
             r_bonus = r_bonus / np.max(r_bonus)
-            # print(r_bonus, count_bonus, dist_bonus)
 
-            total_estimate = 0.0 * dist_bonus + self.count_weight * count_bonus + r_bonus
+            total_estimate = self.count_weight * count_bonus + r_bonus
 
-            # print(q_values)
-            # print([len(buff) for buff in self.klt.buffers])
             probs = np.zeros_like(self.actions)
             probs[np.where(total_estimate == max(total_estimate))] = 1
             probs = probs / sum(probs)
-
-            # probs = q_values
-            # probs[np.where(probs==0)] = 1
-            # probs=probs/sum(probs)
 
             self.action = self.rs.choice(self.actions, p=probs)
             return self.action, self.state, r_estimate

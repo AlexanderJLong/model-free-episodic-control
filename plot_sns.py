@@ -74,9 +74,9 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-#compare_var = "K"
+compare_var = "K"
 
-compare_var = 'STATE-DIM'
+#compare_var = 'STATE-DIM'
 #df = df[(df["STATE-DIM"] == 150)]
 #df = df[(df["DISCOUNT"] == 1)]
 #df = df[(df["ENV"] != "freeway")]
