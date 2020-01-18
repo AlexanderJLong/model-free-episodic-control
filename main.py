@@ -24,7 +24,7 @@ from multiprocessing import Pool
 import numpy as np
 from tqdm import tqdm
 
-from env_names import small_env_list
+from env_names import small_env_list, env_list
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
@@ -35,7 +35,7 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": "qbert",
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 200,
     "DISCOUNT": 0.99,
@@ -50,7 +50,7 @@ config = {
     "PROJECTION-DENSITY": "auto",
     "UPDATE-TYPE": "MC",
     "LR": 1,
-    "AGG-DIST": [10_000, 25_000, 50_000, 100_000],
+    "TIME-SIG": 100_000,
     "SEED": list(range(5)),
 }
 """Projection type:
@@ -110,7 +110,7 @@ def main(cfg):
         projection_density=cfg["PROJECTION-DENSITY"],
         distance=cfg["DISTANCE"],
         update_type=cfg["UPDATE-TYPE"],
-        agg_dist=cfg["AGG-DIST"],
+        time_sig=cfg["TIME-SIG"],
         learning_rate=cfg["LR"],
     )
 
@@ -175,8 +175,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    # main(all_configs[0])
-    # exit()
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

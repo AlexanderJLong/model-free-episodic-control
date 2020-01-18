@@ -6,19 +6,19 @@ import numpy as np
 
 
 class KLT:
-    def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, lr, agg_dist, seed):
+    def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, lr, time_sig, seed):
         self.buffer_size = buffer_size
         self.buffers = tuple(
-            [ActionBuffer(a, self.buffer_size, state_dim, distance, lr, agg_dist, seed) for a in actions])
+            [ActionBuffer(a, self.buffer_size, state_dim, distance, lr, time_sig, seed) for a in actions])
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
-        self.time_horizon = agg_dist
+        self.time_horizon = time_sig
 
     def gaus(self, x, sig):
         return np.exp(-np.square(x / sig) / 2)
 
     def gaus_2d(self, x, y, sig1, sig2):
-        return np.exp(-(np.square(x / sig1) + np.square(y / sig2)) / 2)
+        return np.exp(-(np.square(x / sig1) + np.square(y / sig2)))
 
     def estimate(self, state, action, count_weight):
         """Return the estimated value of the given state"""
@@ -45,13 +45,12 @@ class KLT:
         norms = np.sqrt(dists)
         #norms[norms == 0] = 1
         #w = np.divide(1., norms)  # Get inverse distances as weights
-        h = np.min(norms) if np.min(norms) else 1
+        h = np.mean(norms)//2 if np.min(norms) else 1 # This reduces to only considering exact matches when they are there.
         w = self.gaus_2d(norms, times, sig1=h, sig2=self.time_horizon)
 
-        if not np.sum(w):
-            w = np.ones_like(w)
-        weighted_reward = np.dot(w, values) / np.sum(w)
-        weighted_count = np.dot(w, counts) / np.sum(w)
+        w_sum = np.sum(w)
+        weighted_reward = np.dot(w, values) / w_sum
+        weighted_count = np.dot(w, counts) / w_sum
 
         return weighted_reward, weighted_count, 0
 

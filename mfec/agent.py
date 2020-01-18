@@ -24,7 +24,7 @@ class MFECAgent:
             projection_density,
             update_type,
             learning_rate,
-            agg_dist,
+            time_sig,
             distance,
     ):
         self.rs = np.random.RandomState(seed)
@@ -40,7 +40,7 @@ class MFECAgent:
                        obv_dim=observation_dim,
                        distance=distance,
                        lr=learning_rate,
-                       agg_dist=agg_dist,
+                       time_sig=time_sig,
                        seed=seed)
 
         self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=True,
@@ -68,6 +68,9 @@ class MFECAgent:
         # Preprocess and project observation to state
         # print(observation)
         self.state = self.transformer.transform(observation.reshape(1, -1))
+        #self.state = self.state//0
+#
+        #self.state = self.state.astype(np.int)
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:
