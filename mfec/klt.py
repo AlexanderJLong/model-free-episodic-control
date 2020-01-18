@@ -16,6 +16,9 @@ class KLT:
     def gaus(self, x, sig):
         return np.exp(-np.square(x / sig) / 2)
 
+    def gaus_2d(self, x, y, sig1, sig2):
+        return np.exp(-(np.square(x / sig1) + np.square(y / sig2)) / 2)
+
     def estimate(self, state, action, count_weight):
         """Return the estimated value of the given state"""
 
@@ -33,6 +36,7 @@ class KLT:
         # never seen before so estimate
         values = np.asarray([buffer.values_list[n] for n in neighbors])
         counts = np.asarray([buffer.counts_list[n] for n in neighbors])
+        times = np.asarray([buffer.times_list[n] for n in neighbors])
         # counts = buffer.counts_array[neighbors]
 
         # Convert to l2norm, normalize by original dimensionality so dists have a consistent
@@ -41,8 +45,9 @@ class KLT:
         #norms[norms == 0] = 1
         #w = np.divide(1., norms)  # Get inverse distances as weights
 
-        h = np.max(norms) / 10 if np.max(norms) else 1
-        w = self.gaus(norms, sig=h)
+        h = np.max(norms) / 2 if np.max(norms) else 1
+        #h = 100
+        w = self.gaus_2d(norms, times, sig1=h, sig2=20_000)
 
         if not np.sum(w):
             w = np.ones_like(w)
@@ -51,10 +56,10 @@ class KLT:
 
         return weighted_reward, weighted_count, 0
 
-    def update(self, state, action, value):
+    def update(self, state, action, value, time):
         # print("updating", action)
         buffer = self.buffers[action]
-        buffer.add(state, value)
+        buffer.add(state, value, time)
 
     def save_indexes(self, save_dir):
         """
@@ -153,6 +158,7 @@ class ActionBuffer:
         self._tree.init_index(max_elements=capacity, M=30, random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
         self.counts_list = []
+        self.times_list = []
 
     def __getstate__(self):
         # pickle everything but the hnswlib indexes
@@ -168,11 +174,12 @@ class ActionBuffer:
         """Return idx, dists"""
         return self._tree.knn_query(state, k=k)
 
-    def add(self, state, value):
+    def add(self, state, value, time):
         if not self.values_list:  # buffer empty, just add
             self._tree.add_items(state)
             self.values_list.append(value)
             self.counts_list.append(1)
+            self.times_list.append(time)
             return
 
         idx, dist = self.find_neighbors(state, 1)
@@ -182,10 +189,12 @@ class ActionBuffer:
             # Existing state, update and return
             self.counts_list[idx] += 1
             self.values_list[idx] = 0.9 * self.values_list[idx] + 0.1 * value
+            self.times_list[idx] = time
         else:
             self.values_list.append(value)
             self._tree.add_items(state)
             self.counts_list.append(1)
+            self.times_list.append(time)
 
         return
 

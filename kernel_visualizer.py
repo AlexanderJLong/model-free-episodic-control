@@ -4,6 +4,6 @@ def gaus(x, sig):
 
 x = np.linspace(0, 10000, 1000)
 import matplotlib.pyplot as plt
-plt.plot(x, gaus(x, max(x)/25))
+plt.plot(x, gaus(x, 1000))
 plt.plot(x, 1/np.sqrt(x/200))
 plt.show()

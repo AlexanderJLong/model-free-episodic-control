@@ -136,6 +136,7 @@ class MFECAgent:
                 s,
                 experience["action"],
                 value,
+                experience["time"],
             )
             last_qs = experience["Qs"]
 

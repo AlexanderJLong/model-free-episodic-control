@@ -134,6 +134,7 @@ def main(cfg):
                 "action": action,
                 "reward": reward,
                 "Qs": q_vals,
+                "time":step,
             }
         )
 
