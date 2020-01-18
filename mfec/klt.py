@@ -12,6 +12,7 @@ class KLT:
             [ActionBuffer(a, self.buffer_size, state_dim, distance, lr, agg_dist, seed) for a in actions])
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
+        self.time_horizon = agg_dist
 
     def gaus(self, x, sig):
         return np.exp(-np.square(x / sig) / 2)
@@ -44,9 +45,8 @@ class KLT:
         norms = np.sqrt(dists)
         #norms[norms == 0] = 1
         #w = np.divide(1., norms)  # Get inverse distances as weights
-        #h = np.max(norms) / 2 if np.max(norms) else 1
-        h = 200
-        w = self.gaus_2d(norms, times, sig1=h, sig2=50_000)
+        h = np.min(norms) if np.min(norms) else 1
+        w = self.gaus_2d(norms, times, sig1=h, sig2=self.time_horizon)
 
         if not np.sum(w):
             w = np.ones_like(w)

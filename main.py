@@ -37,7 +37,7 @@ reward_history_len = 5  # At publication time should be 100.
 config = {
     "ENV": "qbert",
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": [5, 20, 100, 200],
+    "K": 200,
     "DISCOUNT": 0.99,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
@@ -50,7 +50,7 @@ config = {
     "PROJECTION-DENSITY": "auto",
     "UPDATE-TYPE": "MC",
     "LR": 1,
-    "AGG-DIST": 1,
+    "AGG-DIST": [10_000, 25_000, 50_000, 100_000],
     "SEED": list(range(5)),
 }
 """Projection type:
