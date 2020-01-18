@@ -36,23 +36,23 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 175,
     "DISCOUNT": 0.99,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
-    "STATE-DIM": [64, 200],
+    "STATE-DIM": 200,
     "DISTANCE": "l2",
     "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": [0.05, 0.1, 0.001],
+    "COUNT-WEIGHT": 0.1,
     "PROJECTION-DENSITY": "auto",
     "UPDATE-TYPE": "MC",
-    "LR": [0.9, 0.99, 0.85],
+    "LR": 0.9,
     "AGG-DIST": 1,
-    "SEED": list(range(3)),
+    "SEED": list(range(5)),
 }
 """Projection type:
 0: Identity
@@ -125,7 +125,7 @@ def main(cfg):
 
         # Act, and add
         action, state, q_vals = agent.choose_action(observation)
-        observation, reward, done = env.step(action)
+        observation, reward, done, life_lost = env.step(action)
         #env.render(mode="human")
         #time.sleep(0.01)
         utils.log_reward(reward)
@@ -137,11 +137,20 @@ def main(cfg):
                 "Qs": q_vals,
             }
         )
-        no_recent_reward = len(trace) > 500 and not sum([e["reward"] for e in trace[-500:]])
-        if done or no_recent_reward:
-            utils.end_episode()
-            agent.train(trace)
 
+        if life_lost:
+            # start a new trace
+            agent.train(trace)
+            trace = []
+
+        no_recent_reward = len(trace) > 500 and not sum([e["reward"] for e in trace[-500:]])
+        if no_recent_reward:
+            agent.train(trace)
+            trace = []
+            done=True
+
+        if done:
+            utils.end_episode()
             # Reset agent and environment
             observation = env.reset()
 

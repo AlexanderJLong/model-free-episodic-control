@@ -107,15 +107,12 @@ class AtariPreprocessing(object):
     Evaluation Protocols and Open Problems for General Agents".
     """
 
-    def __init__(self, environment, frame_skip=4, terminal_on_life_loss=False,
-                 screen_size=84):
+    def __init__(self, environment, frame_skip=4, screen_size=84):
         """Constructor for an Atari 2600 preprocessor.
 
         Args:
           environment: Gym environment whose observations are preprocessed.
           frame_skip: int, the frequency at which the agent experiences the game.
-          terminal_on_life_loss: bool, If True, the step() method returns
-            is_terminal=True whenever a life is lost. See Mnih et al. 2015.
           screen_size: int, size of a resized Atari 2600 frame.
 
         Raises:
@@ -130,7 +127,6 @@ class AtariPreprocessing(object):
 
         self.environment = environment
         self.actions = range(self.environment.action_space.n)
-        self.terminal_on_life_loss = terminal_on_life_loss
         self.frame_skip = frame_skip
         self.screen_size = screen_size
         from collections import deque
@@ -146,6 +142,20 @@ class AtariPreprocessing(object):
 
         self.game_over = False
         self.lives = 0  # Will need to be set by reset().
+
+        # Get median pixel val
+        #self.median_pixels = np.zeros([84, 84])
+        #self.reset()
+        #observations = []
+        #for _ in range(100):
+        #    o, *_ = self.step(0)
+        #    observations.append(o[0])
+        #self.median_pixels = np.median(observations, axis=0)
+        #print(self.median_pixels)
+
+
+
+
 
     def train(self):
         """Compatibility with rainbow env"""
@@ -186,7 +196,7 @@ class AtariPreprocessing(object):
         self.screen_buffer[1].fill(0)
 
         #CHANGED
-        for _ in range(self.frame_stack.maxlen-1):
+        for _ in range(self.frame_stack.maxlen):
             self.frame_stack.append(np.zeros([84, 84]))
 
         return self._pool_and_resize()
@@ -230,21 +240,18 @@ class AtariPreprocessing(object):
           info: Gym API's info data structure.
         """
         accumulated_reward = 0.
-
+        last_obv = []
         for time_step in range(self.frame_skip):
             # We bypass the Gym observation altogether and directly fetch the
             # grayscale image from the ALE. This is a little faster.
-            _, reward, game_over, info = self.environment.step(action)
+            _, reward, is_terminal, info = self.environment.step(action)
             accumulated_reward += reward
 
-            if self.terminal_on_life_loss:
-                new_lives = self.environment.ale.lives()
-                is_terminal = game_over or new_lives < self.lives
-                self.lives = new_lives
-            else:
-                is_terminal = game_over
+            new_lives = self.environment.ale.lives()
+            life_lost = new_lives < self.lives
+            self.lives = new_lives
 
-            if is_terminal:
+            if is_terminal or life_lost:
                 break
             # We max-pool over the last two frames, in grayscale.
             elif time_step >= self.frame_skip - 2:
@@ -254,8 +261,7 @@ class AtariPreprocessing(object):
         # Pool the last two observations.
         observation = self._pool_and_resize()
 
-        self.game_over = game_over
-        return observation, accumulated_reward, is_terminal
+        return observation, accumulated_reward, is_terminal, life_lost
 
     def _fetch_grayscale_observation(self, output):
         """Returns the current observation in grayscale.

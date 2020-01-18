@@ -42,7 +42,7 @@ time, frames, episodes, reward_avg, reward_max
 filenames are: ..._K=1_SEED=1
  """
 
-env_dirs = glob("./agents/*SEED=1*/")
+env_dirs = glob("./agents/*SEED=0*/")
 envs = sorted(list(set([d.replace("=", ":").split(":")[1] for d in env_dirs])))
 data = []
 df = pd.DataFrame()
@@ -52,7 +52,7 @@ for i, env in enumerate(envs):
     print(env)
     try:
         for bd in base_dirs:
-            base_dir = bd[:-4]  # get current run and strip off the seed
+            base_dir = bd[:-4]  # get current run 15and strip off the seed
             files = glob(base_dir + "*/results.csv")
             for f in files:
                 table = pd.read_csv(f, sep=',', header=0)
@@ -74,19 +74,19 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "COUNT-WEIGHT"
-# compare_var = 'STATE-DIM'
-df = df[(df["LR"] == 0.9)]
-df = df[(df["STATE-DIM"] == 64)]
-# df = df[(df["STATE-DIM"] == 512)]
+compare_var = "K"
 
-cols = min(num_envs, 9)
+# compare_var = 'STATE-DIM'
+#df = df[(df["STATE-DIM"] == 150)]
+#df = df[(df["DISCOUNT"] == 1)]
+
+cols = min(num_envs, 4)
 
 print(df.to_string())
 g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
 # g.set(xlim=(0, 1e5))
 try:
-    (g.map(sns.lineplot, "Step", "Reward", ci=100, estimator=np.mean)).set_titles("{col_name}")
+    (g.map(sns.lineplot, "Step", "Reward", ci=100, estimator=np.mean, linewidth=1)).set_titles("{col_name}")
 except:
     (g.map(plt.plot, "Step", "Reward")).set_titles("{col_name}")
 
@@ -130,11 +130,12 @@ num_lines = hns[compare_var].nunique()
 print(hns[compare_var])
 sns.lineplot("Step",
              "normalized_reward",
-             ci='sd',
+             ci=100,
              estimator=np.mean,
              data=hns,
              hue=compare_var,
-             palette=sns.color_palette("colorblind", num_lines)
+             palette=sns.color_palette("colorblind", num_lines),
+             linewidth=1
              ).set_title(f"Median Human Normalized Reward Across {num_games} Games")
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.savefig(f"./plots/mhns.png")
