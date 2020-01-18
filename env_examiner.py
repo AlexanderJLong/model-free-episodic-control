@@ -4,40 +4,38 @@ import numpy as np
 np.set_printoptions(threshold=sys.maxsize)
 import matplotlib.pyplot as plt
 
-from pyvirtualdisplay import Display
 
-display = Display(visible=0, size=(80, 60))
-display.start()
-
-from cartpole_wrapper import pixel_state_wrapper
-from gym.utils.play import play
+from dopamine_env import create_atari_environment
 
 
-env = gym.make("CartPole-v0")
+env = create_atari_environment("MsPacman")
 
-print(f"original env: {env.observation_space}")
-env = pixel_state_wrapper(env)
-print(f"wrapped env: {env.observation_space}")
 
 print(env.observation_space)
 #play(env, keys_to_action={(ord('a'),): 1, (ord('s'),): 0})
 
+def show_stack(obv):
+    for i, f in enumerate(obv):
+        print(f"frame {i}")
+        plt.imshow(f, cmap="Greys")
+        plt.show()
 
 obv1 = env.reset()
-plt.imshow(obv1)
-
+print(obv1.shape)
+show_stack(obv1)
 plt.show()
 
 obv = env.reset()
-obv = env.reset()
-obv = env.reset()
-obv = env.reset()
-plt.imshow(obv1-obv)
+show_stack(obv1)
+
 plt.show()
 
-for _ in range(10):
+for _ in range(100):
     obv, *_ = env.step(1)
-plt.imshow(obv)
+show_stack(obv)
+
+plt.imshow(obv[-1] - obv[-2])
 plt.show()
+
 
 env.close()

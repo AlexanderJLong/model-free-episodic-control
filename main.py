@@ -115,7 +115,6 @@ def main(cfg):
     env.train()  # turn on episodic life
     observation = env.reset()
     trace = []
-    episode_traces = []
     for step in tqdm(list(range(total_steps + 1))):
         if step % eval_steps == 0 and step:
             # Log last k episode rewards
@@ -141,12 +140,12 @@ def main(cfg):
             agent.train(trace)
             trace = []
 
-        no_recent_reward = len(trace) > 500 and \
-                           not sum([e["reward"] for e in trace[-500:]])
-        if no_recent_reward:
-            agent.train(trace)
-            trace = []
-            done = True
+       #no_recent_reward = len(trace) > 500 and \
+       #                   not sum([e["reward"] for e in trace[-500:]])
+       #if no_recent_reward:
+       #    agent.train(trace)
+       #    trace = []
+       #    done = True
         if done:
             utils.end_episode()
             # Reset agent and environment
@@ -175,8 +174,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    # main(all_configs[0])
-    # exit()
+    #main(all_configs[0])
+    #exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)
