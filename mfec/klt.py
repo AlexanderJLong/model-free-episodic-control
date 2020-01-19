@@ -12,6 +12,7 @@ class KLT:
             [ActionBuffer(a, self.buffer_size, state_dim, distance, lr, time_sig, seed) for a in actions])
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
+        self.state_dim = state_dim
         self.time_horizon = time_sig
 
     def gaus(self, x, sig):
@@ -25,13 +26,19 @@ class KLT:
 
         buffer = self.buffers[action]
 
-        if len(buffer) == 0:
+        n = len(buffer)
+        if n == 0:
             return 1e6, 0, 0
-        k = min(self.k, len(buffer))  # the len call might slow it down a bit
+        k = min(self.k, n)  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
         # Strip batch dim. Note dists is already ordered.
         dists = dists[0]
         neighbors = neighbors[0]
+        norms = np.sqrt(dists)
+
+        hn = 50_000/np.sqrt(n)
+        density = 1/(n*hn) * np.sum(self.gaus(norms, sig=hn))
+        #print(np.sqrt(density))
 
         # print(dists, neighbors, buffer.values_array, action)
         # never seen before so estimate
@@ -42,17 +49,16 @@ class KLT:
 
         # Convert to l2norm, normalize by original dimensionality so dists have a consistent
         # range, but make sure they're always still > 1 because of w=1/d
-        norms = np.sqrt(dists)
         #norms[norms == 0] = 1
         #w = np.divide(1., norms)  # Get inverse distances as weights
-        h = np.max(norms)/2 if np.min(norms) else 1 # This reduces to only considering exact matches when they are there.
+        h = hn
         w = self.gaus_2d(norms, times, sig1=h, sig2=self.time_horizon)
 
         w_sum = np.sum(w)
         weighted_reward = np.dot(w, values) / w_sum
         weighted_count = np.dot(w, counts) / w_sum
 
-        return weighted_reward, weighted_count, 0
+        return weighted_reward, weighted_count, density
 
     def update(self, state, action, value, time):
         # print("updating", action)

@@ -76,7 +76,7 @@ num_envs = df["ENV"].nunique()
 
 compare_var = "LR"
 #compare_var = 'STATE-DIM'
-df = df[(df["STATE-DIM"] == 550)]
+#df = df[(df["STATE-DIM"] == 550)]
 #df = df[(df["DISCOUNT"] == 1)]
 #df = df[(df["ENV"] != "freeway")]
 

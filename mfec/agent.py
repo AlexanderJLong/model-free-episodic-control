@@ -98,7 +98,11 @@ class MFECAgent:
             r_bonus -= np.min(r_bonus) + 0.01
             r_bonus = r_bonus / np.max(r_bonus)
 
-            total_estimate = self.count_weight * count_bonus + r_bonus
+            d_bonus = 1/1 / (buffer_out[:, 2] + 0.01)
+            d_bonus -= np.min(d_bonus) + 0.01
+            d_bonus = d_bonus / np.max(d_bonus)
+
+            total_estimate = 0.1*d_bonus + self.count_weight * count_bonus + r_bonus
 
             probs = np.zeros_like(self.actions)
             probs[np.where(total_estimate == max(total_estimate))] = 1
