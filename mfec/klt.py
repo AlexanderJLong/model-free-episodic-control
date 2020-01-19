@@ -45,7 +45,7 @@ class KLT:
         norms = np.sqrt(dists)
         #norms[norms == 0] = 1
         #w = np.divide(1., norms)  # Get inverse distances as weights
-        h = np.mean(norms)//2 if np.min(norms) else 1 # This reduces to only considering exact matches when they are there.
+        h = np.max(norms)/2 if np.min(norms) else 1 # This reduces to only considering exact matches when they are there.
         w = self.gaus_2d(norms, times, sig1=h, sig2=self.time_horizon)
 
         w_sum = np.sum(w)

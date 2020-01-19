@@ -74,13 +74,13 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "K"
+compare_var = "LR"
 #compare_var = 'STATE-DIM'
-#df = df[(df["STATE-DIM"] == 150)]
+df = df[(df["STATE-DIM"] == 550)]
 #df = df[(df["DISCOUNT"] == 1)]
 #df = df[(df["ENV"] != "freeway")]
 
-cols = min(num_envs, 4)
+cols = min(num_envs, 5)
 
 print(df.to_string())
 g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
@@ -110,6 +110,7 @@ plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 # plt.show()
 
 plt.savefig(f"./plots/full_run.png")
+plt.savefig(f"./plots/full_run.pdf", format="pdf")
 plt.figure()
 # human normalized median performance
 summary_scores = df.groupby(["ENV", "Step", compare_var, "SEED"], as_index=False).agg({"Reward": "mean"})
@@ -139,4 +140,6 @@ sns.lineplot("Step",
              ).set_title(f"Median Human Normalized Reward Across {num_games} Games")
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.savefig(f"./plots/mhns.png")
+plt.savefig(f"./plots/mhns.pdf", format="pdf")
+
 plt.show()
