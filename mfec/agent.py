@@ -98,7 +98,7 @@ class MFECAgent:
             r_bonus -= np.min(r_bonus) + 0.01
             r_bonus = r_bonus / np.max(r_bonus)
 
-            d_bonus = 1/1 / (buffer_out[:, 2] + 0.01)
+            d_bonus = 1/ (buffer_out[:, 2] + 0.00000001)
             d_bonus -= np.min(d_bonus) + 0.01
             d_bonus = d_bonus / np.max(d_bonus)
 

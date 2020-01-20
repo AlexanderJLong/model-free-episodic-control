@@ -34,11 +34,12 @@ class KLT:
         # Strip batch dim. Note dists is already ordered.
         dists = dists[0]
         neighbors = neighbors[0]
-        norms = np.sqrt(dists)
 
-        hn = 50_000/np.sqrt(n)
-        density = 1/(n*hn) * np.sum(self.gaus(norms, sig=hn))
-        #print(np.sqrt(density))
+        norms = np.sqrt(dists)
+        h = 1/np.sqrt(n)
+        h_n = h * np.max(norms)
+        density = k/(n*h_n) * np.sum(self.gaus(norms, sig=h_n))
+        #print(density)
 
         # print(dists, neighbors, buffer.values_array, action)
         # never seen before so estimate
@@ -51,7 +52,7 @@ class KLT:
         # range, but make sure they're always still > 1 because of w=1/d
         #norms[norms == 0] = 1
         #w = np.divide(1., norms)  # Get inverse distances as weights
-        h = hn
+        h = h_n
         w = self.gaus_2d(norms, times, sig1=h, sig2=self.time_horizon)
 
         w_sum = np.sum(w)
