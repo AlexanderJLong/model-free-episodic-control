@@ -88,28 +88,23 @@ class MFECAgent:
                 for action in self.actions
             ]
             buffer_out = np.asarray(q_values)
-            r_estimate = buffer_out[:, 0]
-            count_bonus = 1 / (buffer_out[:, 1] + 0.01)  # TODO CHANGE TO SQRT
+            r_estimates = buffer_out[:, 0]
+            r_estimates = r_estimates + 0.01
+            r_estimates /= np.max(r_estimates)
 
-            count_bonus -= np.min(count_bonus) + 0.01
-            count_bonus = count_bonus / np.max(count_bonus)
 
-            r_bonus = r_estimate
-            r_bonus -= np.min(r_bonus) + 0.01
-            r_bonus = r_bonus / np.max(r_bonus)
+            d_bonuses = np.sqrt(buffer_out[:, 1]) + 0.01
+            d_bonuses /= np.max(d_bonuses)
 
-            d_bonus = 1/ (buffer_out[:, 2] + 0.00000001)
-            d_bonus -= np.min(d_bonus) + 0.01
-            d_bonus = d_bonus / np.max(d_bonus)
+            total_estimates = r_estimates + 0.05*d_bonuses
 
-            total_estimate = 0.1*d_bonus + self.count_weight * count_bonus + r_bonus
 
             probs = np.zeros_like(self.actions)
-            probs[np.where(total_estimate == max(total_estimate))] = 1
+            probs[np.where(total_estimates == max(total_estimates))] = 1
             probs = probs / sum(probs)
-
             self.action = self.rs.choice(self.actions, p=probs)
-            return self.action, self.state, r_estimate
+
+            return self.action, self.state, 0
 
     def get_max_value(self, state):
         return np.max([self.klt.estimate(state, action, count_weight=0)
@@ -130,7 +125,8 @@ class MFECAgent:
         for i in range(len(trace)):
             experience = trace.pop()
             s = experience["state"]
-            r = self.clipper(experience["reward"])
+            r = self.clipper(experience["reward"] + experience["bonus"])
+
             if i == 0:
                 # last sample
                 R = r

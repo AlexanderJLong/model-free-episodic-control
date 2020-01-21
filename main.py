@@ -41,12 +41,12 @@ config = {
     "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
-    "STATE-DIM": 64,
+    "STATE-DIM": 32,
     "DISTANCE": "l2",
     "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": 0,
+    "COUNT-WEIGHT": 0.005,
     "PROJECTION-DENSITY": "auto",
     "UPDATE-TYPE": "MC",
     "LR": 1,
@@ -123,7 +123,7 @@ def main(cfg):
             utils.end_epoch(step)
 
         # Act, and add
-        action, state, q_vals = agent.choose_action(observation)
+        action, state, bonus = agent.choose_action(observation)
         observation, reward, done, life_lost = env.step(action)
         # env.render(mode="human")
         # time.sleep(0.01)
@@ -133,7 +133,8 @@ def main(cfg):
                 "state": state,
                 "action": action,
                 "reward": reward,
-                "Qs": q_vals,
+                "bonus": bonus,
+                "Qs": [0],
                 "time":step,
             }
         )

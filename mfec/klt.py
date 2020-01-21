@@ -15,8 +15,8 @@ class KLT:
         self.state_dim = state_dim
         self.time_horizon = time_sig
 
-    def gaus(self, x, sig):
-        return np.exp(-np.square(x / sig) / 2)
+    def gaus(self, x, h):
+        return 1/(h*2*np.pi) * np.exp(-np.square(x / h))
 
     def gaus_2d(self, x, y, sig1, sig2):
         return np.exp(-(np.square(x / sig1) + np.square(y / sig2)))
@@ -28,7 +28,7 @@ class KLT:
 
         n = len(buffer)
         if n == 0:
-            return 1e6, 0, 0
+            return 1e6, 0 #TODO: not neat
         k = min(self.k, n)  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
         # Strip batch dim. Note dists is already ordered.
@@ -36,30 +36,21 @@ class KLT:
         neighbors = neighbors[0]
 
         norms = np.sqrt(dists)
-        h = 1/np.sqrt(n)
-        h_n = h * np.max(norms)
-        density = k/(n*h_n) * np.sum(self.gaus(norms, sig=h_n))
-        #print(density)
 
         # print(dists, neighbors, buffer.values_array, action)
         # never seen before so estimate
         values = np.asarray([buffer.values_list[n] for n in neighbors])
         counts = np.asarray([buffer.counts_list[n] for n in neighbors])
         times = np.asarray([buffer.times_list[n] for n in neighbors])
-        # counts = buffer.counts_array[neighbors]
 
-        # Convert to l2norm, normalize by original dimensionality so dists have a consistent
-        # range, but make sure they're always still > 1 because of w=1/d
-        #norms[norms == 0] = 1
-        #w = np.divide(1., norms)  # Get inverse distances as weights
-        h = h_n
-        w = self.gaus_2d(norms, times, sig1=h, sig2=self.time_horizon)
+        total_visits = np.sum(counts)
+        density = norms[-1] / total_visits  # average dist to find one sample
+        w = self.gaus_2d(norms, times, sig1=density*total_visits, sig2=self.time_horizon)
 
         w_sum = np.sum(w)
-        weighted_reward = np.dot(w, values) / w_sum
-        weighted_count = np.dot(w, counts) / w_sum
+        weighted_reward = np.dot(w, np.multiply(values, counts)) / w_sum
 
-        return weighted_reward, weighted_count, density
+        return weighted_reward, density
 
     def update(self, state, action, value, time):
         # print("updating", action)
