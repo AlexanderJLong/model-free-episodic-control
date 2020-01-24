@@ -35,9 +35,9 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": "ms_pacman",
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 64,
+    "K": 25,
     "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
@@ -176,8 +176,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    main(all_configs[0])
+    exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

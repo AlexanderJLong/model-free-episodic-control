@@ -152,8 +152,8 @@ class ActionBuffer:
         self.lr = lr
         self.capacity = capacity
         self.distance = distance
-        self.M = 30
-        self.ef_construction = 10
+        self.M = 25
+        self.ef_construction = 200
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=capacity,
                               M=self.M,

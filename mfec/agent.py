@@ -140,7 +140,7 @@ class MFECAgent:
             d_bonuses = np.sqrt(buffer_out[:, 1]) + 0.01
             d_bonuses /= np.max(d_bonuses)
 
-            total_estimates = r_estimates + 0.0 * d_bonuses
+            total_estimates = r_estimates + 0.1 * d_bonuses
             probs = np.zeros_like(self.actions)
             probs[np.where(total_estimates == max(total_estimates))] = 1
             probs = probs / sum(probs)

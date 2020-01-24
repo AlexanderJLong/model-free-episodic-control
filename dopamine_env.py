@@ -295,7 +295,7 @@ class AtariPreprocessing(object):
                                        interpolation=cv2.INTER_AREA)
 
         #CHANGED. NORMALIZED AND STACKED.
-        int_image = np.asarray(transformed_image-128, dtype=np.int8)
+        #int_image = np.asarray(transformed_image-128, dtype=np.int8)
         #print(np.max(int_image), np.min(int_image))
-        self.frame_stack.append(int_image)
+        self.frame_stack.append(transformed_image)
         return np.asarray(self.frame_stack)
