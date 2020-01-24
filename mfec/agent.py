@@ -8,7 +8,7 @@ from mfec.klt import KLT
 
 
 class StatsRecorder:
-    """from https://notmatthancock.github.io/2017/03/23/simple-batch-stat-updates.html"""
+    """modified from https://notmatthancock.github.io/2017/03/23/simple-batch-stat-updates.html"""
 
     def __init__(self, dim):
         """
@@ -24,7 +24,6 @@ class StatsRecorder:
         data: ndarray, shape (nobservations, ndimensions)
         """
         data = np.atleast_2d(data)
-        print(data.shape, self.ndimensions)
         if data.shape[1] != self.ndimensions:
             raise ValueError("Data dims don't match prev observations.")
 
@@ -94,7 +93,6 @@ class MFECAgent:
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.action = int
-        self.normalized_state = int
 
         self.stats = StatsRecorder(dim=state_dimension)
 
@@ -112,9 +110,9 @@ class MFECAgent:
     def choose_action(self, observation):
         # Preprocess and project observation to state
         # print(observation)
-        self.origional_state = self.transformer.transform(observation.reshape(1, -1))
+        raw_state = self.transformer.transform(observation.reshape(1, -1))
 
-        self.normalized_state = self.normalize(self.origional_state)
+        normalized_state = self.normalize(raw_state)
         # self.state = self.state//0
         #
         # self.state = self.state.astype(np.int)
@@ -123,15 +121,15 @@ class MFECAgent:
         if self.rs.random_sample() < self.epsilon:
             # don't change current action
             q_values = [
-                self.klt.estimate(self.normalized_state, action, count_weight=self.count_weight)
+                self.klt.estimate(normalized_state, action, count_weight=self.count_weight)
                 for action in self.actions
             ]
-            return self.action, self.normalized_state, q_values
+            return self.action, normalized_state, q_values
 
         # Exploitation
         else:
             q_values = [
-                self.klt.estimate(self.normalized_state, action, count_weight=self.count_weight)
+                self.klt.estimate(normalized_state, action, count_weight=self.count_weight)
                 for action in self.actions
             ]
             buffer_out = np.asarray(q_values)
@@ -143,23 +141,12 @@ class MFECAgent:
             d_bonuses /= np.max(d_bonuses)
 
             total_estimates = r_estimates + 0.0 * d_bonuses
-
             probs = np.zeros_like(self.actions)
             probs[np.where(total_estimates == max(total_estimates))] = 1
             probs = probs / sum(probs)
             self.action = self.rs.choice(self.actions, p=probs)
 
-            return self.action, self.origional_state, 0
-
-    def get_max_value(self, state):
-        return np.max([self.klt.estimate(state, action, count_weight=0)
-                       for action in self.actions
-                       ])
-
-    def get_state_value_and_max_q(self, state):
-        vals = [self.klt.estimate(state, action, count_weight=0)
-                for action in self.actions]
-        return np.mean(vals), np.max(vals)
+            return self.action, raw_state, 0
 
     def train(self, trace):
         # Takes trace object: a list of dicts {"state", "action", "reward"}
@@ -169,8 +156,8 @@ class MFECAgent:
         states_list = []
         for i in range(len(trace)):
             experience = trace.pop()
-            s = experience["state"]
-            states_list.append(s)
+            s = experience["state"] # raw state
+            states_list.append(s[0]) #strip last dim
             r = self.clipper(experience["reward"] + experience["bonus"])
 
             if i == 0:
@@ -192,7 +179,6 @@ class MFECAgent:
         self.stats.update(states_list)
         self.klt.reconstruct_trees(u=self.stats.mean, sig=self.stats.std)
 
-        print(self.stats.mean)
         # print(self.stats.mean)
         # Decay e exponentially
         if self.epsilon > 0.05:

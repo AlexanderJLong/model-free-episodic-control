@@ -44,15 +44,13 @@ class KLT:
         # print(dists, neighbors, buffer.values_array, action)
         # never seen before so estimate
         values = np.asarray([buffer.values_list[n] for n in neighbors])
-        counts = np.asarray([buffer.counts_list[n] for n in neighbors])
         times = np.asarray([buffer.times_list[n] for n in neighbors])
 
-        total_visits = np.sum(counts)
-        density = norms[-1] / total_visits  # average dist to find one sample
-        w = self.gaus_2d(norms, times, sig1=density * total_visits, sig2=self.time_horizon)
+        density = norms[-1] / k  # average dist to find one sample
+        w = self.gaus_2d(norms, times, sig1=density * k + 0.01, sig2=self.time_horizon)
 
         w_sum = np.sum(w)
-        weighted_reward = np.dot(w, np.multiply(values, counts)) / w_sum
+        weighted_reward = np.dot(w, values) / w_sum
 
         return weighted_reward, density
 
@@ -154,12 +152,17 @@ class ActionBuffer:
         self.lr = lr
         self.capacity = capacity
         self.distance = distance
+        self.M = 30
+        self.ef_construction = 10
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=capacity, M=30, random_seed=seed)
+        self._tree.init_index(max_elements=capacity,
+                              M=self.M,
+                              ef_construction=self.ef_construction,
+                              random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
-        self.counts_list = []
         self.times_list = []
         self.raw_states = []
+        self.seed = seed
 
     def __getstate__(self):
         # pickle everything but the hnswlib indexes
@@ -172,8 +175,14 @@ class ActionBuffer:
         self._tree.load_index(f"saves/index_{self.id}.bin")
 
     def reconstruct(self, u, sig):
-        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)
-        states = np.asarray(self.raw_states - u) / sig  # normalize
+        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
+        self._tree.init_index(max_elements=self.capacity,
+                              ef_construction=self.ef_construction,
+                              M=self.M,
+                              random_seed=self.seed)
+
+        #TODO: Inter or intra buffer stats?
+        states = (np.asarray(self.raw_states) - u) / sig  # normalize
         self._tree.add_items(states)
 
     def find_neighbors(self, state, k):
@@ -182,7 +191,7 @@ class ActionBuffer:
 
     def add(self, state, value, time):
         self.values_list.append(value)
-        self.raw_states.append(state)
+        self.raw_states.append(state[0])
         self.times_list.append(time)
 
         return
