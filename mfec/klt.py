@@ -16,10 +16,14 @@ class KLT:
         self.time_horizon = time_sig
 
     def gaus(self, x, h):
-        return 1/(h*2*np.pi) * np.exp(-np.square(x / h))
+        return 1 / (h * 2 * np.pi) * np.exp(-np.square(x / h))
 
     def gaus_2d(self, x, y, sig1, sig2):
         return np.exp(-(np.square(x / sig1) + np.square(y / sig2)))
+
+    def reconstruct_trees(self, u, sig):
+        for b in self.buffers:
+            b.reconstruct(u=u, sig=sig)
 
     def estimate(self, state, action, count_weight):
         """Return the estimated value of the given state"""
@@ -28,7 +32,7 @@ class KLT:
 
         n = len(buffer)
         if n == 0:
-            return 1e6, 0 #TODO: not neat
+            return 1e6, 0  # TODO: not neat
         k = min(self.k, n)  # the len call might slow it down a bit
         neighbors, dists = buffer.find_neighbors(state, k)
         # Strip batch dim. Note dists is already ordered.
@@ -45,7 +49,7 @@ class KLT:
 
         total_visits = np.sum(counts)
         density = norms[-1] / total_visits  # average dist to find one sample
-        w = self.gaus_2d(norms, times, sig1=density*total_visits, sig2=self.time_horizon)
+        w = self.gaus_2d(norms, times, sig1=density * total_visits, sig2=self.time_horizon)
 
         w_sum = np.sum(w)
         weighted_reward = np.dot(w, np.multiply(values, counts)) / w_sum
@@ -56,7 +60,6 @@ class KLT:
         # print("updating", action)
         buffer = self.buffers[action]
         buffer.add(state, value, time)
-
 
     def save_indexes(self, save_dir):
         """
@@ -156,6 +159,7 @@ class ActionBuffer:
         self.values_list = []  # true values - this is the object that is updated.
         self.counts_list = []
         self.times_list = []
+        self.raw_states = []
 
     def __getstate__(self):
         # pickle everything but the hnswlib indexes
@@ -167,31 +171,19 @@ class ActionBuffer:
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)
         self._tree.load_index(f"saves/index_{self.id}.bin")
 
+    def reconstruct(self, u, sig):
+        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)
+        states = np.asarray(self.raw_states - u) / sig  # normalize
+        self._tree.add_items(states)
+
     def find_neighbors(self, state, k):
         """Return idx, dists"""
         return self._tree.knn_query(state, k=k)
 
     def add(self, state, value, time):
-        if not self.values_list:  # buffer empty, just add
-            self._tree.add_items(state)
-            self.values_list.append(value)
-            self.counts_list.append(1)
-            self.times_list.append(time)
-            return
-
-        idx, dist = self.find_neighbors(state, 1)
-        idx = idx[0][0]
-        dist = dist[0][0]
-        if dist < self.agg_dist or np.isnan(dist):
-            # Existing state, update and return
-            self.counts_list[idx] += 1
-            self.values_list[idx] = 0.9 * self.values_list[idx] + 0.1 * value
-            self.times_list[idx] = time
-        else:
-            self.values_list.append(value)
-            self._tree.add_items(state)
-            self.counts_list.append(1)
-            self.times_list.append(time)
+        self.values_list.append(value)
+        self.raw_states.append(state)
+        self.times_list.append(time)
 
         return
 

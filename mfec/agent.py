@@ -9,44 +9,39 @@ from mfec.klt import KLT
 
 class StatsRecorder:
     """from https://notmatthancock.github.io/2017/03/23/simple-batch-stat-updates.html"""
-    def __init__(self, data=None):
+
+    def __init__(self, dim):
         """
         data: ndarray, shape (nobservations, ndimensions)
         """
-        if data is not None:
-            data = np.atleast_2d(data)
-            self.mean = data.mean(axis=0)
-            self.std  = data.std(axis=0)
-            self.nobservations = data.shape[0]
-            self.ndimensions   = data.shape[1]
-        else:
-            self.nobservations = 0
+        self.mean = np.zeros(dim)
+        self.std = np.ones(dim)
+        self.nobservations = 0
+        self.ndimensions = dim
 
     def update(self, data):
         """
         data: ndarray, shape (nobservations, ndimensions)
         """
-        if self.nobservations == 0:
-            self.__init__(data)
-        else:
-            data = np.atleast_2d(data)
-            if data.shape[1] != self.ndimensions:
-                raise ValueError("Data dims don't match prev observations.")
+        data = np.atleast_2d(data)
+        print(data.shape, self.ndimensions)
+        if data.shape[1] != self.ndimensions:
+            raise ValueError("Data dims don't match prev observations.")
 
-            newmean = data.mean(axis=0)
-            newstd  = data.std(axis=0)
+        newmean = data.mean(axis=0)
+        newstd = data.std(axis=0)
 
-            m = self.nobservations * 1.0
-            n = data.shape[0]
+        m = self.nobservations * 1.0
+        n = data.shape[0]
 
-            tmp = self.mean
+        tmp = self.mean
 
-            self.mean = m/(m+n)*tmp + n/(m+n)*newmean
-            self.std  = m/(m+n)*self.std**2 + n/(m+n)*newstd**2 +\
-                        m*n/(m+n)**2 * (tmp - newmean)**2
-            self.std  = np.sqrt(self.std)
+        self.mean = m / (m + n) * tmp + n / (m + n) * newmean
+        self.std = m / (m + n) * self.std ** 2 + n / (m + n) * newstd ** 2 + \
+                   m * n / (m + n) ** 2 * (tmp - newmean) ** 2
+        self.std = np.sqrt(self.std)
 
-            self.nobservations += n
+        self.nobservations += n
 
 
 class MFECAgent:
@@ -99,36 +94,44 @@ class MFECAgent:
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.action = int
-        self.state = int
+        self.normalized_state = int
 
-        self.stats = StatsRecorder()
+        self.stats = StatsRecorder(dim=state_dimension)
 
         if clip_rewards:
             self.clipper = lambda x: np.clip(x, -1, 1)
         else:
             self.clipper = lambda x: x
 
+    def normalize(self, state):
+        """
+        feature wise normalize a state based on running mean and variance estimations
+        """
+        return (state - self.stats.mean) / self.stats.std
+
     def choose_action(self, observation):
         # Preprocess and project observation to state
         # print(observation)
-        self.state = self.transformer.transform(observation.reshape(1, -1))
-        #self.state = self.state//0
-#
-        #self.state = self.state.astype(np.int)
+        self.origional_state = self.transformer.transform(observation.reshape(1, -1))
+
+        self.normalized_state = self.normalize(self.origional_state)
+        # self.state = self.state//0
+        #
+        # self.state = self.state.astype(np.int)
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:
             # don't change current action
             q_values = [
-                self.klt.estimate(self.state, action, count_weight=self.count_weight)
+                self.klt.estimate(self.normalized_state, action, count_weight=self.count_weight)
                 for action in self.actions
             ]
-            return self.action, self.state, q_values
+            return self.action, self.normalized_state, q_values
 
         # Exploitation
         else:
             q_values = [
-                self.klt.estimate(self.state, action, count_weight=self.count_weight)
+                self.klt.estimate(self.normalized_state, action, count_weight=self.count_weight)
                 for action in self.actions
             ]
             buffer_out = np.asarray(q_values)
@@ -136,19 +139,17 @@ class MFECAgent:
             r_estimates = r_estimates + 0.01
             r_estimates /= np.max(r_estimates)
 
-
             d_bonuses = np.sqrt(buffer_out[:, 1]) + 0.01
             d_bonuses /= np.max(d_bonuses)
 
-            total_estimates = r_estimates + 0.0*d_bonuses
-
+            total_estimates = r_estimates + 0.0 * d_bonuses
 
             probs = np.zeros_like(self.actions)
             probs[np.where(total_estimates == max(total_estimates))] = 1
             probs = probs / sum(probs)
             self.action = self.rs.choice(self.actions, p=probs)
 
-            return self.action, self.state, 0
+            return self.action, self.origional_state, 0
 
     def get_max_value(self, state):
         return np.max([self.klt.estimate(state, action, count_weight=0)
@@ -189,10 +190,10 @@ class MFECAgent:
             last_qs = experience["Qs"]
 
         self.stats.update(states_list)
-
+        self.klt.reconstruct_trees(u=self.stats.mean, sig=self.stats.std)
 
         print(self.stats.mean)
-        #print(self.stats.mean)
+        # print(self.stats.mean)
         # Decay e exponentially
         if self.epsilon > 0.05:
             self.epsilon -= self.epsilon_decay
