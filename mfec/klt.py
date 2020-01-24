@@ -21,9 +21,9 @@ class KLT:
     def gaus_2d(self, x, y, sig1, sig2):
         return np.exp(-(np.square(x / sig1) + np.square(y / sig2)))
 
-    def reconstruct_trees(self, u, sig):
+    def update_normalization(self, mean, std):
         for b in self.buffers:
-            b.reconstruct(u=u, sig=sig)
+            b.update_normalization(mean=mean, std=std)
 
     def estimate(self, state, action, count_weight):
         """Return the estimated value of the given state"""
@@ -162,6 +162,8 @@ class ActionBuffer:
         self.values_list = []  # true values - this is the object that is updated.
         self.times_list = []
         self.raw_states = []
+        self.mean = np.zeros(state_dim)
+        self.std = np.ones(state_dim)
         self.seed = seed
 
     def __getstate__(self):
@@ -174,26 +176,29 @@ class ActionBuffer:
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)
         self._tree.load_index(f"saves/index_{self.id}.bin")
 
-    def reconstruct(self, u, sig):
+    def normalize(self, state):
+        "can be single or list of states"
+        return (np.asarray(state) - self.mean)/self.std
+
+    def update_normalization(self, mean, std):
+        self.mean = mean
+        self.std = std
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=self.capacity,
                               ef_construction=self.ef_construction,
                               M=self.M,
                               random_seed=self.seed)
-
-        #TODO: Inter or intra buffer stats?
-        states = (np.asarray(self.raw_states) - u) / sig  # normalize
-        self._tree.add_items(states)
+        self._tree.add_items(self.normalize(self.raw_states))
 
     def find_neighbors(self, state, k):
         """Return idx, dists"""
-        return self._tree.knn_query(state, k=k)
+        return self._tree.knn_query(self.normalize(state), k=k)
 
     def add(self, state, value, time):
         self.values_list.append(value)
-        self.raw_states.append(state[0])
+        self.raw_states.append(state)
+        self._tree.add_items(self.normalize(state))
         self.times_list.append(time)
-
         return
 
     def get_states(self):

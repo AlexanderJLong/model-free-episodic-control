@@ -93,7 +93,7 @@ class MFECAgent:
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.action = int
-
+        self.train_count = 0
         self.stats = StatsRecorder(dim=state_dimension)
 
         if clip_rewards:
@@ -101,63 +101,42 @@ class MFECAgent:
         else:
             self.clipper = lambda x: x
 
-    def normalize(self, state):
-        """
-        feature wise normalize a state based on running mean and variance estimations
-        """
-        return (state - self.stats.mean) / self.stats.std
-
     def choose_action(self, observation):
         # Preprocess and project observation to state
         # print(observation)
-        raw_state = self.transformer.transform(observation.reshape(1, -1))
+        raw_state = self.transformer.transform(observation.reshape(1, -1))[0]
 
-        normalized_state = self.normalize(raw_state)
-        # self.state = self.state//0
-        #
-        # self.state = self.state.astype(np.int)
+        q_values = [
+            self.klt.estimate(raw_state, action, count_weight=self.count_weight)
+            for action in self.actions
+        ]
+        buffer_out = np.asarray(q_values)
+        r_estimates = buffer_out[:, 0]
+        r_estimates = r_estimates + 0.01
+        r_estimates /= np.max(r_estimates)
 
-        # Exploration
-        if self.rs.random_sample() < self.epsilon:
-            # don't change current action
-            q_values = [
-                self.klt.estimate(normalized_state, action, count_weight=self.count_weight)
-                for action in self.actions
-            ]
-            return self.action, normalized_state, q_values
+        d_bonuses = np.sqrt(buffer_out[:, 1]) + 0.01
+        d_bonuses /= np.max(d_bonuses)
 
-        # Exploitation
-        else:
-            q_values = [
-                self.klt.estimate(normalized_state, action, count_weight=self.count_weight)
-                for action in self.actions
-            ]
-            buffer_out = np.asarray(q_values)
-            r_estimates = buffer_out[:, 0]
-            r_estimates = r_estimates + 0.01
-            r_estimates /= np.max(r_estimates)
+        total_estimates = r_estimates + 0.0 * d_bonuses
+        probs = np.zeros_like(self.actions)
+        probs[np.where(total_estimates == max(total_estimates))] = 1
+        probs = probs / sum(probs)
+        self.action = self.rs.choice(self.actions, p=probs)
 
-            d_bonuses = np.sqrt(buffer_out[:, 1]) + 0.01
-            d_bonuses /= np.max(d_bonuses)
-
-            total_estimates = r_estimates + 0.1 * d_bonuses
-            probs = np.zeros_like(self.actions)
-            probs[np.where(total_estimates == max(total_estimates))] = 1
-            probs = probs / sum(probs)
-            self.action = self.rs.choice(self.actions, p=probs)
-
-            return self.action, raw_state, 0
+        return self.action, raw_state, 0
 
     def train(self, trace):
         # Takes trace object: a list of dicts {"state", "action", "reward"}
+        self.train_count += 1
         R = 0.0
         # print(f"len trace {trace}")
         lr = self.learning_rate
         states_list = []
         for i in range(len(trace)):
             experience = trace.pop()
-            s = experience["state"] # raw state
-            states_list.append(s[0]) #strip last dim
+            s = experience["state"]  # raw state
+            states_list.append(s)  # strip last dim
             r = self.clipper(experience["reward"] + experience["bonus"])
 
             if i == 0:
@@ -177,7 +156,10 @@ class MFECAgent:
             last_qs = experience["Qs"]
 
         self.stats.update(states_list)
-        self.klt.reconstruct_trees(u=self.stats.mean, sig=self.stats.std)
+
+        if self.train_count % 10 == 0:
+            print("updating norm")
+            self.klt.update_normalization(mean=self.stats.mean, std=self.stats.std)
 
         # print(self.stats.mean)
         # Decay e exponentially
