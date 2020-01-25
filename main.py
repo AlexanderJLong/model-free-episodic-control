@@ -37,7 +37,7 @@ reward_history_len = 5  # At publication time should be 100.
 config = {
     "ENV": "ms_pacman",
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 64,
+    "K": [32, 64, 128],
     "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
