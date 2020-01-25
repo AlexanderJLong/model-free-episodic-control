@@ -24,7 +24,7 @@ from multiprocessing import Pool
 import numpy as np
 from tqdm import tqdm
 
-from env_names import small_env_list, env_list
+from env_names import *
 from mfec.agent import MFECAgent
 from mfec.utils import Utils
 
@@ -35,21 +35,19 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 200,
     "DISCOUNT": 0.99,
-    "EPSILON": 0,
-    "EPS-DECAY": 0.05,
+    "EPSILON": 0.5,
+    "EPS-DECAY": 0.02,
     "STATE-DIM": 64,
-    "DISTANCE": "l2",
     "STICKY-ACTIONS": True,
     "STACKED-STATE": 4,
     "CLIP-REWARD": False,
-    "COUNT-WEIGHT": 0.1,
     "PROJECTION-DENSITY": "auto",
-    "UPDATE-TYPE": "MC",
-    "LR": 1,
+    "M": 30,
+    "NORM-FREQ": 50,
     "TIME-SIG": 100_000,
     "SEED": list(range(3)),
 }
@@ -106,12 +104,9 @@ def main(cfg):
         seed=cfg["SEED"],
         epsilon_decay=cfg["EPS-DECAY"],
         clip_rewards=cfg["CLIP-REWARD"],
-        count_weight=cfg["COUNT-WEIGHT"],
         projection_density=cfg["PROJECTION-DENSITY"],
-        distance=cfg["DISTANCE"],
-        update_type=cfg["UPDATE-TYPE"],
-        time_sig=cfg["TIME-SIG"],
-        learning_rate=cfg["LR"],
+        M=cfg["M"],
+        norm_freq=cfg["NORM-FREQ"],
     )
 
     env.train()  # turn on episodic life
@@ -123,7 +118,7 @@ def main(cfg):
             utils.end_epoch(step)
 
         # Act, and add
-        action, state, q_vals = agent.choose_action(observation)
+        action, state = agent.choose_action(observation)
         observation, reward, done, life_lost = env.step(action)
         # env.render(mode="human")
         # time.sleep(0.01)
@@ -133,8 +128,7 @@ def main(cfg):
                 "state": state,
                 "action": action,
                 "reward": reward,
-                "Qs": q_vals,
-                "time":step,
+                "time": step,
             }
         )
 
@@ -154,9 +148,7 @@ def main(cfg):
             # Reset agent and environment
             observation = env.reset()
 
-            #agent.klt.plot3d()
-    # print("saving...")
-    # agent.save("./saves")
+            # agent.klt.plot3d()
 
 
 if __name__ == "__main__":

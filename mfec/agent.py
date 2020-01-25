@@ -57,40 +57,27 @@ class MFECAgent:
             seed,
             epsilon_decay,
             clip_rewards,
-            count_weight,
             projection_density,
-            update_type,
-            learning_rate,
-            time_sig,
-            distance,
+            M,
+            norm_freq,
     ):
         self.rs = np.random.RandomState(seed)
         self.actions = actions
-        self.count_weight = count_weight
-        self.update_type = update_type
-        self.learning_rate = learning_rate
-
         self.klt = KLT(actions=self.actions,
                        buffer_size=buffer_size,
                        k=k,
                        state_dim=state_dimension,
-                       obv_dim=observation_dim,
-                       distance=distance,
-                       lr=learning_rate,
-                       time_sig=time_sig,
+                       M=M,
                        seed=seed)
 
-        self.transformer = random_projection.SparseRandomProjection(n_components=state_dimension, dense_output=True,
-                                                                    density=projection_density)
+        self.transformer = random_projection.SparseRandomProjection(
+            n_components=state_dimension,
+            dense_output=True,
+            density=projection_density)
         self.transformer.fit(np.zeros([1, observation_dim]))
-        # self.transformer.components_.data[np.where(self.transformer.components_.data < 0)] = -1
-        # self.transformer.components_.data[np.where(self.transformer.components_.data > 0)] = 1
-        # self.transformer.components_ = self.transformer.components_.astype(np.int8)
-
-        # for r in self.transformer.components_:
-        #    print(r)
 
         self.discount = discount
+        self.norm_freq = norm_freq
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.action = int
@@ -103,92 +90,54 @@ class MFECAgent:
             self.clipper = lambda x: x
 
     def choose_action(self, observation):
-        # Preprocess and project observation to state
-        # print(observation)
-        self.state = self.transformer.transform(observation.reshape(1, -1))[0]
-        #self.state = self.state//0
-#
-        #self.state = self.state.astype(np.int)
+        state = self.transformer.transform(observation.reshape(1, -1))[0]
 
         # Exploration
         if self.rs.random_sample() < self.epsilon:
-            # don't change current action
-            self.action = np.random.choice(self.actions)
-            return self.action, self.state, 0
+            action = np.random.choice(self.actions)
+            return action, state
 
         # Exploitation
         else:
-            q_values = [
-                self.klt.estimate(self.state, action, count_weight=self.count_weight)
-                for action in self.actions
-            ]
-            buffer_out = np.asarray(q_values)
-            r_estimate = buffer_out[:, 0]
-            count_bonus = 1 / (buffer_out[:, 1] + 0.01)  # TODO CHANGE TO SQRT
+            query_results = np.asarray([
+                self.klt.estimate(state, action)
+                for action in self.actions])
 
-            count_bonus -= np.min(count_bonus) + 0.01
-            count_bonus = count_bonus / np.max(count_bonus)
-
-            r_bonus = r_estimate
-            r_bonus -= np.min(r_bonus) + 0.01
-            r_bonus = r_bonus / np.max(r_bonus)
-
-           # print(r_bonus, count_bonus)
-
-            total_estimate = self.count_weight * count_bonus + r_bonus
+            r_estimate = query_results[:, 0]
 
             probs = np.zeros_like(self.actions)
-            probs[np.where(total_estimate == max(total_estimate))] = 1
+            probs[np.where(r_estimate == max(r_estimate))] = 1
             probs = probs / sum(probs)
 
-            self.action = self.rs.choice(self.actions, p=probs)
-            return self.action, self.state, r_estimate
-
-    def get_max_value(self, state):
-        return np.max([self.klt.estimate(state, action, count_weight=0)
-                       for action in self.actions
-                       ])
-
-    def get_state_value_and_max_q(self, state):
-        vals = [self.klt.estimate(state, action, count_weight=0)
-                for action in self.actions]
-        return np.mean(vals), np.max(vals)
+            action = self.rs.choice(self.actions, p=probs)
+            return action, state
 
     def train(self, trace):
-        # Takes trace object: a list of dicts {"state", "action", "reward"}
         R = 0.0
-        # print(f"len trace {trace}")
-        lr = self.learning_rate
         states_list = []
         for i in range(len(trace)):
             experience = trace.pop()
             s = experience["state"]
-            states_list.append(s)  # strip last dim
+            a = experience["action"]
+            t = experience["time"]
             r = self.clipper(experience["reward"])
+
+            states_list.append(s)  # strip last dim
+
             if i == 0:
                 # last sample
                 R = r
-                value = R
             else:
-                value = r + self.discount * (lr * R + (1 - lr) * np.mean(last_qs))
                 R = r + self.discount * R
 
-            self.klt.update(
-                s,
-                experience["action"],
-                value,
-                experience["time"],
-            )
-            last_qs = experience["Qs"]
+            self.klt.update(s, a, R, t)
 
         self.stats.update(states_list)
 
-        self.train_count+=1
-        if self.train_count % 50 == 0:
+        self.train_count += 1
+        if self.train_count % self.norm_freq == 0:
             self.klt.update_normalization(mean=self.stats.mean, std=self.stats.std)
 
-        # print(self.stats.mean)
-        # Decay e exponentially
         if self.epsilon > 0.05:
             self.epsilon -= self.epsilon_decay
             print(f"eps={self.epsilon:.2f}")

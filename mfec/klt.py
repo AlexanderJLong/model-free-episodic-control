@@ -7,20 +7,16 @@ import umap
 
 
 class KLT:
-    def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, lr, time_sig, seed):
+    def __init__(self, actions, buffer_size, k, state_dim, M, seed):
         self.buffer_size = buffer_size
         self.buffers = tuple(
             [ActionBuffer(n=a,
                           capacity=self.buffer_size,
                           state_dim=state_dim,
-                          distance=distance,
-                          lr=lr,
-                          agg_dist=0.01,
+                          M=M,
                           seed=seed,
                           ) for a in actions])
         self.k = k
-        self.obv_dim = obv_dim  # dimentionality of origional data
-        self.time_horizon = time_sig
 
     def gaus(self, x, sig):
         return np.exp(-np.square(x / sig) / 2)
@@ -32,42 +28,23 @@ class KLT:
         for b in self.buffers:
             b.update_normalization(mean=mean, std=std)
 
-    def estimate(self, state, action, count_weight):
+    def estimate(self, state, action):
         """Return the estimated value of the given state"""
         buffer = self.buffers[action]
 
-        if len(buffer) == 0:
-            return 1e6, 0, 0
-        k = min(self.k, len(buffer))  # the len call might slow it down a bit
+        n = len(buffer)
+        if n == 0:
+            return 1e6, 0
+        k = min(self.k, n)
         neighbors, dists = buffer.find_neighbors(state, k)
-        # Strip batch dim. Note dists is already ordered.
-        dists = dists[0]
         neighbors = neighbors[0]
 
-        # print(dists, neighbors, buffer.values_array, action)
-        # never seen before so estimate
-        values = np.asarray([buffer.values_list[n] for n in neighbors])
-        counts = np.asarray([buffer.counts_list[n] for n in neighbors])
-        times = np.asarray([buffer.times_list[n] for n in neighbors])
-        # counts = buffer.counts_array[neighbors]
+        values = [buffer.values_list[n] for n in neighbors]
+        weighted_reward = np.mean(values)
 
-        # Convert to l2norm, normalize by original dimensionality so dists have a consistent
-        # range, but make sure they're always still > 1 because of w=1/d
-        norms = np.sqrt(dists)
-        # norms[norms == 0] = 1
-        # w = np.divide(1., norms)  # Get inverse distances as weights
-        h = np.mean(norms) / 2 if np.min(
-            norms) != 0 else 1  # This reduces to only considering exact matches when they are there.
-        w = self.gaus_2d(norms, times, sig1=h, sig2=self.time_horizon)
-
-        w_sum = np.sum(w)
-        weighted_reward = np.dot(w, values) / w_sum
-        weighted_count = np.dot(w, counts) / w_sum
-
-        return weighted_reward, weighted_count, 0
+        return weighted_reward, 0
 
     def update(self, state, action, value, time):
-        # print("updating", action)
         buffer = self.buffers[action]
         buffer.add(state, value, time)
 
@@ -107,22 +84,18 @@ class KLT:
 
 
 class ActionBuffer:
-    def __init__(self, n, capacity, state_dim, distance, lr, agg_dist, seed):
+    def __init__(self, n, capacity, state_dim, M, seed):
         self.id = n
-        self.agg_dist = agg_dist
         self.state_dim = state_dim
-        self.lr = lr
         self.capacity = capacity
-        self.distance = distance
-        self.M = 200
+        self.M = M
         self.ef_construction = 200
-        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
+        self._tree = hnswlib.Index(space="l2", dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=capacity,
                               M=self.M,
                               ef_construction=self.ef_construction,
                               random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
-        self.counts_list = []
         self.times_list = []
         self.raw_states = []
         self.mean = np.zeros(state_dim)
@@ -136,18 +109,18 @@ class ActionBuffer:
 
     def __setstate__(self, d):
         self.__dict__ = d
-        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)
+        self._tree = hnswlib.Index(space="l2", dim=self.state_dim)
         self._tree.load_index(f"saves/index_{self.id}.bin")
 
     def normalize(self, state):
-        "can be single or list of states - will be broadcast"
+        """can be single or list of states - will be broadcast"""
         # print(f"before: {state}, after:{np.subtract(state, self.mean)/self.std}")
         return np.subtract(state, self.mean) / self.std
 
     def update_normalization(self, mean, std):
         self.mean = mean
         self.std = std
-        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
+        self._tree = hnswlib.Index(space="l2", dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=self.capacity,
                               ef_construction=self.ef_construction,
                               M=self.M,
@@ -160,31 +133,10 @@ class ActionBuffer:
 
     def add(self, state, value, time):
         normalized_state = self.normalize(state)
-        if not self.values_list:  # buffer empty, just add
-            self._tree.add_items(normalized_state)
-            self.raw_states.append(state)
-            self.values_list.append(value)
-            self.counts_list.append(1)
-            self.times_list.append(time)
-            return
-
-        idx, dist = self.find_neighbors(normalized_state, 1)
-        idx = idx[0][0]
-        dist = dist[0][0]
-
-        if dist < self.agg_dist:
-            # Existing state, update and return
-            self.counts_list[idx] += 1
-            self.values_list[idx] = 0.9 * self.values_list[idx] + 0.1 * value
-            self.times_list[idx] = time
-        else:
-            self.values_list.append(value)
-            self._tree.add_items(normalized_state)
-            self.raw_states.append(state)
-            self.counts_list.append(1)
-            self.times_list.append(time)
-
-        return
+        self._tree.add_items(normalized_state)
+        self.raw_states.append(state)
+        self.values_list.append(value)
+        self.times_list.append(time)
 
     def get_states(self):
         return self._tree.get_items(range(0, len(self)))
