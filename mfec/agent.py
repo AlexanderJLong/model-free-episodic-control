@@ -118,7 +118,7 @@ class MFECAgent:
         d_bonuses = np.sqrt(buffer_out[:, 1]) + 0.01
         d_bonuses /= np.max(d_bonuses)
 
-        total_estimates = r_estimates + 0.0 * d_bonuses
+        total_estimates = r_estimates + 0.2 * d_bonuses
         probs = np.zeros_like(self.actions)
         probs[np.where(total_estimates == max(total_estimates))] = 1
         probs = probs / sum(probs)
@@ -157,7 +157,7 @@ class MFECAgent:
 
         self.stats.update(states_list)
 
-        if self.train_count % 10 == 0:
+        if self.train_count % 50 == 0:
             print("updating norm")
             self.klt.update_normalization(mean=self.stats.mean, std=self.stats.std)
 

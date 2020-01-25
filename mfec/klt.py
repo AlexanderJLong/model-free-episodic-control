@@ -46,13 +46,13 @@ class KLT:
         values = np.asarray([buffer.values_list[n] for n in neighbors])
         times = np.asarray([buffer.times_list[n] for n in neighbors])
 
-        #density = norms[-1] / k  # average dist to find one sample
-        #w = self.gaus_2d(norms, times, sig1=np.mean(norms), sig2=self.time_horizon)
+        density = norms[-1] / k  # average dist to find one sample
+        w = self.gaus_2d(norms, times, sig1=density*k+0.01, sig2=self.time_horizon)
 #
-        #w_sum = np.sum(w)
-        #weighted_reward = np.dot(w, values) / w_sum
+        w_sum = np.sum(w)
+        weighted_reward = np.dot(w, values) / w_sum
 
-        return np.mean(values), 0
+        return weighted_reward, density
 
     def update(self, state, action, value, time):
         # print("updating", action)
@@ -152,8 +152,8 @@ class ActionBuffer:
         self.lr = lr
         self.capacity = capacity
         self.distance = distance
-        self.M = 60
-        self.ef_construction = 200
+        self.M = 100
+        self.ef_construction = 50
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=capacity,
                               M=self.M,
@@ -177,7 +177,7 @@ class ActionBuffer:
         self._tree.load_index(f"saves/index_{self.id}.bin")
 
     def normalize(self, state):
-        "can be single or list of states"
+        "can be single or list of states - will be broadcast"
         return (np.asarray(state) - self.mean)/self.std
 
     def update_normalization(self, mean, std):
