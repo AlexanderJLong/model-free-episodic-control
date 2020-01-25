@@ -3,13 +3,21 @@
 import hnswlib
 import matplotlib.pyplot as plt
 import numpy as np
+import umap
 
 
 class KLT:
     def __init__(self, actions, buffer_size, k, state_dim, obv_dim, distance, lr, time_sig, seed):
         self.buffer_size = buffer_size
         self.buffers = tuple(
-            [ActionBuffer(a, self.buffer_size, state_dim, distance, lr, time_sig, seed) for a in actions])
+            [ActionBuffer(n=a,
+                          capacity=self.buffer_size,
+                          state_dim=state_dim,
+                          distance=distance,
+                          lr=lr,
+                          agg_dist=0.01,
+                          seed=seed,
+                          ) for a in actions])
         self.k = k
         self.obv_dim = obv_dim  # dimentionality of origional data
         self.time_horizon = time_sig
@@ -46,9 +54,10 @@ class KLT:
         # Convert to l2norm, normalize by original dimensionality so dists have a consistent
         # range, but make sure they're always still > 1 because of w=1/d
         norms = np.sqrt(dists)
-        #norms[norms == 0] = 1
-        #w = np.divide(1., norms)  # Get inverse distances as weights
-        h = np.mean(norms)/2 if np.min(norms)!=0 else 1 # This reduces to only considering exact matches when they are there.
+        # norms[norms == 0] = 1
+        # w = np.divide(1., norms)  # Get inverse distances as weights
+        h = np.mean(norms) / 2 if np.min(
+            norms) != 0 else 1  # This reduces to only considering exact matches when they are there.
         w = self.gaus_2d(norms, times, sig1=h, sig2=self.time_horizon)
 
         w_sum = np.sum(w)
@@ -76,74 +85,24 @@ class KLT:
         for i, buff in enumerate(self.buffers):
             buff._tree.load_index(f"{save_dir}/buff_{i}.bin", max_elements=self.buffer_size)
 
-    def plot3d(self, both, diff):
+    def plot3d(self, ):
         fig = plt.figure()
+        reducer = umap.UMAP(n_neighbors=200, n_components=2)
+
         fig.set_tight_layout(True)
-        if diff and both:
-            ax1 = fig.add_subplot(131, projection='3d')
-            ax2 = fig.add_subplot(132, projection='3d')
-            ax3 = fig.add_subplot(133, projection='3d')
-            axes = [ax1, ax2]
-            for i, ax in enumerate(axes):
-                data = self.buffers[i]
-                states = np.asarray(data.get_states())
-                vals = np.asarray(data.values)
-                ax.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals)
-                ax.set(xlabel="Vel")
-                ax.set(ylabel="Angle")
-                ax.set(zlabel="Position")
+        rows = 4
+        for i, buffer in enumerate(self.buffers):
+            ax = fig.add_subplot(rows, len(self.buffers) // rows + 1, i + 1)
 
-                ax.set(title=f"max r={max(vals)}")
-
-            states = np.random.rand(5000, 4) * 5 - 2
-            states[:, -1] = 0
-            vals = []
-            for s in states:
-                vals.append(self.estimate(s, 1, 0) - self.estimate(s, 0, 0))
-
-            # force normalization between certain range and make sure its symetric
-            vals[0] = max(max(vals), -min(vals))
-            vals[1] = min(-max(vals), min(vals))
-            ax3.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals, cmap="bwr")
-            ax3.set(xlabel="Vel")
-            ax3.set(ylabel="Angle")
-            ax3.set(zlabel="Position")
-            ax3.set(title=f"max={max(vals):.2f}, min={min(vals):.2f}")
-            plt.show()
-            return
-
-        elif diff:
-            ax = fig.add_subplot(111, projection='3d')
-            states = np.random.rand(5000, 4) * 5 - 2
-            vals = []
-            for s in states:
-                vals.append(self.estimate(s, 1, 0))
-            ax.scatter(states[:, 1], states[:, 2], states[:, 0], c=vals)
-
+            states = np.asarray(buffer.get_states())
+            embeddings = reducer.fit_transform(states)
+            vals = np.asarray(buffer.values_list)
+            ax.scatter(embeddings[:, 1], embeddings[:, 0], c=vals, s=1)
             ax.set(xlabel="Vel")
             ax.set(ylabel="Angle")
-            ax.set(zlabel="Position")
-            plt.show()
-            return
 
-        else:
-            if len(self.buffers[0].values_list) < 10:
-                return
-            num_actions = len(self.buffers)
-            cols = 4
-            rows = num_actions // cols + 1
-            max_r = max([max(b.values_list) for b in self.buffers])
-            for i in range(num_actions):
-                ax = fig.add_subplot(rows, cols, i + 1, projection='3d')
-
-                data = self.buffers[i]
-                states = np.asarray(data.get_states())[::]
-                if len(states) < 1:
-                    return
-                vals = np.asarray(data.values)[::]
-                ax.scatter(states[:, 0], states[:, 1], states[:, 2], c=vals, vmax=max_r)
-
-            plt.show()
+            ax.set(title=f"max r={max(vals)}")
+        plt.show()
         return
 
 
@@ -155,7 +114,7 @@ class ActionBuffer:
         self.lr = lr
         self.capacity = capacity
         self.distance = distance
-        self.M = 30
+        self.M = 200
         self.ef_construction = 200
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=capacity,
@@ -182,7 +141,8 @@ class ActionBuffer:
 
     def normalize(self, state):
         "can be single or list of states - will be broadcast"
-        return (np.asarray(state) - self.mean)/self.std
+        # print(f"before: {state}, after:{np.subtract(state, self.mean)/self.std}")
+        return np.subtract(state, self.mean) / self.std
 
     def update_normalization(self, mean, std):
         self.mean = mean
@@ -211,6 +171,7 @@ class ActionBuffer:
         idx, dist = self.find_neighbors(normalized_state, 1)
         idx = idx[0][0]
         dist = dist[0][0]
+
         if dist < self.agg_dist:
             # Existing state, update and return
             self.counts_list[idx] += 1

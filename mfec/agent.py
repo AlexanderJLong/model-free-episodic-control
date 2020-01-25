@@ -8,7 +8,8 @@ from mfec.klt import KLT
 
 
 class StatsRecorder:
-    """modified from https://notmatthancock.github.io/2017/03/23/simple-batch-stat-updates.html"""
+    """modified from https://notmatthancock.github.io/2017/03/23/simple-batch-stat-updates.html
+    This definietly works"""
 
     def __init__(self, dim):
         """
@@ -112,11 +113,8 @@ class MFECAgent:
         # Exploration
         if self.rs.random_sample() < self.epsilon:
             # don't change current action
-            q_values = [
-                self.klt.estimate(self.state, action, count_weight=self.count_weight)
-                for action in self.actions
-            ]
-            return self.action, self.state, q_values
+            self.action = np.random.choice(self.actions)
+            return self.action, self.state, 0
 
         # Exploitation
         else:
@@ -134,6 +132,8 @@ class MFECAgent:
             r_bonus = r_estimate
             r_bonus -= np.min(r_bonus) + 0.01
             r_bonus = r_bonus / np.max(r_bonus)
+
+           # print(r_bonus, count_bonus)
 
             total_estimate = self.count_weight * count_bonus + r_bonus
 
@@ -183,8 +183,8 @@ class MFECAgent:
 
         self.stats.update(states_list)
 
+        self.train_count+=1
         if self.train_count % 50 == 0:
-            #print("updating norm")
             self.klt.update_normalization(mean=self.stats.mean, std=self.stats.std)
 
         # print(self.stats.mean)

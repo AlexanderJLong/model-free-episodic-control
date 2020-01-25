@@ -35,7 +35,7 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 200,
     "DISCOUNT": 0.99,
@@ -51,7 +51,7 @@ config = {
     "UPDATE-TYPE": "MC",
     "LR": 1,
     "TIME-SIG": 100_000,
-    "SEED": list(range(5)),
+    "SEED": list(range(3)),
 }
 """Projection type:
 0: Identity
@@ -154,6 +154,7 @@ def main(cfg):
             # Reset agent and environment
             observation = env.reset()
 
+            #agent.klt.plot3d()
     # print("saving...")
     # agent.save("./saves")
 
