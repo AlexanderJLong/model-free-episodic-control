@@ -7,6 +7,42 @@ from sklearn import random_projection
 from mfec.klt import KLT
 
 
+class StatsRecorder:
+    """modified from https://notmatthancock.github.io/2017/03/23/simple-batch-stat-updates.html"""
+
+    def __init__(self, dim):
+        """
+        data: ndarray, shape (nobservations, ndimensions)
+        """
+        self.mean = np.zeros(dim)
+        self.std = np.ones(dim)
+        self.nobservations = 0
+        self.ndimensions = dim
+
+    def update(self, data):
+        """
+        data: ndarray, shape (nobservations, ndimensions)
+        """
+        data = np.atleast_2d(data)
+        if data.shape[1] != self.ndimensions:
+            raise ValueError("Data dims don't match prev observations.")
+
+        newmean = data.mean(axis=0)
+        newstd = data.std(axis=0)
+
+        m = self.nobservations * 1.0
+        n = data.shape[0]
+
+        tmp = self.mean
+
+        self.mean = m / (m + n) * tmp + n / (m + n) * newmean
+        self.std = m / (m + n) * self.std ** 2 + n / (m + n) * newstd ** 2 + \
+                   m * n / (m + n) ** 2 * (tmp - newmean) ** 2
+        self.std = np.sqrt(self.std)
+
+        self.nobservations += n
+
+
 class MFECAgent:
     def __init__(
             self,
@@ -57,7 +93,8 @@ class MFECAgent:
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.action = int
-        self.state = int
+        self.train_count = 0
+        self.stats = StatsRecorder(dim=state_dimension)
 
         if clip_rewards:
             self.clipper = lambda x: np.clip(x, -1, 1)
@@ -67,7 +104,7 @@ class MFECAgent:
     def choose_action(self, observation):
         # Preprocess and project observation to state
         # print(observation)
-        self.state = self.transformer.transform(observation.reshape(1, -1))
+        self.state = self.transformer.transform(observation.reshape(1, -1))[0]
         #self.state = self.state//0
 #
         #self.state = self.state.astype(np.int)
@@ -122,10 +159,11 @@ class MFECAgent:
         R = 0.0
         # print(f"len trace {trace}")
         lr = self.learning_rate
-
+        states_list = []
         for i in range(len(trace)):
             experience = trace.pop()
             s = experience["state"]
+            states_list.append(s)  # strip last dim
             r = self.clipper(experience["reward"])
             if i == 0:
                 # last sample
@@ -143,6 +181,13 @@ class MFECAgent:
             )
             last_qs = experience["Qs"]
 
+        self.stats.update(states_list)
+
+        if self.train_count % 50 == 0:
+            #print("updating norm")
+            self.klt.update_normalization(mean=self.stats.mean, std=self.stats.std)
+
+        # print(self.stats.mean)
         # Decay e exponentially
         if self.epsilon > 0.05:
             self.epsilon -= self.epsilon_decay

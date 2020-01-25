@@ -20,9 +20,12 @@ class KLT:
     def gaus_2d(self, x, y, sig1, sig2):
         return np.exp(-(np.square(x / sig1) + np.square(y / sig2)))
 
+    def update_normalization(self, mean, std):
+        for b in self.buffers:
+            b.update_normalization(mean=mean, std=std)
+
     def estimate(self, state, action, count_weight):
         """Return the estimated value of the given state"""
-
         buffer = self.buffers[action]
 
         if len(buffer) == 0:
@@ -45,7 +48,7 @@ class KLT:
         norms = np.sqrt(dists)
         #norms[norms == 0] = 1
         #w = np.divide(1., norms)  # Get inverse distances as weights
-        h = np.mean(norms)//2 if np.min(norms) else 1 # This reduces to only considering exact matches when they are there.
+        h = np.mean(norms)/2 if np.min(norms)!=0 else 1 # This reduces to only considering exact matches when they are there.
         w = self.gaus_2d(norms, times, sig1=h, sig2=self.time_horizon)
 
         w_sum = np.sum(w)
@@ -152,11 +155,20 @@ class ActionBuffer:
         self.lr = lr
         self.capacity = capacity
         self.distance = distance
+        self.M = 30
+        self.ef_construction = 200
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=capacity, M=30, random_seed=seed)
+        self._tree.init_index(max_elements=capacity,
+                              M=self.M,
+                              ef_construction=self.ef_construction,
+                              random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
         self.counts_list = []
         self.times_list = []
+        self.raw_states = []
+        self.mean = np.zeros(state_dim)
+        self.std = np.ones(state_dim)
+        self.seed = seed
 
     def __getstate__(self):
         # pickle everything but the hnswlib indexes
@@ -168,29 +180,46 @@ class ActionBuffer:
         self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)
         self._tree.load_index(f"saves/index_{self.id}.bin")
 
+    def normalize(self, state):
+        "can be single or list of states - will be broadcast"
+        return (np.asarray(state) - self.mean)/self.std
+
+    def update_normalization(self, mean, std):
+        self.mean = mean
+        self.std = std
+        self._tree = hnswlib.Index(space=self.distance, dim=self.state_dim)  # possible options are l2, cosine or ip
+        self._tree.init_index(max_elements=self.capacity,
+                              ef_construction=self.ef_construction,
+                              M=self.M,
+                              random_seed=self.seed)
+        self._tree.add_items(self.normalize(self.raw_states))
+
     def find_neighbors(self, state, k):
         """Return idx, dists"""
-        return self._tree.knn_query(state, k=k)
+        return self._tree.knn_query(self.normalize(state), k=k)
 
     def add(self, state, value, time):
+        normalized_state = self.normalize(state)
         if not self.values_list:  # buffer empty, just add
-            self._tree.add_items(state)
+            self._tree.add_items(normalized_state)
+            self.raw_states.append(state)
             self.values_list.append(value)
             self.counts_list.append(1)
             self.times_list.append(time)
             return
 
-        idx, dist = self.find_neighbors(state, 1)
+        idx, dist = self.find_neighbors(normalized_state, 1)
         idx = idx[0][0]
         dist = dist[0][0]
-        if dist < self.agg_dist or np.isnan(dist):
+        if dist < self.agg_dist:
             # Existing state, update and return
             self.counts_list[idx] += 1
             self.values_list[idx] = 0.9 * self.values_list[idx] + 0.1 * value
             self.times_list[idx] = time
         else:
             self.values_list.append(value)
-            self._tree.add_items(state)
+            self._tree.add_items(normalized_state)
+            self.raw_states.append(state)
             self.counts_list.append(1)
             self.times_list.append(time)
 
