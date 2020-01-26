@@ -92,19 +92,24 @@ class MFECAgent:
     def choose_action(self, observation):
         state = self.transformer.transform(observation.reshape(1, -1))[0]
 
+        query_results = np.asarray([
+            self.klt.estimate(state, action)
+            for action in self.actions])
+        r_estimate = query_results[:, 0]
+
         # Exploration
         if self.rs.random_sample() < self.epsilon:
-            action = np.random.choice(self.actions)
+            #explore based on distances
+            dists = query_results[:, 1]
+            probs = np.zeros_like(self.actions)
+            probs[np.where(dists == max(dists))] = 1
+            probs = probs/np.sum(probs)
+
+            action = np.random.choice(self.actions, p=probs)
             return action, state
 
         # Exploitation
         else:
-            query_results = np.asarray([
-                self.klt.estimate(state, action)
-                for action in self.actions])
-
-            r_estimate = query_results[:, 0]
-
             probs = np.zeros_like(self.actions)
             probs[np.where(r_estimate == max(r_estimate))] = 1
             probs = probs / sum(probs)

@@ -20,7 +20,7 @@ import random
 import shutil
 from glob import glob
 from multiprocessing import Pool
-import matplotlib.pyplot as plt
+import time
 
 import numpy as np
 from tqdm import tqdm
@@ -36,21 +36,21 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 30,
+    "K": 32,
     "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.02,
     "STATE-DIM": 64,
     "STICKY-ACTIONS": True,
-    "STACKED-STATE": 2,
+    "FRAMESTACK": 1,
     "CLIP-REWARD": False,
     "PROJECTION-DENSITY": "auto",
     "M": 30,
-    "NORM-FREQ": 100,
+    "NORM-FREQ": 1e6,
     "TIME-SIG": 100_000,
-    "SEED": list(range(3)),
+    "SEED": list(range(5)),
 }
 """Projection type:
 0: Identity
@@ -91,6 +91,7 @@ def main(cfg):
     env = create_atari_environment(
         game_name=camelcase_title,
         sticky_actions=cfg["STICKY-ACTIONS"],
+        frame_stack=cfg["FRAMESTACK"],
         seed=cfg["SEED"])
 
     obv_dim = np.prod(env.reset().shape)
@@ -121,12 +122,14 @@ def main(cfg):
         # Act, and add
         action, state = agent.choose_action(observation)
         observation, reward, done, life_lost = env.step(action)
-       #for f in observation:
-       #    plt.imshow(f, cmap="Greys")
-
-       #    plt.show()
-        # env.render(mode="human")
-        # time.sleep(0.01)
+        #print(action)
+        #import matplotlib.pyplot as plt
+        #for f in observation:
+        #  plt.imshow(f, cmap="Greys")
+#
+        #  plt.show()
+        #env.render(mode="human")
+        #time.sleep(0.1)
         utils.log_reward(reward)
         trace.append(
             {
@@ -153,7 +156,8 @@ def main(cfg):
             # Reset agent and environment
             observation = env.reset()
 
-            # agent.klt.plot3d()
+            if step>100_000:
+                agent.klt.plot3d()
 
 
 if __name__ == "__main__":
@@ -173,8 +177,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    #main(all_configs[0])
-    #exit()
+    # main(all_configs[0])
+    # exit()
 
     with Pool(20) as p:
         p.map(main, all_configs)

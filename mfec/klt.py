@@ -20,10 +20,10 @@ class KLT:
 
     def gaus(self, x, sig):
         # Goes to 0 in double sig
-        return np.exp(-np.square(x / sig))
+        return np.exp(-np.square(np.divide(x,  sig)))
 
     def gaus_2d(self, x, y, sig1, sig2):
-        return np.exp(-(np.square(x / sig1) + np.square(y / sig2)))
+        return np.exp(-(np.square(np.divide(x,  sig1) + np.square(y / sig2))))
 
     def update_normalization(self, mean, std):
         for b in self.buffers:
@@ -35,12 +35,12 @@ class KLT:
 
         n = len(buffer)
         if n == 0:
-            return 1e6, 0
+            return 1e6, 1e6
         k = min(self.k, n)
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
-
         values = [buffer.values_list[n] for n in neighbors]
+
         weighted_reward = np.mean(values)
 
         return weighted_reward, 0
@@ -69,16 +69,14 @@ class KLT:
 
         fig.set_tight_layout(True)
         rows = 4
+        max_val = np.max([max(b.values_list) for b in self.buffers])
+        print(max_val)
         for i, buffer in enumerate(self.buffers):
             ax = fig.add_subplot(rows, len(self.buffers) // rows + 1, i + 1)
-
             states = np.asarray(buffer.get_states())
             embeddings = reducer.fit_transform(states)
             vals = np.asarray(buffer.values_list)
-            ax.scatter(embeddings[:, 1], embeddings[:, 0], c=vals, s=1)
-            ax.set(xlabel="Vel")
-            ax.set(ylabel="Angle")
-
+            ax.scatter(embeddings[:, 1], embeddings[:, 0], c=vals, s=2, vmax=max_val)
             ax.set(title=f"max r={max(vals)}")
         plt.show()
         return

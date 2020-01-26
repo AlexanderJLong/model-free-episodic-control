@@ -54,7 +54,7 @@ NATURE_DQN_STACK_SIZE = 4  # Number of frames in the state stack.
 
 
 
-def create_atari_environment(game_name=None, sticky_actions=True, seed=0):
+def create_atari_environment(game_name=None, sticky_actions=True, frame_stack=4, seed=0):
     """Wraps an Atari 2600 Gym environment with some basic preprocessing.
 
     This preprocessing matches the guidelines proposed in Machado et al. (2017),
@@ -87,7 +87,7 @@ def create_atari_environment(game_name=None, sticky_actions=True, seed=0):
     # (30 minutes). The TimeLimit wrapper also plays poorly with saving and
     # restoring states.
     env = env.env
-    env = AtariPreprocessing(env)
+    env = AtariPreprocessing(env, frame_stack=frame_stack)
     return env
 
 
@@ -107,7 +107,7 @@ class AtariPreprocessing(object):
     Evaluation Protocols and Open Problems for General Agents".
     """
 
-    def __init__(self, environment, frame_skip=4, screen_size=24):
+    def __init__(self, environment, frame_skip=4, screen_size=42, frame_stack=4):
         """Constructor for an Atari 2600 preprocessor.
 
         Args:
@@ -130,7 +130,7 @@ class AtariPreprocessing(object):
         self.frame_skip = frame_skip
         self.screen_size = screen_size
         from collections import deque
-        self.frame_stack = deque([], maxlen=4)
+        self.frame_stack = deque([], maxlen=frame_stack)
 
         obs_dims = self.environment.observation_space
         # Stores temporary observations used for pooling over two successive
@@ -192,11 +192,11 @@ class AtariPreprocessing(object):
         self._fetch_grayscale_observation(self.screen_buffer[0])
         self.screen_buffer[1].fill(0)
 
-        #CHANGED
-        for _ in range(self.frame_stack.maxlen):
-            self.frame_stack.append(np.zeros([self.screen_size, self.screen_size]))
+        for _ in range(50):
+            o, *_ = self.step(0)
 
-        return self._stack_and_return()
+
+        return o
 
     def render(self, mode):
         """Renders the current screen, before preprocessing.

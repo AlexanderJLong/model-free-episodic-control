@@ -74,9 +74,8 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "K"
+compare_var = "NORM-FREQ"
 #compare_var = 'STATE-DIM'
-#df = df[(df["ENV"] != "freeway")]
 
 cols = min(num_envs, 4)
 
