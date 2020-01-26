@@ -26,7 +26,7 @@ class Utils:
         """Save the results for the given epoch in the results-file"""
         results = [
             step,
-            np.mean(self.reward_history),
+            np.mean(self.reward_history) if sum(self.reward_history) else 0,
         ]
         self.results_file.write("{},{}\n".format(*results))
         self.results_file.flush()

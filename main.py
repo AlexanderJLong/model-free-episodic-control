@@ -38,11 +38,11 @@ reward_history_len = 5  # At publication time should be 100.
 config = {
     "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 32,
+    "K": [10, 30],
     "DISCOUNT": 1,
     "EPSILON": 0,
     "EPS-DECAY": 0.02,
-    "STATE-DIM": 64,
+    "STATE-DIM": 50,
     "STICKY-ACTIONS": True,
     "FRAMESTACK": 1,
     "CLIP-REWARD": False,
@@ -114,13 +114,13 @@ def main(cfg):
     env.train()  # turn on episodic life
     observation = env.reset()
     trace = []
-    for step in tqdm(list(range(total_steps + 1))):
+    for step in tqdm(list(range(total_steps))):
 
         if step % eval_steps == 0 and step:
             utils.end_epoch(step)
 
         # Act, and add
-        action, state = agent.choose_action(observation)
+        action, state, bonus = agent.choose_action(observation)
         observation, reward, done, life_lost = env.step(action)
         #print(action)
         #import matplotlib.pyplot as plt
@@ -129,13 +129,14 @@ def main(cfg):
 #
         #  plt.show()
         #env.render(mode="human")
-        #time.sleep(0.1)
+        #time.sleep(0.01)
         utils.log_reward(reward)
         trace.append(
             {
                 "state": state,
                 "action": action,
                 "reward": reward,
+                "bonus": 0,
                 "time": step,
             }
         )
@@ -145,13 +146,14 @@ def main(cfg):
             agent.train(trace)
             trace = []
 
-        no_recent_reward = len(trace) > 500 and not sum([e["reward"] for e in trace[-500:]])
-        if no_recent_reward:
-            agent.train(trace)
-            trace = []
-            done = True
+        #no_recent_reward = len(trace) > 500 and not sum([e["reward"] for e in trace[-500:]])
+        #if no_recent_reward:
+        #    agent.train(trace)
+        #    trace = []
+        #    done = True
 
         if done:
+            assert life_lost
             utils.end_episode()
             # Reset agent and environment
             observation = env.reset()

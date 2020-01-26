@@ -35,15 +35,16 @@ class KLT:
 
         n = len(buffer)
         if n == 0:
-            return 1e6, 1e6
+            return 1e6, 0
         k = min(self.k, n)
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
+        dists = np.sqrt(dists[0])
         values = [buffer.values_list[n] for n in neighbors]
 
         weighted_reward = np.mean(values)
 
-        return weighted_reward, 0
+        return weighted_reward, np.mean(dists)
 
     def update(self, state, action, value, time):
         buffer = self.buffers[action]

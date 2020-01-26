@@ -95,8 +95,10 @@ class MFECAgent:
         query_results = np.asarray([
             self.klt.estimate(state, action)
             for action in self.actions])
-        r_estimate = query_results[:, 0]
+        r_estimates = query_results[:, 0]
+        d_estimates = query_results[:, 1]
 
+        r_estimates =r_estimates
         # Exploration
         if self.rs.random_sample() < self.epsilon:
             #explore based on distances
@@ -106,16 +108,17 @@ class MFECAgent:
             probs = probs/np.sum(probs)
 
             action = np.random.choice(self.actions, p=probs)
-            return action, state
 
         # Exploitation
         else:
             probs = np.zeros_like(self.actions)
-            probs[np.where(r_estimate == max(r_estimate))] = 1
+            probs[np.where(r_estimates == max(r_estimates))] = 1
             probs = probs / sum(probs)
 
             action = self.rs.choice(self.actions, p=probs)
-            return action, state
+
+        bonus = d_estimates[action]*0.0001
+        return action, state, bonus
 
     def train(self, trace):
         R = 0.0
@@ -125,7 +128,8 @@ class MFECAgent:
             s = experience["state"]
             a = experience["action"]
             t = experience["time"]
-            r = self.clipper(experience["reward"])
+            b = experience["bonus"]
+            r = self.clipper(experience["reward"]) + b
 
             states_list.append(s)  # strip last dim
 
