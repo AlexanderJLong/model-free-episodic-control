@@ -76,8 +76,6 @@ num_envs = df["ENV"].nunique()
 
 compare_var = "K"
 #compare_var = 'STATE-DIM'
-#df = df[(df["STATE-DIM"] == 150)]
-#df = df[(df["DISCOUNT"] == 1)]
 #df = df[(df["ENV"] != "freeway")]
 
 cols = min(num_envs, 4)

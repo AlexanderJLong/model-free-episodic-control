@@ -20,6 +20,7 @@ import random
 import shutil
 from glob import glob
 from multiprocessing import Pool
+import matplotlib.pyplot as plt
 
 import numpy as np
 from tqdm import tqdm
@@ -35,19 +36,19 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 200,
-    "DISCOUNT": 0.99,
-    "EPSILON": 0.5,
+    "K": 30,
+    "DISCOUNT": 1,
+    "EPSILON": 0,
     "EPS-DECAY": 0.02,
     "STATE-DIM": 64,
     "STICKY-ACTIONS": True,
-    "STACKED-STATE": 4,
+    "STACKED-STATE": 2,
     "CLIP-REWARD": False,
     "PROJECTION-DENSITY": "auto",
     "M": 30,
-    "NORM-FREQ": 50,
+    "NORM-FREQ": 100,
     "TIME-SIG": 100_000,
     "SEED": list(range(3)),
 }
@@ -120,6 +121,10 @@ def main(cfg):
         # Act, and add
         action, state = agent.choose_action(observation)
         observation, reward, done, life_lost = env.step(action)
+       #for f in observation:
+       #    plt.imshow(f, cmap="Greys")
+
+       #    plt.show()
         # env.render(mode="human")
         # time.sleep(0.01)
         utils.log_reward(reward)

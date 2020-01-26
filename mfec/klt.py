@@ -19,7 +19,8 @@ class KLT:
         self.k = k
 
     def gaus(self, x, sig):
-        return np.exp(-np.square(x / sig) / 2)
+        # Goes to 0 in double sig
+        return np.exp(-np.square(x / sig))
 
     def gaus_2d(self, x, y, sig1, sig2):
         return np.exp(-(np.square(x / sig1) + np.square(y / sig2)))
@@ -112,10 +113,18 @@ class ActionBuffer:
         self._tree = hnswlib.Index(space="l2", dim=self.state_dim)
         self._tree.load_index(f"saves/index_{self.id}.bin")
 
+    @staticmethod
+    def safe_divide(a, b):
+        """
+        If 0 in b, set result in a to 0. This is good in normalizatoin because axis with 0 variance
+        should be ignored
+        """
+        return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
+
     def normalize(self, state):
         """can be single or list of states - will be broadcast"""
-        # print(f"before: {state}, after:{np.subtract(state, self.mean)/self.std}")
-        return np.subtract(state, self.mean) / self.std
+        # print(f"before: {state}, after:{np.subtract(state, self.mean)/self.std}
+        return self.safe_divide(np.subtract(state, self.mean), self.std)
 
     def update_normalization(self, mean, std):
         self.mean = mean

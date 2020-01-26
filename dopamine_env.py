@@ -107,7 +107,7 @@ class AtariPreprocessing(object):
     Evaluation Protocols and Open Problems for General Agents".
     """
 
-    def __init__(self, environment, frame_skip=4, screen_size=84):
+    def __init__(self, environment, frame_skip=4, screen_size=24):
         """Constructor for an Atari 2600 preprocessor.
 
         Args:
@@ -154,9 +154,6 @@ class AtariPreprocessing(object):
         #print(self.median_pixels)
 
 
-
-
-
     def train(self):
         """Compatibility with rainbow env"""
         return
@@ -197,9 +194,9 @@ class AtariPreprocessing(object):
 
         #CHANGED
         for _ in range(self.frame_stack.maxlen):
-            self.frame_stack.append(np.zeros([84, 84]))
+            self.frame_stack.append(np.zeros([self.screen_size, self.screen_size]))
 
-        return self._pool_and_resize()
+        return self._stack_and_return()
 
     def render(self, mode):
         """Renders the current screen, before preprocessing.
@@ -240,7 +237,6 @@ class AtariPreprocessing(object):
           info: Gym API's info data structure.
         """
         accumulated_reward = 0.
-        last_obv = []
         for time_step in range(self.frame_skip):
             # We bypass the Gym observation altogether and directly fetch the
             # grayscale image from the ALE. This is a little faster.
@@ -259,9 +255,14 @@ class AtariPreprocessing(object):
                 self._fetch_grayscale_observation(self.screen_buffer[t])
 
         # Pool the last two observations.
-        observation = self._pool_and_resize()
+        observation = self._stack_and_return()
 
         return observation, accumulated_reward, is_terminal, life_lost
+
+    def _stack_and_return(self):
+        """add current obv to stack and return it"""
+        self.frame_stack.append(self._pool_and_resize())
+        return np.asarray(self.frame_stack)
 
     def _fetch_grayscale_observation(self, output):
         """Returns the current observation in grayscale.
@@ -294,8 +295,4 @@ class AtariPreprocessing(object):
                                        (self.screen_size, self.screen_size),
                                        interpolation=cv2.INTER_AREA)
 
-        #CHANGED. NORMALIZED AND STACKED.
-        int_image = np.asarray(transformed_image-128, dtype=np.int8)
-        #print(np.max(int_image), np.min(int_image))
-        self.frame_stack.append(int_image)
-        return np.asarray(self.frame_stack)
+        return transformed_image
