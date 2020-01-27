@@ -98,7 +98,7 @@ class MFECAgent:
             self.klt.estimate(state, action, time)
             for action in self.actions])
         r_estimates = query_results[:, 0]
-        #d_estimates = query_results[:, 1]
+        d_estimates = query_results[:, 1]
 
         r_estimates =r_estimates
         # Exploration
@@ -113,7 +113,7 @@ class MFECAgent:
 
             action = self.rs.choice(self.actions, p=probs)
 
-        bonus = 0 #0.0005/d_estimates[action]
+        bonus = 0#10*d_estimates[action]
         #print(bonus)
         return action, state, bonus, np.max(r_estimates)
 

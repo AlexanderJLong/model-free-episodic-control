@@ -43,17 +43,24 @@ class KLT:
         k = min(self.k, n)
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
-        #dists = np.sqrt(dists[0])
+        dists = np.sqrt(dists[0])
+        #print(dists)
         values = [buffer.values_list[n] for n in neighbors]
-        #times = time - np.asarray([buffer.times_list[n] for n in neighbors])
+        times = time - np.asarray([buffer.times_list[n] for n in neighbors])
 
         #print(dists)
-        #density = 1/np.sum(self.laplace(times, 100_000) + self.laplace(dists, 500))
-        #print(density)
+
+        #density = 1/np.mean(dists)
 
        # w = self.laplace(dists, density)
        # weighted_reward = np.dot(values, w)/np.sum(w) if np.sum(w) else 0
         weighted_reward = np.mean(values)
+
+        if np.sum(dists) == 0:
+            # This sample point is saturated - delete oldest sample.
+            earliest = np.argmax(times)
+            idx = neighbors[earliest]
+            buffer.remove(idx)
 
         return weighted_reward, 0
 
@@ -131,6 +138,11 @@ class ActionBuffer:
         should be ignored
         """
         return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
+
+    def remove(self, idx):
+        #The tree wont return the marked index now, but it stays in the tree.
+        self._tree.mark_deleted(idx)
+        self.length -= 1
 
     def normalize(self, state):
         return state #TODO DON"T LEAVE THIS

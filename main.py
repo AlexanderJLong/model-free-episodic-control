@@ -36,9 +36,9 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": [8, 16, 32],
+    "K": 8,
     "DISCOUNT": 0.95,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
