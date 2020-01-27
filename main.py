@@ -38,7 +38,7 @@ reward_history_len = 5  # At publication time should be 100.
 config = {
     "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 8,
+    "K": 16,
     "DISCOUNT": 0.95,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,

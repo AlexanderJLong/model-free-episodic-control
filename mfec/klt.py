@@ -58,8 +58,8 @@ class KLT:
 
         if np.sum(dists) == 0:
             # This sample point is saturated - delete oldest sample.
-            earliest = np.argmax(times)
-            idx = neighbors[earliest]
+            least_contributing = np.argmin(np.abs(values - weighted_reward))
+            idx = neighbors[least_contributing]
             buffer.remove(idx)
 
         return weighted_reward, 0
