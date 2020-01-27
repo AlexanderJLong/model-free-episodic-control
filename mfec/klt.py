@@ -37,7 +37,7 @@ class KLT:
         """Return the estimated value of the given state"""
         buffer = self.buffers[action]
 
-        n = len(buffer)
+        n = buffer.length
         if n == 0:
             return 0, 1e6
         k = min(self.k, n)
@@ -100,7 +100,7 @@ class ActionBuffer:
         self.state_dim = state_dim
         self.capacity = capacity
         self.M = M
-        self.ef_construction = 200
+        self.ef_construction = 150
         self._tree = hnswlib.Index(space="l2", dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=capacity,
                               M=self.M,
@@ -111,6 +111,7 @@ class ActionBuffer:
         self.raw_states = []
         self.mean = np.zeros(state_dim)
         self.std = np.ones(state_dim)
+        self.length = 0
         self.seed = seed
 
     def __getstate__(self):
@@ -132,6 +133,7 @@ class ActionBuffer:
         return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
 
     def normalize(self, state):
+        return state #TODO DON"T LEAVE THIS
         """can be single or list of states - will be broadcast"""
         # print(f"before: {state}, after:{np.subtract(state, self.mean)/self.std}
         return self.safe_divide(np.subtract(state, self.mean), self.std)
@@ -156,9 +158,10 @@ class ActionBuffer:
         self.raw_states.append(state)
         self.values_list.append(value)
         self.times_list.append(time)
+        self.length+=1
 
     def get_states(self):
         return self._tree.get_items(range(0, len(self)))
 
     def __len__(self):
-        return len(self.values_list)
+        return self.length
