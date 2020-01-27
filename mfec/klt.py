@@ -20,14 +20,17 @@ class KLT:
 
     def gaus(self, x, sig):
         # Goes to 0 in 2xsig
-        return np.exp(-np.square(np.divide(x,  sig)))
+        return np.exp(-np.square(np.divide(x, sig)))
 
     def laplace(self, x, sig):
         # Goes to 0 in 4xsig
-        return np.exp(np.divide(x,  sig))
+        return np.exp(np.divide(x, sig))
 
     def gaus_2d(self, x, y, sig1, sig2):
-        return np.exp(-(np.square(np.divide(x,  sig1) + np.square(y / sig2))))
+        return np.exp(-np.square(x / sig1) - np.square(y / sig2))
+
+    def laplace_2d(self, x, y, sig1, sig2):
+        return np.exp(-(x / sig1 - y / sig2))
 
     def update_normalization(self, mean, std):
         for b in self.buffers:
@@ -44,21 +47,23 @@ class KLT:
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
         dists = np.sqrt(dists[0])
-        #print(dists)
+        # print(dists)
         values = [buffer.values_list[n] for n in neighbors]
         times = time - np.asarray([buffer.times_list[n] for n in neighbors])
 
-        #print(dists)
+        # print(dists)
 
-        #density = 1/np.mean(dists)
+        # density = 1/np.mean(dists)
 
-       # w = self.laplace(dists, density)
-       # weighted_reward = np.dot(values, w)/np.sum(w) if np.sum(w) else 0
-        weighted_reward = np.mean(values)
+        # w = self.laplace(dists, density)
+        # weighted_reward = np.dot(values, w)/np.sum(w) if np.sum(w) else 0
+
+        w = self.gaus_2d(dists, times, np.mean(dists)+0.01, np.mean(times))
+        weighted_reward = np.dot(values, w) /np.sum(w)
 
         if np.sum(dists) == 0:
             # This sample point is saturated - delete oldest sample.
-            least_contributing = np.argmin(np.abs(values - weighted_reward))
+            least_contributing = np.argmin(w)
             idx = neighbors[least_contributing]
             buffer.remove(idx)
 
@@ -140,12 +145,12 @@ class ActionBuffer:
         return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
 
     def remove(self, idx):
-        #The tree wont return the marked index now, but it stays in the tree.
+        # The tree wont return the marked index now, but it stays in the tree.
         self._tree.mark_deleted(idx)
         self.length -= 1
 
     def normalize(self, state):
-        return state #TODO DON"T LEAVE THIS
+        return state  # TODO DON"T LEAVE THIS
         """can be single or list of states - will be broadcast"""
         # print(f"before: {state}, after:{np.subtract(state, self.mean)/self.std}
         return self.safe_divide(np.subtract(state, self.mean), self.std)
@@ -170,7 +175,7 @@ class ActionBuffer:
         self.raw_states.append(state)
         self.values_list.append(value)
         self.times_list.append(time)
-        self.length+=1
+        self.length += 1
 
     def get_states(self):
         return self._tree.get_items(range(0, len(self)))

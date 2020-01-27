@@ -13,3 +13,5 @@ plt.plot(x, 1/np.sqrt(x))
 #plt.plot(x, gaus2(x, 1500))
 #plt.plot(x, 1/np.sqrt(x/200))
 plt.show()
+
+
