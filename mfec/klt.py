@@ -19,8 +19,12 @@ class KLT:
         self.k = k
 
     def gaus(self, x, sig):
-        # Goes to 0 in double sig
+        # Goes to 0 in 2xsig
         return np.exp(-np.square(np.divide(x,  sig)))
+
+    def laplace(self, x, sig):
+        # Goes to 0 in 4xsig
+        return np.exp(np.divide(x,  sig))
 
     def gaus_2d(self, x, y, sig1, sig2):
         return np.exp(-(np.square(np.divide(x,  sig1) + np.square(y / sig2))))
@@ -29,22 +33,29 @@ class KLT:
         for b in self.buffers:
             b.update_normalization(mean=mean, std=std)
 
-    def estimate(self, state, action):
+    def estimate(self, state, action, time):
         """Return the estimated value of the given state"""
         buffer = self.buffers[action]
 
         n = len(buffer)
         if n == 0:
-            return 1e6, 0
+            return 0, 1e6
         k = min(self.k, n)
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
-        dists = np.sqrt(dists[0])
+        #dists = np.sqrt(dists[0])
         values = [buffer.values_list[n] for n in neighbors]
+        #times = time - np.asarray([buffer.times_list[n] for n in neighbors])
 
+        #print(dists)
+        #density = 1/np.sum(self.laplace(times, 100_000) + self.laplace(dists, 500))
+        #print(density)
+
+       # w = self.laplace(dists, density)
+       # weighted_reward = np.dot(values, w)/np.sum(w) if np.sum(w) else 0
         weighted_reward = np.mean(values)
 
-        return weighted_reward, np.mean(dists)
+        return weighted_reward, 0
 
     def update(self, state, action, value, time):
         buffer = self.buffers[action]

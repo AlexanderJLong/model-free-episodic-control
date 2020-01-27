@@ -71,10 +71,10 @@ class MFECAgent:
                        seed=seed)
 
         self.transformer = random_projection.SparseRandomProjection(
-            n_components=state_dimension,
-            dense_output=True,
-            density=projection_density)
-        self.transformer.fit(np.zeros([1, observation_dim]))
+            n_components="auto", eps=0.3)
+            #dense_output=True,
+            #density=projection_density)
+        self.transformer.fit(np.zeros([100_000, observation_dim]))
 
         self.discount = discount
         self.norm_freq = norm_freq
@@ -89,25 +89,21 @@ class MFECAgent:
         else:
             self.clipper = lambda x: x
 
-    def choose_action(self, observation):
-        state = self.transformer.transform(observation.reshape(1, -1))[0]
-
+    def choose_action(self, observation, time):
+        #state = self.transformer.transform(observation.reshape(1, -1))[0]
+        state = observation.flatten()
+        #print(np.max(state), np.min(state))
+        #print(self.transformer.components_.shape)
         query_results = np.asarray([
-            self.klt.estimate(state, action)
+            self.klt.estimate(state, action, time)
             for action in self.actions])
         r_estimates = query_results[:, 0]
-        d_estimates = query_results[:, 1]
+        #d_estimates = query_results[:, 1]
 
         r_estimates =r_estimates
         # Exploration
         if self.rs.random_sample() < self.epsilon:
-            #explore based on distances
-            dists = query_results[:, 1]
-            probs = np.zeros_like(self.actions)
-            probs[np.where(dists == max(dists))] = 1
-            probs = probs/np.sum(probs)
-
-            action = np.random.choice(self.actions, p=probs)
+            action = np.random.choice(self.actions)
 
         # Exploitation
         else:
@@ -117,8 +113,9 @@ class MFECAgent:
 
             action = self.rs.choice(self.actions, p=probs)
 
-        bonus = d_estimates[action]*0.0001
-        return action, state, bonus
+        bonus = 0 #0.0005/d_estimates[action]
+        #print(bonus)
+        return action, state, bonus, np.max(r_estimates)
 
     def train(self, trace):
         R = 0.0
@@ -129,6 +126,7 @@ class MFECAgent:
             a = experience["action"]
             t = experience["time"]
             b = experience["bonus"]
+
             r = self.clipper(experience["reward"]) + b
 
             states_list.append(s)  # strip last dim
@@ -139,13 +137,14 @@ class MFECAgent:
             else:
                 R = r + self.discount * R
 
+            e = experience["estimate"]
             self.klt.update(s, a, R, t)
 
-        self.stats.update(states_list)
+        #self.stats.update(states_list)
 
-        self.train_count += 1
-        if self.train_count % self.norm_freq == 0:
-            self.klt.update_normalization(mean=self.stats.mean, std=self.stats.std)
+        #self.train_count += 1
+        #if self.train_count % self.norm_freq == 0:
+        #    self.klt.update_normalization(mean=self.stats.mean, std=self.stats.std)
 
         if self.epsilon > 0.05:
             self.epsilon -= self.epsilon_decay

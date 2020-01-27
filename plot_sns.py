@@ -76,7 +76,9 @@ num_envs = df["ENV"].nunique()
 
 compare_var = "K"
 #compare_var = 'STATE-DIM'
-#df = df[(df["STATE-DIM"] == 64)]
+#df = df[(df["K"] == 16)]
+#df = df[(df["M"] == 200)]
+#df = df[(df["STATE-DIM"] == 512)]
 
 cols = min(num_envs, 4)
 

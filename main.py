@@ -36,15 +36,15 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": "ms_pacman",
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": [10, 30],
-    "DISCOUNT": 1,
+    "K": [16, 64, 200],
+    "DISCOUNT": 0.95,
     "EPSILON": 0,
-    "EPS-DECAY": 0.02,
-    "STATE-DIM": 50,
+    "EPS-DECAY": 0.05,
+    "STATE-DIM": 2048,
     "STICKY-ACTIONS": True,
-    "FRAMESTACK": 1,
+    "FRAMESTACK": 2,
     "CLIP-REWARD": False,
     "PROJECTION-DENSITY": "auto",
     "M": 30,
@@ -120,13 +120,13 @@ def main(cfg):
             utils.end_epoch(step)
 
         # Act, and add
-        action, state, bonus = agent.choose_action(observation)
+        action, state, bonus, estimate = agent.choose_action(observation, time=step)
         observation, reward, done, life_lost = env.step(action)
-        #print(action)
-        #import matplotlib.pyplot as plt
-        #for f in observation:
+        # print(action)
+        # import matplotlib.pyplot as plt
+        # for f in observation:
         #  plt.imshow(f, cmap="Greys")
-#
+        #
         #  plt.show()
         #env.render(mode="human")
         #time.sleep(0.01)
@@ -136,8 +136,9 @@ def main(cfg):
                 "state": state,
                 "action": action,
                 "reward": reward,
-                "bonus": 0,
+                "bonus": bonus,
                 "time": step,
+                "estimate": estimate,
             }
         )
 
@@ -146,19 +147,18 @@ def main(cfg):
             agent.train(trace)
             trace = []
 
-        #no_recent_reward = len(trace) > 500 and not sum([e["reward"] for e in trace[-500:]])
-        #if no_recent_reward:
-        #    agent.train(trace)
-        #    trace = []
-        #    done = True
+        no_recent_reward = len(trace) > 500 and not sum([e["reward"] for e in trace[-500:]])
+        if no_recent_reward:
+            agent.train(trace)
+            trace = []
+            done = True
 
         if done:
-            assert life_lost
             utils.end_episode()
             # Reset agent and environment
             observation = env.reset()
 
-            if step>100_000:
+            if step > 100_000:
                 agent.klt.plot3d()
 
 
