@@ -76,7 +76,7 @@ num_envs = df["ENV"].nunique()
 
 compare_var = "STICKY-ACTIONS"
 #compare_var = 'STATE-DIM'
-df = df[(df["K"] == 8)]
+#df = df[(df["K"] == 16)]
 #df = df[(df["M"] == 200)]
 #df = df[(df["STATE-DIM"] == 512)]
 

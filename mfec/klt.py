@@ -56,7 +56,7 @@ class KLT:
         # w = self.laplace(dists, density)
         # weighted_reward = np.dot(values, w)/np.sum(w) if np.sum(w) else 0
 
-        w = self.gaus_2d(dists, times, 300, np.mean(times))
+        w = self.gaus_2d(dists, times, 300, 50_000)
         weighted_reward = np.dot(values, w) / np.sum(w)
 
         if np.sum(dists) == 0:
