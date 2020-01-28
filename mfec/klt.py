@@ -51,15 +51,13 @@ class KLT:
         values = [buffer.values_list[n] for n in neighbors]
         times = time - np.asarray([buffer.times_list[n] for n in neighbors])
 
-        # print(dists)
-
         # density = 1/np.mean(dists)
 
         # w = self.laplace(dists, density)
         # weighted_reward = np.dot(values, w)/np.sum(w) if np.sum(w) else 0
 
-        w = self.gaus_2d(dists, times, np.mean(dists)+0.01, np.mean(times))
-        weighted_reward = np.dot(values, w) /np.sum(w)
+        w = self.gaus_2d(dists, times, 300, np.mean(times))
+        weighted_reward = np.dot(values, w) / np.sum(w)
 
         if np.sum(dists) == 0:
             # This sample point is saturated - delete oldest sample.

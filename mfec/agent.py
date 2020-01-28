@@ -72,8 +72,8 @@ class MFECAgent:
 
         self.transformer = random_projection.SparseRandomProjection(
             n_components="auto", eps=0.3)
-            #dense_output=True,
-            #density=projection_density)
+        # dense_output=True,
+        # density=projection_density)
         self.transformer.fit(np.zeros([100_000, observation_dim]))
 
         self.discount = discount
@@ -90,17 +90,17 @@ class MFECAgent:
             self.clipper = lambda x: x
 
     def choose_action(self, observation, time):
-        #state = self.transformer.transform(observation.reshape(1, -1))[0]
+        # state = self.transformer.transform(observation.reshape(1, -1))[0]
         state = observation.flatten()
-        #print(np.max(state), np.min(state))
-        #print(self.transformer.components_.shape)
+        # print(np.max(state), np.min(state))
+        # print(self.transformer.components_.shape)
         query_results = np.asarray([
             self.klt.estimate(state, action, time)
             for action in self.actions])
         r_estimates = query_results[:, 0]
         d_estimates = query_results[:, 1]
 
-        r_estimates =r_estimates
+        r_estimates = r_estimates
         # Exploration
         if self.rs.random_sample() < self.epsilon:
             action = np.random.choice(self.actions)
@@ -113,8 +113,8 @@ class MFECAgent:
 
             action = self.rs.choice(self.actions, p=probs)
 
-        bonus = 0#10*d_estimates[action]
-        #print(bonus)
+        bonus = 0  # 10*d_estimates[action]
+        # print(bonus)
         return action, state, bonus, np.max(r_estimates)
 
     def train(self, trace):
@@ -140,10 +140,10 @@ class MFECAgent:
             e = experience["estimate"]
             self.klt.update(s, a, R, t)
 
-        #self.stats.update(states_list)
+        # self.stats.update(states_list)
 
-        #self.train_count += 1
-        #if self.train_count % self.norm_freq == 0:
+        # self.train_count += 1
+        # if self.train_count % self.norm_freq == 0:
         #    self.klt.update_normalization(mean=self.stats.mean, std=self.stats.std)
 
         if self.epsilon > 0.05:
