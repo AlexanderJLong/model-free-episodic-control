@@ -74,8 +74,7 @@ class MFECAgent:
             n_components="auto", eps=0.3)
         # dense_output=True,
         # density=projection_density)
-        self.transformer.fit(np.zeros([100_000, observation_dim]))
-
+        #self.transformer.fit(np.zeros([100_000, observation_dim]))
         self.discount = discount
         self.norm_freq = norm_freq
         self.epsilon = epsilon
@@ -92,6 +91,7 @@ class MFECAgent:
     def choose_action(self, observation, time):
         # state = self.transformer.transform(observation.reshape(1, -1))[0]
         state = observation.flatten()
+
         # print(np.max(state), np.min(state))
         # print(self.transformer.components_.shape)
         query_results = np.asarray([
@@ -151,6 +151,6 @@ class MFECAgent:
             print(f"eps={self.epsilon:.2f}")
 
 
-def save(self, save_dir):
-    with open(f"{save_dir}/agent.pkl", "wb") as f:
-        pkl.dump(self, f)
+    def save(self, save_dir):
+        with open(f"{save_dir}/agent.pkl", "wb") as f:
+            pkl.dump(self, f)

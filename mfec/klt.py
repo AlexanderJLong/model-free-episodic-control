@@ -56,7 +56,7 @@ class KLT:
         # w = self.laplace(dists, density)
         # weighted_reward = np.dot(values, w)/np.sum(w) if np.sum(w) else 0
 
-        w = self.gaus_2d(dists, times, 300, 50_000)
+        w = self.gaus_2d(dists, times, 300, 100_000)
         weighted_reward = np.dot(values, w) / np.sum(w)
 
         if np.sum(dists) == 0:
@@ -110,7 +110,7 @@ class ActionBuffer:
         self.state_dim = state_dim
         self.capacity = capacity
         self.M = M
-        self.ef_construction = 150
+        self.ef_construction = 1000
         self._tree = hnswlib.Index(space="l2", dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=capacity,
                               M=self.M,

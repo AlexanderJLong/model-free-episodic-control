@@ -1,7 +1,6 @@
 import cloudpickle as pkl
 import numpy as np
 from tqdm import tqdm
-from rainbow_env import EnvStacked
 import umap
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -10,13 +9,11 @@ import seaborn as sns
 with open("saves/agent.pkl", "rb") as f:
     agent = pkl.load(f)
 
-print('awd')
-print([len(b) for b in agent.klt.buffers])
 
 from dopamine_env import create_atari_environment
 
 env = create_atari_environment(
-    game_name="Qbert",
+    game_name="Frostbite",
     sticky_actions=True,
     seed=0)
 
@@ -33,14 +30,14 @@ trace_id = 0
 trace_ids = []
 traces = []
 
-for step in tqdm(list(range(3000))):
+for step in tqdm(list(range(50_000))):
     # Act, and record
-    action, state, Qs = agent.choose_action(observation)
+    action, state, *_ = agent.choose_action(observation, step)
     observations.append(observation.flatten())
     states.append(state.flatten())
     trace_ids.append(trace_id)
 
-    observation, reward, done = env.step(action)
+    observation, reward, done, lifelost = env.step(action)
     ep_reward += reward
     if done:
         print(ep_reward)
@@ -49,6 +46,11 @@ for step in tqdm(list(range(3000))):
         ep_reward = 0
         observation = env.reset()
 
+
+pkl.dump(states, open("saves/states.pkl", "wb"))
+
+
+exit()
 print(trace_id)
 trace_ends = []  # index of last value in trace
 for i, _ in enumerate(trace_ids[:-1]):

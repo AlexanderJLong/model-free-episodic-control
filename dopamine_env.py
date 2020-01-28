@@ -107,7 +107,7 @@ class AtariPreprocessing(object):
     Evaluation Protocols and Open Problems for General Agents".
     """
 
-    def __init__(self, environment, frame_skip=4, screen_size=32,  frame_stack=4):
+    def __init__(self, environment, frame_skip=4, screen_size=10,  frame_stack=4):
         """Constructor for an Atari 2600 preprocessor.
 
         Args:
