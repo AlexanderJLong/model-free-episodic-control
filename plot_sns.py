@@ -76,7 +76,7 @@ num_envs = df["ENV"].nunique()
 
 compare_var = "STICKY-ACTIONS"
 #compare_var = 'STATE-DIM'
-df = df[(df["K"] == 16)]
+df = df[(df["M"] == 20)]
 #df = df[(df["M"] == 200)]
 
 cols = min(num_envs, 4)

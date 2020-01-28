@@ -36,9 +36,9 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": "frostbite",
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 16,
+    "K": 8,
     "DISCOUNT": 0.95,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
@@ -47,7 +47,7 @@ config = {
     "FRAMESTACK": 2,
     "CLIP-REWARD": False,
     "PROJECTION-DENSITY": "auto",
-    "M": 48,
+    "M": [20, 40, 80],
     "NORM-FREQ": 1e6,
     "TIME-SIG": 100_000,
     "SEED": list(range(5)),
@@ -183,8 +183,8 @@ if __name__ == "__main__":
     for vals in all_values:
         all_configs.append(dict(zip(config.keys(), vals)))
 
-    main(all_configs[0])
-    exit()
+    #main(all_configs[0])
+    #exit()
 
-    with Pool(18) as p:
+    with Pool(20) as p:
         p.map(main, all_configs)
