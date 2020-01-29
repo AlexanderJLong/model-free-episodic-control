@@ -48,9 +48,12 @@ class KLT:
         neighbors = neighbors[0]
         dists = np.sqrt(dists[0])
         # print(dists)
-        values = [buffer.values_list[n] for n in neighbors]
-        times = time - np.asarray([buffer.times_list[n] for n in neighbors])
+        values_list = [buffer.values_list[n] for n in neighbors]
+        values = [np.mean(e) for e in values_list]
+        counts = [len(e) for e in values_list]
+        #times = time - np.asarray([buffer.times_list[n] for n in neighbors])
 
+        #print(values)
         # density = 1/np.mean(dists)
 
         # w = self.laplace(dists, density)
@@ -118,10 +121,6 @@ class ActionBuffer:
                               random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
         self.times_list = []
-        self.raw_states = []
-        self.mins = np.zeros(state_dim)
-        self.maxes = np.ones(state_dim)
-        self.deleted = []
         self.length = 0
         self.seed = seed
 
@@ -143,43 +142,30 @@ class ActionBuffer:
         """
         return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
 
-    def remove(self, idx):
-        # The tree wont return the marked index now, but it stays in the tree.
-        self._tree.mark_deleted(idx)
-        self.deleted.append(idx)
-        self.length -= 1
-
-    def normalize(self, state):
-        return self.safe_divide(np.subtract(state, self.mins), (self.maxes-self.mins))
-
-    def update_normalization(self, maxes, mins):
-        to_remove = set(self.deleted)
-        for i in to_remove:
-            del self.raw_states[i]
-            del self.values_list[i]
-            del self.times_list[i]
-
-        self._tree = hnswlib.Index(space="l2", dim=self.state_dim)  # possible options are l2, cosine or ip
-        self._tree.init_index(max_elements=self.capacity,
-                              ef_construction=self.ef_construction,
-                              M=self.M,
-                              random_seed=self.seed)
-        self._tree.add_items(self.raw_states)
-
     def find_neighbors(self, state, k):
         """Return idx, dists"""
-        return self._tree.knn_query(self.normalize(state), k=k)
+        return self._tree.knn_query(state, k=k)
 
     def add(self, state, value, time):
-        normalized_state = self.normalize(state)
-        self._tree.add_items(normalized_state)
-        self.raw_states.append(state)
-        self.values_list.append(value)
-        self.times_list.append(time)
+        if self.length != 0:
+            idx, dist = self.find_neighbors(state, k=1)
+            idx = idx[0][0]
+            dist = dist[0][0]
+            if dist == 0:
+                # existing state
+                self.values_list[idx].append(value)
+                self.times_list[idx].append(time)
+                return
+
+        # Otherwise it's new
+        self._tree.add_items(state)
+        self.values_list.append([value])
+        self.times_list.append([time])
         self.length += 1
 
     def get_states(self):
         return self._tree.get_items(range(0, len(self)))
 
     def __len__(self):
+        """number of samples in the buffer - not number visited."""
         return self.length

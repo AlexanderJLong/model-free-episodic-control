@@ -36,7 +36,7 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 8,
     "DISCOUNT": 0.95,
@@ -46,9 +46,8 @@ config = {
     "STICKY-ACTIONS": True,
     "FRAMESTACK": 2,
     "CLIP-REWARD": False,
-    "PROJECTION-DENSITY": "auto",
     "M": 20,
-    "NORM-FREQ": [10, 1e6],
+    "NORM-FREQ": 0,
     "TIME-SIG": 100_000,
     "SEED": list(range(5)),
 }
@@ -106,7 +105,6 @@ def main(cfg):
         seed=cfg["SEED"],
         epsilon_decay=cfg["EPS-DECAY"],
         clip_rewards=cfg["CLIP-REWARD"],
-        projection_density=cfg["PROJECTION-DENSITY"],
         M=cfg["M"],
         norm_freq=cfg["NORM-FREQ"],
     )
