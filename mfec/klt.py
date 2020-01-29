@@ -32,9 +32,9 @@ class KLT:
     def laplace_2d(self, x, y, sig1, sig2):
         return np.exp(-(x / sig1 - y / sig2))
 
-    def update_normalization(self, mean, std):
+    def update_normalization(self, maxes, mins):
         for b in self.buffers:
-            b.update_normalization(mean=mean, std=std)
+            b.update_normalization(mins=mins, maxes=maxes)
 
     def estimate(self, state, action, time):
         """Return the estimated value of the given state"""
@@ -56,7 +56,7 @@ class KLT:
         # w = self.laplace(dists, density)
         # weighted_reward = np.dot(values, w)/np.sum(w) if np.sum(w) else 0
 
-        w = self.gaus_2d(dists, times, 300, 100_000)
+        w = self.gaus(dists, 300)
         weighted_reward = np.dot(values, w) / np.sum(w)
 
         #if np.sum(dists) == 0:
@@ -119,8 +119,9 @@ class ActionBuffer:
         self.values_list = []  # true values - this is the object that is updated.
         self.times_list = []
         self.raw_states = []
-        self.mean = np.zeros(state_dim)
-        self.std = np.ones(state_dim)
+        self.mins = np.zeros(state_dim)
+        self.maxes = np.ones(state_dim)
+        self.deleted = []
         self.length = 0
         self.seed = seed
 
@@ -145,23 +146,25 @@ class ActionBuffer:
     def remove(self, idx):
         # The tree wont return the marked index now, but it stays in the tree.
         self._tree.mark_deleted(idx)
+        self.deleted.append(idx)
         self.length -= 1
 
     def normalize(self, state):
-        return state  # TODO DON"T LEAVE THIS
-        """can be single or list of states - will be broadcast"""
-        # print(f"before: {state}, after:{np.subtract(state, self.mean)/self.std}
-        return self.safe_divide(np.subtract(state, self.mean), self.std)
+        return self.safe_divide(np.subtract(state, self.mins), (self.maxes-self.mins))
 
-    def update_normalization(self, mean, std):
-        self.mean = mean
-        self.std = std
+    def update_normalization(self, maxes, mins):
+        to_remove = set(self.deleted)
+        for i in to_remove:
+            del self.raw_states[i]
+            del self.values_list[i]
+            del self.times_list[i]
+
         self._tree = hnswlib.Index(space="l2", dim=self.state_dim)  # possible options are l2, cosine or ip
         self._tree.init_index(max_elements=self.capacity,
                               ef_construction=self.ef_construction,
                               M=self.M,
                               random_seed=self.seed)
-        self._tree.add_items(self.normalize(self.raw_states))
+        self._tree.add_items(self.raw_states)
 
     def find_neighbors(self, state, k):
         """Return idx, dists"""

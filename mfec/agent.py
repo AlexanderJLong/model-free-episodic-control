@@ -2,9 +2,31 @@
 
 import cloudpickle as pkl
 import numpy as np
-from sklearn import random_projection
 
 from mfec.klt import KLT
+
+
+class MinMaxRecorder:
+    def __init__(self, dim):
+        """
+        data: ndarray, shape (nobservations, ndimensions)
+        """
+        self.maxes = -np.ones(dim) * np.inf
+        self.mins = np.ones(dim) * np.inf
+        self.ndimensions = dim
+
+    def update(self, data):
+        """
+        data: ndarray, shape (nobservations, ndimensions)
+        """
+        data = np.atleast_2d(data)
+        if data.shape[1] != self.ndimensions:
+            raise ValueError("Data dims don't match prev observations.")
+        new_mins = np.min(data, axis=0)
+        new_maxes = np.max(data, axis=0)
+
+        self.maxes = np.maximum(new_maxes, self.maxes)
+        self.mins = np.minimum(new_mins, self.mins)
 
 
 class StatsRecorder:
@@ -70,18 +92,18 @@ class MFECAgent:
                        M=M,
                        seed=seed)
 
-        self.transformer = random_projection.SparseRandomProjection(
-            n_components="auto", eps=0.3)
+        # self.transformer = random_projection.SparseRandomProjection(
+        #    n_components="auto", eps=0.3)
         # dense_output=True,
         # density=projection_density)
-        #self.transformer.fit(np.zeros([100_000, observation_dim]))
+        # self.transformer.fit(np.zeros([100_000, observation_dim]))
         self.discount = discount
         self.norm_freq = norm_freq
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.action = int
         self.train_count = 0
-        self.stats = StatsRecorder(dim=state_dimension)
+        self.stats = MinMaxRecorder(dim=state_dimension)
 
         if clip_rewards:
             self.clipper = lambda x: np.clip(x, -1, 1)
@@ -140,16 +162,14 @@ class MFECAgent:
             e = experience["estimate"]
             self.klt.update(s, a, R, t)
 
-        # self.stats.update(states_list)
-
-        # self.train_count += 1
-        # if self.train_count % self.norm_freq == 0:
-        #    self.klt.update_normalization(mean=self.stats.mean, std=self.stats.std)
+        self.stats.update(states_list)
+        self.train_count += 1
+        if self.train_count % self.norm_freq == 0:
+            self.klt.update_normalization(maxes=self.stats.maxes, mins=self.stats.mins)
 
         if self.epsilon > 0.05:
             self.epsilon -= self.epsilon_decay
             print(f"eps={self.epsilon:.2f}")
-
 
     def save(self, save_dir):
         with open(f"{save_dir}/agent.pkl", "wb") as f:

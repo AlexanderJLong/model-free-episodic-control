@@ -92,3 +92,12 @@ small_env_list = [
     "frostbite",
      #"crazy_climber",
 ]
+
+small_env_list2 = [
+    #"alien",
+    #"freeway",
+    "assault",
+    "pong",
+    "seaquest",
+     "crazy_climber",
+]
