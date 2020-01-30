@@ -31,7 +31,7 @@ from mfec.utils import Utils
 
 # GLOBAl VARS FIXED FOR EACH RUN
 eval_steps = 2_500
-total_steps = 100_000
+total_steps = 80_000
 reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
@@ -43,7 +43,7 @@ config = {
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
     "STATE-DIM": 200,
-    "STICKY-ACTIONS": True,
+    "STICKY-ACTIONS": [True, False],
     "FRAMESTACK": 2,
     "CLIP-REWARD": False,
     "M": 20,

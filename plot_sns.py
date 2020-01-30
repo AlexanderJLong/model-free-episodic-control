@@ -74,9 +74,9 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "NORM-FREQ"
+compare_var = "STICKY-ACTIONS"
 #compare_var = 'STATE-DIM'
-#df = df[(df["M"] == 200)]
+df = df[(df["CLIP-REWARD"] == "False")]
 
 cols = min(num_envs, 4)
 

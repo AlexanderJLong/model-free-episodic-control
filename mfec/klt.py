@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from collections import deque
+
 import hnswlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,7 +26,7 @@ class KLT:
 
     def laplace(self, x, sig):
         # Goes to 0 in 4xsig
-        return np.exp(np.divide(x, sig))
+        return np.exp(-np.divide(x, sig))
 
     def gaus_2d(self, x, y, sig1, sig2):
         return np.exp(-np.square(x / sig1) - np.square(y / sig2))
@@ -49,6 +51,7 @@ class KLT:
         dists = np.sqrt(dists[0])
         # print(dists)
         values_list = [buffer.values_list[n] for n in neighbors]
+
         values = [np.mean(e) for e in values_list]
         counts = [len(e) for e in values_list]
         #times = time - np.asarray([buffer.times_list[n] for n in neighbors])
@@ -59,10 +62,10 @@ class KLT:
         # w = self.laplace(dists, density)
         # weighted_reward = np.dot(values, w)/np.sum(w) if np.sum(w) else 0
 
-        w = self.gaus(dists, 300)
+        w = self.laplace(dists, np.min(dists)+0.01)
         weighted_reward = np.dot(values, w) / np.sum(w)
 
-        #if np.sum(dists) == 0:
+        # if np.sum(dists) == 0:
         #    # This sample point is saturated - delete oldest sample.
         #    least_contributing = np.argmin(w)
         #    idx = neighbors[least_contributing]
@@ -95,7 +98,6 @@ class KLT:
         fig.set_tight_layout(True)
         rows = 4
         max_val = np.max([max(b.values_list) for b in self.buffers])
-        print(max_val)
         for i, buffer in enumerate(self.buffers):
             ax = fig.add_subplot(rows, len(self.buffers) // rows + 1, i + 1)
             states = np.asarray(buffer.get_states())
@@ -122,6 +124,7 @@ class ActionBuffer:
         self.values_list = []  # true values - this is the object that is updated.
         self.times_list = []
         self.length = 0
+        self.states = []
         self.seed = seed
 
     def __getstate__(self):
@@ -161,6 +164,7 @@ class ActionBuffer:
         self._tree.add_items(state)
         self.values_list.append([value])
         self.times_list.append([time])
+        self.states.append(state)
         self.length += 1
 
     def get_states(self):
