@@ -53,17 +53,19 @@ class KLT:
         values_list = [buffer.values_list[n] for n in neighbors]
 
         values = [np.mean(e) for e in values_list]
-        counts = [len(e) for e in values_list]
+        #counts = [len(e) for e in values_list]
         #times = time - np.asarray([buffer.times_list[n] for n in neighbors])
 
         #print(values)
-        # density = 1/np.mean(dists)
-
+        #density = 1/k * np.sum(self.gaus(dists, 50))
+        density = np.max(dists)
         # w = self.laplace(dists, density)
         # weighted_reward = np.dot(values, w)/np.sum(w) if np.sum(w) else 0
 
         w = self.laplace(dists, np.min(dists)+0.01)
-        weighted_reward = np.dot(values, w) / np.sum(w)
+        w_sum = np.sum(w)
+        weighted_reward = np.dot(values, w) / w_sum
+        #weighted_count = np.dot(counts, w) / w_sum
 
         # if np.sum(dists) == 0:
         #    # This sample point is saturated - delete oldest sample.
@@ -71,7 +73,7 @@ class KLT:
         #    idx = neighbors[least_contributing]
         #    buffer.remove(idx)
 
-        return weighted_reward, 0
+        return weighted_reward, density
 
     def update(self, state, action, value, time):
         buffer = self.buffers[action]

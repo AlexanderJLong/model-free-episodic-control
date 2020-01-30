@@ -86,7 +86,7 @@ env_list = [
 
 small_env_list = [
     "breakout",
-    #"freeway",
+    "freeway",
     "ms_pacman",
     "qbert",
     "frostbite",

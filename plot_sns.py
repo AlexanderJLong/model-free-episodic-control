@@ -76,7 +76,7 @@ num_envs = df["ENV"].nunique()
 
 compare_var = "STICKY-ACTIONS"
 #compare_var = 'STATE-DIM'
-df = df[(df["CLIP-REWARD"] == "False")]
+#df = df[(df["CLIP-REWARD"] == "False")]
 
 cols = min(num_envs, 4)
 
