@@ -43,7 +43,7 @@ config = {
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
     "STATE-DIM": 200,
-    "STICKY-ACTIONS": [True, False],
+    "STICKY-ACTIONS": False,
     "FRAMESTACK": 2,
     "CLIP-REWARD": True,
     "M": 20,

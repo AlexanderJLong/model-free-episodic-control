@@ -114,8 +114,7 @@ class MFECAgent:
         r_estimates = query_results[:, 0]
         d_estimates = query_results[:, 1]
 
-        print(d_estimates)
-        r_estimates = r_estimates / (d_estimates+0.001)
+        r_estimates = (r_estimates+0.0001) / (d_estimates+0.001)
         # Exploration
         if self.rs.random_sample() < self.epsilon:
             action = np.random.choice(self.actions)

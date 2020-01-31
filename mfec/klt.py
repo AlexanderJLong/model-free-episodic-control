@@ -62,11 +62,10 @@ class KLT:
         #print(density)
         # w = self.laplace(dists, density)
         # weighted_reward = np.dot(values, w)/np.sum(w) if np.sum(w) else 0
-
-        w = self.laplace(dists, np.min(dists)+0.01)
+        weighted_count = np.sum(np.sqrt(counts) * self.laplace(dists, 100)) / time
+        w = self.laplace(dists, (1+weighted_count)*np.min(dists)+0.01)
         w_sum = np.sum(w)
         weighted_reward = np.dot(values, w) / w_sum
-        weighted_count = np.sum(np.sqrt(counts) * self.laplace(dists, 100)) /time
 
         # if np.sum(dists) == 0:
         #    # This sample point is saturated - delete oldest sample.
