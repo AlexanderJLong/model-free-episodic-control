@@ -114,7 +114,8 @@ class MFECAgent:
         r_estimates = query_results[:, 0]
         d_estimates = query_results[:, 1]
 
-        r_estimates = (r_estimates+0.01)*np.sqrt(d_estimates+0.01)
+        print(d_estimates)
+        r_estimates = r_estimates / (d_estimates+0.001)
         # Exploration
         if self.rs.random_sample() < self.epsilon:
             action = np.random.choice(self.actions)
@@ -126,7 +127,7 @@ class MFECAgent:
 
             action = self.rs.choice(self.actions, p=probs)
 
-        bonus = 0 #0.0002*d_estimates[action]
+        bonus = 0 #d_estimates[action]
         return action, state, bonus, 0
 
     def train(self, trace):

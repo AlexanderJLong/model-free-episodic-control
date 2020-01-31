@@ -38,7 +38,7 @@ reward_history_len = 5  # At publication time should be 100.
 config = {
     "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 60,
+    "K": 8,
     "DISCOUNT": 0.95,
     "EPSILON": 0,
     "EPS-DECAY": 0.05,
@@ -126,8 +126,8 @@ def main(cfg):
         #  plt.imshow(f, cmap="Greys")
         #
         #  plt.show()
-        #env.render(mode="human")
-        #time.sleep(0.01)
+        # env.render(mode="human")
+        # time.sleep(0.01)
         utils.log_reward(reward)
         trace.append(
             {
