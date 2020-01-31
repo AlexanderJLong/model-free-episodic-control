@@ -32,7 +32,7 @@ class KLT:
         return np.exp(-np.square(x / sig1) - np.square(y / sig2))
 
     def laplace_2d(self, x, y, sig1, sig2):
-        return np.exp(-(x / sig1 - y / sig2))
+        return np.exp(-(x / sig1) - (y / sig2))
 
     def update_normalization(self, maxes, mins):
         for b in self.buffers:
@@ -51,10 +51,14 @@ class KLT:
         dists = np.sqrt(dists[0])
         # print(dists)
         values_list = [buffer.values_list[n] for n in neighbors]
+        times = [buffer.times_list[n] for n in neighbors]
 
-        values = [np.mean(e) for e in values_list]
+        values = []
+        for t, v in zip(times, values_list):
+            w_t = self.laplace(time-np.asarray(t), 2_000)+0.01
+            val = np.dot(w_t, v)/np.sum(w_t)
+            values.append(val)
         counts = [len(e) for e in values_list]
-        #times = time - np.asarray([buffer.times_list[n] for n in neighbors])
 
         #print(values)
         #density = 1/k * np.sum(self.gaus(dists, 50))
