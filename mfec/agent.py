@@ -4,6 +4,7 @@ import cloudpickle as pkl
 import numpy as np
 
 from mfec.klt import KLT
+from scipy.sparse import csr_matrix
 
 
 class MinMaxRecorder:
@@ -80,6 +81,7 @@ class MFECAgent:
             epsilon_decay,
             clip_rewards,
             M,
+            time_sig,
             norm_freq,
     ):
         self.rs = np.random.RandomState(seed)
@@ -89,8 +91,9 @@ class MFECAgent:
                        k=k,
                        state_dim=state_dimension,
                        M=M,
+                       time_sig=time_sig,
                        seed=seed)
-
+        self.projection = self.create_projection(state_dimension, observation_dim)
         self.discount = discount
         self.norm_freq = norm_freq
         self.epsilon = epsilon
@@ -103,30 +106,42 @@ class MFECAgent:
         else:
             self.clipper = lambda x: x
 
+    def create_projection(self, F, D):
+        s = np.sqrt(D)
+        A = np.zeros([F, D], dtype=np.int8)
+        for i in range(F):
+            for j in range(D):
+                rand = np.random.rand()
+                if rand <= 1 / (2 * s):
+                    A[i][j] = 1
+                elif rand < 1 / s:
+                    A[i][j] = -1
+        return csr_matrix(A)
+
     def choose_action(self, observation, time):
         # state = self.transformer.transform(observation.reshape(1, -1))[0]
-        state = observation.flatten()
+        state = self.projection.dot(observation.flatten())
 
         query_results = np.asarray([
             self.klt.estimate(state, action, time)
             for action in self.actions])
 
         r_estimates = query_results[:, 0]
-        d_estimates = query_results[:, 1]
+        c_estimates = query_results[:, 1]
 
-        r_estimates = (r_estimates+0.0001) / (d_estimates+0.001)
-        # Exploration
+        r_estimates = r_estimates+0.0001 / (np.sqrt(c_estimates))
         if self.rs.random_sample() < self.epsilon:
+            # Exploration
             action = np.random.choice(self.actions)
-        # Exploitation
         else:
+            # Exploitation
             probs = np.zeros_like(self.actions)
             probs[np.where(r_estimates == max(r_estimates))] = 1
             probs = probs / sum(probs)
 
             action = self.rs.choice(self.actions, p=probs)
 
-        bonus = 0 #d_estimates[action]
+        bonus = 0 #0.1/np.sqrt(d_estimates[action])
         return action, state, bonus, 0
 
     def train(self, trace):

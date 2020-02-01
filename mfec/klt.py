@@ -9,8 +9,9 @@ import umap
 
 
 class KLT:
-    def __init__(self, actions, buffer_size, k, state_dim, M, seed):
+    def __init__(self, actions, buffer_size, k, state_dim, M, time_sig, seed):
         self.buffer_size = buffer_size
+        self.time_sig = time_sig
         self.buffers = tuple(
             [ActionBuffer(n=a,
                           capacity=self.buffer_size,
@@ -44,7 +45,7 @@ class KLT:
 
         n = buffer.length
         if n == 0:
-            return 0, 0
+            return 1e6, 0.01
         k = min(self.k, n)
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
@@ -55,27 +56,15 @@ class KLT:
 
         values = []
         for t, v in zip(times, values_list):
-            w_t = self.laplace(time-np.asarray(t), 2_000)+0.01
+            w_t = self.gaus(time-np.asarray(t), self.time_sig)+0.01
             val = np.dot(w_t, v)/np.sum(w_t)
             values.append(val)
         counts = [len(e) for e in values_list]
 
-        #print(values)
-        #density = 1/k * np.sum(self.gaus(dists, 50))
-        #density = counts
-        #print(density)
-        # w = self.laplace(dists, density)
-        # weighted_reward = np.dot(values, w)/np.sum(w) if np.sum(w) else 0
-        weighted_count = np.sum(np.sqrt(counts) * self.laplace(dists, 100)) / time
-        w = self.laplace(dists, (1+weighted_count)*np.min(dists)+0.01)
+        w = self.laplace(dists, np.min(dists)+0.01)
         w_sum = np.sum(w)
         weighted_reward = np.dot(values, w) / w_sum
-
-        # if np.sum(dists) == 0:
-        #    # This sample point is saturated - delete oldest sample.
-        #    least_contributing = np.argmin(w)
-        #    idx = neighbors[least_contributing]
-        #    buffer.remove(idx)
+        weighted_count = np.dot(counts, w) / w_sum#TODO norm or not
 
         return weighted_reward, weighted_count
 

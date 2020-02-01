@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+
 # simple, otrainbow at 100k, human, random
 sota = {
     "alien": (405.2, 739.9, 6875.40, 227.8),
@@ -68,6 +69,10 @@ for i, env in enumerate(envs):
     except:
         continue
 
+sns.set_context("paper")
+#sns.set(style="whitegrid")
+#sns.despine()
+#sns.set_palette("colorblind")
 
 df["SEED"] = pd.to_numeric(df["SEED"])
 df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
@@ -75,40 +80,44 @@ df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
 compare_var = "STICKY-ACTIONS"
-#compare_var = 'STATE-DIM'
-#df = df[(df["M"] == 100)]
+# compare_var = 'STATE-DIM'
+df = df[(df["TIME-SIG"] == 1000)]
+
+df.to_csv("results/df.csv")
 
 cols = min(num_envs, 4)
-
-print(df.to_string())
-g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
-# g.set(xlim=(0, 1e5))
-try:
-    (g.map(sns.lineplot, "Step", "Reward", ci=100, estimator=np.mean, linewidth=1)).set_titles("{col_name}")
-except:
-    (g.map(plt.plot, "Step", "Reward")).set_titles("{col_name}")
-
 max_frames = max(df["Step"])
-for ax in g.axes.flat:
-    env_name = ax.get_title()
-    if env_name in sota:
-        # ax.plot((0, max_frames), (sota[env_name][0], sota[env_name][0]), c="k", linewidth=1, ls=":", label="SimPLe")
-        ax.plot((0, max_frames), (sota[env_name][1], sota[env_name][1]), c="k", linewidth=1, ls="--",
-                label="Rainbow (OT)")
 
-sns.set_context("paper")
-sns.set(style="ticks")
-sns.despine()
-sns.set_palette("colorblind")
+lw = 0.75
 
-#plt.legend()
-g.add_legend()
+if True:
+    print(df.to_string())
+    g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
+    # g.set(xlim=(0, 1e5))
+    try:
+        (g.map(sns.lineplot, "Step", "Reward", ci=100, estimator=np.mean, linewidth=lw)).set_titles("{col_name}")
+    except:
+        (g.map(plt.plot, "Step", "Reward")).set_titles("{col_name}")
 
-plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
-# plt.show()
+    for ax in g.axes.flat:
+        env_name = ax.get_title()
+        if env_name in sota:
+            # ax.plot((0, max_frames), (sota[env_name][0], sota[env_name][0]), c="k", linewidth=1, ls=":",
+            # label="SimPLe")
+            ax.plot((0, max_frames), (sota[env_name][1], sota[env_name][1]), c="k", linewidth=lw, ls="--",
+                    label="Rainbow (OT)")
 
-plt.savefig(f"./plots/full_run.png")
-plt.figure()
+
+    #plt.legend(loc="upper-center")
+    g.add_legend()
+
+    plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+    # plt.show()
+
+    plt.savefig(f"./plots/full_run.png")
+    plt.savefig(f"./plots/full_run.pdf", format="pdf")
+
+
 # human normalized median performance
 summary_scores = df.groupby(["ENV", "Step", compare_var, "SEED"], as_index=False).agg({"Reward": "mean"})
 """
@@ -126,15 +135,31 @@ num_games = summary_scores["ENV"].nunique()
 hns[compare_var] = hns[compare_var].astype('category')
 num_lines = hns[compare_var].nunique()
 print(hns[compare_var])
+fig, ax = plt.subplots()
 sns.lineplot("Step",
              "normalized_reward",
              ci=100,
              estimator=np.mean,
              data=hns,
+             linewidth=lw,
              hue=compare_var,
              palette=sns.color_palette("colorblind", num_lines),
-             linewidth=1
-             ).set_title(f"Median Human Normalized Reward Across {num_games} Games")
+             label="AKR3",
+             ax=ax
+             )
+plt.plot((0, max_frames), (0.161, 0.161), c="k", linewidth=lw, ls="--",
+         label="Rainbow (DE)")
+plt.plot((0, max_frames), (0.098, 0.098), c="k", linewidth=lw, ls=":",
+         label="SimPLe")
+plt.xlim(0, 8e4)
+
+# Put a legend below current axis
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.10),
+          ncol=3)
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+plt.ylabel("Median Human Normalized Reward")
+plt.yscale("linear")
+
 plt.savefig(f"./plots/mhns.png")
+plt.savefig(f"./plots/mhns.pdf", format="pdf")
 plt.show()

@@ -86,18 +86,21 @@ env_list = [
 
 small_env_list = [
     "breakout",
-    #"freeway",
+    "freeway",
     "ms_pacman",
     "qbert",
     "frostbite",
      #"crazy_climber",
 ]
 
-small_env_list2 = [
-    #"alien",
-    #"freeway",
+medium_env_list = [
+    "alien",
+    "amidar",
+    "breakout",
+    "freeway",
+    "ms_pacman",
+    "qbert",
+    "frostbite",
     "assault",
-    "pong",
     "seaquest",
-     "crazy_climber",
 ]
