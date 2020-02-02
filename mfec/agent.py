@@ -111,7 +111,7 @@ class MFECAgent:
         A = np.zeros([F, D], dtype=np.int8)
         for i in range(F):
             for j in range(D):
-                rand = np.random.rand()
+                rand = self.rs.random_sample()
                 if rand <= 1 / (2 * s):
                     A[i][j] = 1
                 elif rand < 1 / s:

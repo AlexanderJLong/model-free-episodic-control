@@ -81,7 +81,7 @@ num_envs = df["ENV"].nunique()
 
 compare_var = "STICKY-ACTIONS"
 # compare_var = 'STATE-DIM'
-df = df[(df["TIME-SIG"] == 1000)]
+#df = df[(df["TIME-SIG"] == 1000)]
 
 df.to_csv("results/df.csv")
 

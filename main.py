@@ -48,7 +48,7 @@ config = {
     "CLIP-REWARD": True,
     "M": 20,
     "NORM-FREQ": 0,
-    "TIME-SIG": 1000,
+    "TIME-SIG": 100,
     "SEED": list(range(3)),
 }
 """Projection type:
