@@ -17,16 +17,16 @@ X, Y = np.meshgrid(X, Y)
 
 
 def gaus_2d(x, y, sig1, sig2):
-    return np.exp(-(np.square(x / sig1) + np.square(y / sig2)))
+    return np.exp(-np.square(x / sig1) - np.square(y / sig2))
 
 
 def laplace_2d( x, y, sig1, sig2):
     return np.exp(-(x / sig1) - (y / sig2))
 
-Z = laplace_2d(X, Y, 300, 1000)
+Z = gaus_2d(X, Y, 300, 30)
 
 # Plot the surface.
-surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,)
+surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm)
 
 # Customize the z axis.
 #ax.set_zlim(-1.01, 1.01)

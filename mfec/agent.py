@@ -91,6 +91,7 @@ class MFECAgent:
                        k=k,
                        state_dim=state_dimension,
                        M=M,
+                       s = np.sqrt(observation_dim),
                        time_sig=time_sig,
                        seed=seed)
         self.projection = self.create_projection(state_dimension, observation_dim)
@@ -111,7 +112,7 @@ class MFECAgent:
         A = np.zeros([F, D], dtype=np.int8)
         for i in range(F):
             for j in range(D):
-                rand = np.random.rand()
+                rand = self.rs.random_sample()
                 if rand <= 1 / (2 * s):
                     A[i][j] = 1
                 elif rand < 1 / s:
@@ -119,7 +120,6 @@ class MFECAgent:
         return csr_matrix(A)
 
     def choose_action(self, observation, time):
-        # state = self.transformer.transform(observation.reshape(1, -1))[0]
         state = self.projection.dot(observation.flatten())
 
         query_results = np.asarray([

@@ -97,10 +97,10 @@ medium_env_list = [
     "alien",
     "amidar",
     "breakout",
-    "freeway",
+    #"freeway",
     "ms_pacman",
     "qbert",
     "frostbite",
-    "assault",
-    "seaquest",
+    #"assault",
+    #"seaquest",
 ]

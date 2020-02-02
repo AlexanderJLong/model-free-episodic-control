@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-from collections import deque
-
 import hnswlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,9 +7,10 @@ import umap
 
 
 class KLT:
-    def __init__(self, actions, buffer_size, k, state_dim, M, time_sig, seed):
+    def __init__(self, actions, buffer_size, k, state_dim, M, s, time_sig, seed):
         self.buffer_size = buffer_size
         self.time_sig = time_sig
+        self.sqrt_s = np.sqrt(s)
         self.buffers = tuple(
             [ActionBuffer(n=a,
                           capacity=self.buffer_size,
@@ -50,21 +49,27 @@ class KLT:
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
         dists = np.sqrt(dists[0])
-        # print(dists)
-        values_list = [buffer.values_list[n] for n in neighbors]
-        times = [buffer.times_list[n] for n in neighbors]
 
-        values = []
-        for t, v in zip(times, values_list):
-            w_t = self.gaus(time-np.asarray(t), self.time_sig)+0.01
-            val = np.dot(w_t, v)/np.sum(w_t)
-            values.append(val)
-        counts = [len(e) for e in values_list]
+        values_lists = [buffer.values_list[n] for n in neighbors]
+        times_lists = [buffer.times_list[n] for n in neighbors]
+        counts = np.zeros(k)
 
-        w = self.laplace(dists, np.min(dists)+0.01)
+        samples = []  # dist, time seperation, value
+        for i in range(k):
+            times = times_lists[i]
+            values = values_lists[i]
+            counts[i] = len(values)
+            for t, v in zip(times, values):
+                samples.append([dists[i], time - t, v])
+
+        samples = np.asarray(samples)
+
+        w = self.laplace_2d(samples[:, 0], samples[:, 1], np.min(dists)+0.01, self.time_sig)+0.01
         w_sum = np.sum(w)
-        weighted_reward = np.dot(values, w) / w_sum
-        weighted_count = np.dot(counts, w) / w_sum#TODO norm or not
+        weighted_reward = np.dot(samples[:, 2], w) / w_sum
+
+        b = self.gaus(dists, np.min(dists)+0.01)
+        weighted_count = np.dot(counts, b) / np.sum(b)
 
         return weighted_reward, weighted_count
 
