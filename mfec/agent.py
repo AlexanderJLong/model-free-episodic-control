@@ -127,12 +127,17 @@ class MFECAgent:
             for action in self.actions])
 
         r_estimates = query_results[:, 0]
-        c_estimates = query_results[:, 1]
 
-        r_estimates = r_estimates+0.0001 / (np.sqrt(c_estimates))
+        #r_estimates = (r_estimates+0.0001) / (np.sqrt(c_estimates))
         if self.rs.random_sample() < self.epsilon:
             # Exploration
-            action = np.random.choice(self.actions)
+            #c_estimates = query_results[:, 1]
+#
+            #probs = np.zeros_like(self.actions)
+            #probs[np.where(c_estimates == min(c_estimates))] = 1
+            #probs = probs / sum(probs)
+
+            action = self.rs.choice(self.actions)#, p=probs)
         else:
             # Exploitation
             probs = np.zeros_like(self.actions)
@@ -166,6 +171,8 @@ class MFECAgent:
         if self.epsilon > 0.05:
             self.epsilon -= self.epsilon_decay
             print(f"eps={self.epsilon:.2f}")
+        else:
+            self.epsilon = 0
 
     def save(self, save_dir):
         with open(f"{save_dir}/agent.pkl", "wb") as f:

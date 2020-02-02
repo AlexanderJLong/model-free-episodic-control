@@ -79,9 +79,9 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "STICKY-ACTIONS"
-# compare_var = 'STATE-DIM'
-#df = df[(df["TIME-SIG"] == 1000)]
+compare_var = "CLIP-REWARD"
+#compare_var = 'STATE-DIM'
+#df = df[(df["STICKY-ACTIONS"] == "True")]
 
 df.to_csv("results/df.csv")
 
@@ -93,7 +93,7 @@ lw = 0.75
 if True:
     print(df.to_string())
     g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
-    # g.set(xlim=(0, 1e5))
+    g.set(xlim=(0, 8e4))
     try:
         (g.map(sns.lineplot, "Step", "Reward", ci=100, estimator=np.mean, linewidth=lw)).set_titles("{col_name}")
     except:
@@ -105,15 +105,17 @@ if True:
             # ax.plot((0, max_frames), (sota[env_name][0], sota[env_name][0]), c="k", linewidth=1, ls=":",
             # label="SimPLe")
             ax.plot((0, max_frames), (sota[env_name][1], sota[env_name][1]), c="k", linewidth=lw, ls="--",
-                    label="Rainbow (OT)")
+                    label="DE-Rainbow Baseline")
 
-
-    #plt.legend(loc="upper-center")
-    g.add_legend()
+    lines = ax.get_legend_handles_labels()[1]
+    legend = plt.figlegend(lines, loc="upper center", ncol=10, bbox_to_anchor=[0.5, 0.98], borderaxespad=0)
+    legend.get_texts()[0].set_text("Sticky Actions Off")
+    legend.get_texts()[1].set_text("Sticky Actions On")
+    #g.add_legend()
 
     plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
     # plt.show()
-
+    plt.subplots_adjust(top=0.8)
     plt.savefig(f"./plots/full_run.png")
     plt.savefig(f"./plots/full_run.pdf", format="pdf")
 

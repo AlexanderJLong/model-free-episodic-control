@@ -93,6 +93,14 @@ small_env_list = [
      #"crazy_climber",
 ]
 
+small_env_list2 = [
+    "alien",
+    "amidar",
+    "frostbite",
+    "breakout",
+     #"crazy_climber",
+]
+
 medium_env_list = [
     "alien",
     "amidar",

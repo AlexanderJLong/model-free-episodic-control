@@ -49,22 +49,24 @@ class KLT:
         k = min(self.k, n)
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
-        dists = np.sqrt(dists[0])
+        dists = np.sqrt(dists[0])+0.01
+
         # print(dists)
         values_lists = [buffer.values_list[n] for n in neighbors]
         times_lists = [buffer.times_list[n] for n in neighbors]
+
+        counts = [len(e) for e in values_lists]
 
         v_over_time = []
         for times, values in zip(times_lists, values_lists):
             w_t = self.gaus(time-np.asarray(times), self.time_sig)+0.01
             val = np.dot(w_t, values)/np.sum(w_t)
             v_over_time.append(val)
-        counts = [len(e) for e in values_lists]
 
-        w = self.laplace(dists, np.min(dists)+0.01)
+        w = self.gaus(dists, np.min(dists))
         w_sum = np.sum(w)
         weighted_reward = np.dot(v_over_time, w) / w_sum
-        weighted_count = np.dot(counts, w) / w_sum#TODO norm or not
+        weighted_count = np.dot(counts, w) / w_sum
 
         return weighted_reward, weighted_count
 
