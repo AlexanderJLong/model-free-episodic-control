@@ -79,9 +79,9 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "CLIP-REWARD"
+compare_var = "K"
 #compare_var = 'STATE-DIM'
-#df = df[(df["STICKY-ACTIONS"] == "True")]
+df = df[(df["TIME-SIG"] != 10_000)]
 
 df.to_csv("results/df.csv")
 
@@ -109,8 +109,8 @@ if True:
 
     lines = ax.get_legend_handles_labels()[1]
     legend = plt.figlegend(lines, loc="upper center", ncol=10, bbox_to_anchor=[0.5, 0.98], borderaxespad=0)
-    legend.get_texts()[0].set_text("Sticky Actions Off")
-    legend.get_texts()[1].set_text("Sticky Actions On")
+    #legend.get_texts()[0].set_text("Sticky Actions Off")
+    #legend.get_texts()[1].set_text("Sticky Actions On")
     #g.add_legend()
 
     plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))

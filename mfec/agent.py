@@ -127,17 +127,14 @@ class MFECAgent:
             for action in self.actions])
 
         r_estimates = query_results[:, 0]
+        #c_estimates = query_results[:, 1]
 
         #r_estimates = (r_estimates+0.0001) / (np.sqrt(c_estimates))
         if self.rs.random_sample() < self.epsilon:
             # Exploration
-            #c_estimates = query_results[:, 1]
-#
-            #probs = np.zeros_like(self.actions)
-            #probs[np.where(c_estimates == min(c_estimates))] = 1
-            #probs = probs / sum(probs)
-
-            action = self.rs.choice(self.actions)#, p=probs)
+            probs=c_estimates
+            probs = probs / sum(probs)
+            action = self.rs.choice(self.actions, p=probs)
         else:
             # Exploitation
             probs = np.zeros_like(self.actions)
@@ -146,10 +143,10 @@ class MFECAgent:
 
             action = self.rs.choice(self.actions, p=probs)
 
-        bonus = 0 #0.1/np.sqrt(d_estimates[action])
+        bonus =0# 0.05/np.sqrt(c_estimates[action])
         return action, state, bonus, 0
 
-    def train(self, trace):
+    def train(self, trace, step):
         R = 0.0
         for i in range(len(trace)):
             experience = trace.pop()
@@ -168,11 +165,8 @@ class MFECAgent:
 
             self.klt.update(s, a, R, t)
 
-        if self.epsilon > 0.05:
-            self.epsilon -= self.epsilon_decay
-            print(f"eps={self.epsilon:.2f}")
-        else:
-            self.epsilon = 0
+        #self.epsilon = max(1 - step/self.epsilon_decay, 0)
+        #print(self.epsilon)
 
     def save(self, save_dir):
         with open(f"{save_dir}/agent.pkl", "wb") as f:

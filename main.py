@@ -36,20 +36,20 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list2,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 8,
     "DISCOUNT": 0.95,
-    "EPSILON": 1,
-    "EPS-DECAY": 0.1,
+    "EPSILON": 0,
+    "EPS-DECAY": 40_000,
     "STATE-DIM": 200,
     "STICKY-ACTIONS": False,
     "FRAMESTACK": 2,
-    "CLIP-REWARD": [True, False],
+    "CLIP-REWARD": True,
     "M": 20,
     "NORM-FREQ": 0,
     "TIME-SIG": 100,
-    "SEED": list(range(5)),
+    "SEED": list(range(3)),
 }
 """Projection type:
 0: Identity
@@ -143,12 +143,12 @@ def main(cfg):
 
         if life_lost:
             # start a new trace
-            agent.train(trace)
+            agent.train(trace, step)
             trace = []
 
         no_recent_reward = len(trace) > 500 and not sum([e["reward"] for e in trace[-500:]])
         if no_recent_reward:
-            agent.train(trace)
+            agent.train(trace, step)
             trace = []
             done = True
 
