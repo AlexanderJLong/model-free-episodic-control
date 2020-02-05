@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-from collections import deque
-
 import hnswlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -49,26 +47,28 @@ class KLT:
         k = min(self.k, n)
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
-        dists = np.sqrt(dists[0])+0.01
+        dists = np.sqrt(dists[0]) + 0.01
+        w = self.gaus(dists, np.mean(dists))
 
-        # print(dists)
         values_lists = [buffer.values_list[n] for n in neighbors]
-        times_lists = [buffer.times_list[n] for n in neighbors]
+        pseudo_count = np.dot([len(e) for e in values_lists], w)/sum(w)
 
-        counts = [len(e) for e in values_lists]
+        values_lists = values_lists[:8]
+        neighbors = neighbors[:8]
+        w = self.gaus(dists[:8], np.min(dists))
+
+        times_lists = [buffer.times_list[n] for n in neighbors]
 
         v_over_time = []
         for times, values in zip(times_lists, values_lists):
-            w_t = self.gaus(time-np.asarray(times), self.time_sig)+0.01
-            val = np.dot(w_t, values)/np.sum(w_t)
+            w_t = self.gaus(time - np.asarray(times), self.time_sig) + 0.01
+            val = np.dot(w_t, values) / np.sum(w_t)
             v_over_time.append(val)
 
-        w = self.gaus(dists, np.min(dists))
         w_sum = np.sum(w)
         weighted_reward = np.dot(v_over_time, w) / w_sum
-        weighted_count = np.dot(counts, w) / w_sum
 
-        return weighted_reward, weighted_count
+        return weighted_reward, pseudo_count
 
     def update(self, state, action, value, time):
         buffer = self.buffers[action]

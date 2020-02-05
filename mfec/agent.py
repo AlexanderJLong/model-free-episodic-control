@@ -81,6 +81,7 @@ class MFECAgent:
             epsilon_decay,
             clip_rewards,
             M,
+            B,
             time_sig,
             norm_freq,
     ):
@@ -100,6 +101,7 @@ class MFECAgent:
         self.epsilon_decay = epsilon_decay
         self.action = int
         self.train_count = 0
+        self.B=B
 
         if clip_rewards:
             self.clipper = lambda x: np.clip(x, -1, 1)
@@ -127,26 +129,25 @@ class MFECAgent:
             for action in self.actions])
 
         r_estimates = query_results[:, 0]
+        c_estimates = query_results[:, 1]
 
-        #r_estimates = (r_estimates+0.0001) / (np.sqrt(c_estimates))
+        t_estimates = r_estimates + 1e-6/c_estimates
+
         if self.rs.random_sample() < self.epsilon:
             # Exploration
-            #c_estimates = query_results[:, 1]
 #
-            #probs = np.zeros_like(self.actions)
-            #probs[np.where(c_estimates == min(c_estimates))] = 1
-            #probs = probs / sum(probs)
-
-            action = self.rs.choice(self.actions)#, p=probs)
-        else:
-            # Exploitation
-            probs = np.zeros_like(self.actions)
-            probs[np.where(r_estimates == max(r_estimates))] = 1
+            probs=c_estimates
             probs = probs / sum(probs)
 
             action = self.rs.choice(self.actions, p=probs)
+        else:
+            # Exploitation
+            probs = np.zeros_like(self.actions)
+            probs[np.where(t_estimates == max(t_estimates))] = 1
+            probs = probs / sum(probs)
+            action = self.rs.choice(self.actions, p=probs)
 
-        bonus = 0 #0.1/np.sqrt(d_estimates[action])
+        bonus = self.B/np.sqrt(c_estimates[action])
         return action, state, bonus, 0
 
     def train(self, trace):
@@ -160,11 +161,8 @@ class MFECAgent:
 
             r = self.clipper(experience["reward"]) + b
 
-            if i == 0:
-                # last sample
-                R = r
-            else:
-                R = r + self.discount * R
+
+            R = r + self.discount * R
 
             self.klt.update(s, a, R, t)
 

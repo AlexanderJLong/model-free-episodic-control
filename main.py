@@ -36,17 +36,18 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list2,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 8,
+    "K": 200,
     "DISCOUNT": 0.95,
-    "EPSILON": 1,
+    "EPSILON": 0,
     "EPS-DECAY": 0.1,
     "STATE-DIM": 200,
     "STICKY-ACTIONS": False,
     "FRAMESTACK": 2,
-    "CLIP-REWARD": [True, False],
-    "M": 20,
+    "CLIP-REWARD": False,
+    "M": 25,
+    "B": 0,
     "NORM-FREQ": 0,
     "TIME-SIG": 100,
     "SEED": list(range(5)),
@@ -106,6 +107,7 @@ def main(cfg):
         epsilon_decay=cfg["EPS-DECAY"],
         clip_rewards=cfg["CLIP-REWARD"],
         M=cfg["M"],
+        B=cfg["B"],
         time_sig=cfg["TIME-SIG"],
         norm_freq=cfg["NORM-FREQ"],
     )
@@ -113,7 +115,7 @@ def main(cfg):
     env.train()  # turn on episodic life
     observation = env.reset()
     trace = []
-    for step in tqdm(list(range(total_steps))):
+    for step in tqdm(list(range(total_steps+1))):
 
         if step % eval_steps == 0 and step:
             utils.end_epoch(step)
@@ -127,8 +129,8 @@ def main(cfg):
         #  plt.imshow(f, cmap="Greys")
         #
         #  plt.show()
-        # env.render(mode="human")
-        # time.sleep(0.01)
+        #env.render(mode="human")
+        #time.sleep(0.001)
         utils.log_reward(reward)
         trace.append(
             {

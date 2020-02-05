@@ -79,9 +79,9 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "CLIP-REWARD"
+compare_var = "B"
 #compare_var = 'STATE-DIM'
-#df = df[(df["STICKY-ACTIONS"] == "True")]
+#df = df[(df["STATE-DIM"] == 200)]
 
 df.to_csv("results/df.csv")
 
@@ -95,7 +95,7 @@ if True:
     g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
     g.set(xlim=(0, 8e4))
     try:
-        (g.map(sns.lineplot, "Step", "Reward", ci=100, estimator=np.mean, linewidth=lw)).set_titles("{col_name}")
+        (g.map(sns.lineplot, "Step", "Reward", ci="sd", estimator=np.mean, linewidth=lw)).set_titles("{col_name}")
     except:
         (g.map(plt.plot, "Step", "Reward")).set_titles("{col_name}")
 
@@ -107,10 +107,10 @@ if True:
             ax.plot((0, max_frames), (sota[env_name][1], sota[env_name][1]), c="k", linewidth=lw, ls="--",
                     label="DE-Rainbow Baseline")
 
-    lines = ax.get_legend_handles_labels()[1]
-    legend = plt.figlegend(lines, loc="upper center", ncol=10, bbox_to_anchor=[0.5, 0.98], borderaxespad=0)
-    legend.get_texts()[0].set_text("Sticky Actions Off")
-    legend.get_texts()[1].set_text("Sticky Actions On")
+    #lines = ax.get_legend_handles_labels()[1]
+    legend = plt.figlegend(loc="upper center", ncol=10, bbox_to_anchor=[0.5, 0.98], borderaxespad=0)
+    #legend.get_texts()[0].set_text("Sticky Actions Off")
+    #legend.get_texts()[1].set_text("Sticky Actions On")
     #g.add_legend()
 
     plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
@@ -121,43 +121,43 @@ if True:
 
 
 # human normalized median performance
-summary_scores = df.groupby(["ENV", "Step", compare_var, "SEED"], as_index=False).agg({"Reward": "mean"})
+ss = df.groupby(["ENV", "Step", compare_var], as_index=False).agg({"Reward": "mean"})
 """
 Create a new column by mapping env name to the sota dict, then convert this column of 
 tuples to seperate columns and rename.
 """
-summary_scores[["simple", "rainbow", "human", "random"]] = pd.DataFrame(summary_scores["ENV"].map(sota).tolist())
-summary_scores["reward_rnd_normed"] = summary_scores["Reward"] - summary_scores["random"]
-summary_scores["human_rnd_normed"] = summary_scores["human"] - summary_scores["random"]
-summary_scores["normalized_reward"] = summary_scores["reward_rnd_normed"] / summary_scores["human_rnd_normed"]
-hns = summary_scores.groupby(["Step", compare_var, "SEED"], as_index=False).agg(
-    {"normalized_reward": "median"})
 
-num_games = summary_scores["ENV"].nunique()
-hns[compare_var] = hns[compare_var].astype('category')
-num_lines = hns[compare_var].nunique()
-print(hns[compare_var])
-fig, ax = plt.subplots()
+ss[["simple", "rainbow", "human", "random"]] = pd.DataFrame(ss["ENV"].map(sota).tolist())
+ss["reward_rnd_normed"] = ss["Reward"] - ss["random"]
+ss["human_rnd_normed"] = ss["human"] - ss["random"]
+ss["normalized_reward"] = ss["reward_rnd_normed"] / ss["human_rnd_normed"]
+
+ss.to_csv("results/processed.csv")
+
+num_games = ss["ENV"].nunique()
+ss[compare_var] = ss[compare_var].astype('category')
+num_lines = ss[compare_var].nunique()
+
+plt.figure()
+sns.set(rc={'figure.figsize':(5,4)})
 sns.lineplot("Step",
              "normalized_reward",
-             ci=100,
-             estimator=np.mean,
-             data=hns,
-             linewidth=lw,
+             ci="sd",
+             estimator=np.median,
+             data=ss,
+             linewidth=1.25,
              hue=compare_var,
              palette=sns.color_palette("colorblind", num_lines),
-             label="AKR3",
-             ax=ax
              )
 plt.plot((0, max_frames), (0.161, 0.161), c="k", linewidth=lw, ls="--",
          label="Rainbow (DE)")
 plt.plot((0, max_frames), (0.098, 0.098), c="k", linewidth=lw, ls=":",
          label="SimPLe")
 plt.xlim(0, 8e4)
-
+plt.gcf().set_size_inches(6, 5)
 # Put a legend below current axis
-ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.10),
-          ncol=3)
+plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.10),
+          ncol=5)
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.ylabel("Median Human Normalized Reward")
 plt.yscale("linear")
