@@ -51,22 +51,24 @@ class KLT:
         w = self.gaus(dists, np.mean(dists))
 
         values_lists = [buffer.values_list[n] for n in neighbors]
-        pseudo_count = np.dot([len(e) for e in values_lists], w)/sum(w)
+        counts = [buffer.counts_list[n] for n in neighbors]
+        pseudo_count = np.average(counts, weights=w)
 
-        values_lists = values_lists[:8]
-        neighbors = neighbors[:8]
-        w = self.gaus(dists[:8], np.min(dists))
+        small_k = 8
+        values_lists = values_lists[:small_k]
+        neighbors = neighbors[:small_k]
+        dists = dists[:small_k]
+        w = self.gaus(dists, np.min(dists))
 
         times_lists = [buffer.times_list[n] for n in neighbors]
 
         v_over_time = []
         for times, values in zip(times_lists, values_lists):
             w_t = self.gaus(time - np.asarray(times), self.time_sig) + 0.01
-            val = np.dot(w_t, values) / np.sum(w_t)
+            val = np.average(values, weights=w_t)
             v_over_time.append(val)
 
-        w_sum = np.sum(w)
-        weighted_reward = np.dot(v_over_time, w) / w_sum
+        weighted_reward = np.average(v_over_time, weights=w)
 
         return weighted_reward, pseudo_count
 
@@ -120,6 +122,7 @@ class ActionBuffer:
                               random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
         self.times_list = []
+        self.counts_list = [] # could be computed from values or times list but quicker to keep explicit record
         self.length = 0
         self.states = []
         self.seed = seed
@@ -155,12 +158,14 @@ class ActionBuffer:
                 # existing state
                 self.values_list[idx].append(value)
                 self.times_list[idx].append(time)
+                self.counts_list[idx] += 1
                 return
 
         # Otherwise it's new
         self._tree.add_items(state)
         self.values_list.append([value])
         self.times_list.append([time])
+        self.counts_list.append(1)
         self.states.append(state)
         self.length += 1
 

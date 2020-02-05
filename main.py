@@ -36,7 +36,7 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": medium_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "K": 200,
     "DISCOUNT": 0.95,
@@ -187,5 +187,5 @@ if __name__ == "__main__":
     #main(all_configs[0])
     #exit()
 
-    with Pool(20) as p:
+    with Pool(18) as p:
         p.map(main, all_configs)
