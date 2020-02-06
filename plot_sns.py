@@ -107,9 +107,9 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "EXPLORE"
+compare_var = "K_ACT"
 #compare_var = 'STATE-DIM'
-#df = df[(df["STATE-DIM"] == 200)]
+df = df[(df["K_ACT"] != 32)]
 
 df.to_csv("results/df.csv")
 
@@ -118,12 +118,12 @@ max_frames = max(df["Step"])
 
 lw = 0.75
 
-if True:
+if False:
     print(df.to_string())
     g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
     g.set(xlim=(0, 8e4))
     try:
-        (g.map(sns.lineplot, "Step", "Reward", ci=90, estimator=np.mean, linewidth=lw, label="AKR2")).set_titles("{col_name}")
+        (g.map(sns.lineplot, "Step", "Reward", ci=90, estimator=np.mean, linewidth=lw, label="AKR2", alpha=0.5)).set_titles("{col_name}")
     except:
         (g.map(plt.plot, "Step", "Reward")).set_titles("{col_name}")
 
@@ -151,8 +151,8 @@ if True:
 
 
 # human normalized median performance
-#ss = df.groupby(["ENV", "Step", compare_var], as_index=False).agg({"Reward": "mean"})
-ss = df
+ss = df.groupby(["ENV", "Step", compare_var], as_index=False).mean()
+#ss = df
 print(ss[ss["Step"]==80_000])
 """
 Create a new column by mapping env name to the sota dict, then convert this column of 
@@ -175,12 +175,12 @@ sns.set_context("notebook")
 sns.set_style("ticks")
 sns.lineplot("Step",
              "normalized_reward",
-             ci=90,
+             ci=0,
              estimator=np.median,
              data=ss,
              linewidth=1.25,
-             #hue=compare_var,
-             #palette=sns.color_palette("colorblind", num_lines),
+             hue=compare_var,
+             palette=sns.color_palette("colorblind", num_lines),
              label="AKR2",
              )
 plt.plot((0, max_frames), (0.161, 0.161), c="k", linewidth=lw, ls="--",

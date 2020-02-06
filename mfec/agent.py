@@ -73,22 +73,18 @@ class MFECAgent:
             self.klt.estimate(state, action, time)
             for action in self.actions])
 
-        r_estimates = query_results[:, 0]
-        c_estimates = query_results[:, 1]
-
-        t_estimates = r_estimates + 1e-6/c_estimates
+        r_estimates = query_results
 
         if self.rs.random_sample() < self.epsilon:
             # Exploration
-#
-            probs=c_estimates
+            probs=r_estimates
             probs = probs / sum(probs)
 
             action = self.rs.choice(self.actions, p=probs)
         else:
             # Exploitation
             probs = np.zeros_like(self.actions)
-            probs[np.where(t_estimates == max(t_estimates))] = 1
+            probs[np.where(r_estimates == max(r_estimates))] = 1
             probs = probs / sum(probs)
             action = self.rs.choice(self.actions, p=probs)
 

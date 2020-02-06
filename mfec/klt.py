@@ -6,7 +6,6 @@ import numpy as np
 import umap
 
 
-
 class KLT:
     def __init__(self, actions, buffer_size, k_exp, k_act, state_dim, M, explore, time_sig, seed):
         self.buffer_size = buffer_size
@@ -21,7 +20,6 @@ class KLT:
                           ) for a in actions])
         self.k_exp = k_exp
         self.k_act = k_act
-
 
     def gaus(self, x, sig):
         # Goes to 0 in 2xsig
@@ -41,31 +39,23 @@ class KLT:
         for b in self.buffers:
             b.update_normalization(mins=mins, maxes=maxes)
 
-
     def estimate(self, state, action, time):
         """Return the estimated value of the given state"""
         buffer = self.buffers[action]
 
         n = buffer.length
         if n == 0:
-            return 1e6, 0.01
-        if self.explore:
-            k = min(self.k_exp, n)
-        else:
-            k = min(self.k_act, n)
+            return 1e6
+
+        k = min(self.k_act, n)
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
-        dists = np.sqrt(dists[0])+0.01
+        dists = np.sqrt(dists[0]) + 0.01
         w = self.laplace(dists, np.min(dists))
+        sum_w = np.sum(w)
 
-        counts = [buffer.counts_list[n] for n in neighbors]
-        pseudo_count = np.dot(counts, w)/np.sum(w)
-
-        small_k = self.k_act
-        neighbors = neighbors[:small_k]
         values_lists = [buffer.values_list[n] for n in neighbors]
         times_lists = [buffer.times_list[n] for n in neighbors]
-        w = w[:small_k]
 
         v_over_time = []
         for times, values in zip(times_lists, values_lists):
@@ -73,9 +63,8 @@ class KLT:
             val = np.dot(values, w_t)
             v_over_time.append(val)
 
-        weighted_reward = np.dot(v_over_time, w)/ np.sum(w)
-
-        return weighted_reward, pseudo_count
+        weighted_reward = np.dot(v_over_time, w) / sum_w
+        return weighted_reward
 
     def update(self, state, action, value, time):
         buffer = self.buffers[action]
@@ -127,7 +116,6 @@ class ActionBuffer:
                               random_seed=seed)
         self.values_list = []  # true values - this is the object that is updated.
         self.times_list = []
-        self.counts_list = [] # could be computed from values or times list but quicker to keep explicit record
         self.length = 0
         self.states = []
         self.seed = seed
@@ -163,14 +151,12 @@ class ActionBuffer:
                 # existing state
                 self.values_list[idx].append(value)
                 self.times_list[idx].append(time)
-                self.counts_list[idx] += 1
                 return
 
         # Otherwise it's new
         self._tree.add_items(state)
         self.values_list.append([value])
         self.times_list.append([time])
-        self.counts_list.append(1)
         self.states.append(state)
         self.length += 1
 
