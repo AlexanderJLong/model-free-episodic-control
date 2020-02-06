@@ -130,8 +130,8 @@ if True:
     for ax in g.axes.flat:
         env_name = ax.get_title()
         if env_name in sota:
-            ax.plot((0, max_frames), (sota[env_name][0], sota[env_name][0]), c="k", linewidth=1, ls=":",
-            label="SimPLe Baseline")
+            #ax.plot((0, max_frames), (sota[env_name][0], sota[env_name][0]), c="k", linewidth=1, ls=":",
+            #label="SimPLe Baseline")
             ax.plot((0, max_frames), (sota[env_name][1], sota[env_name][1]), c="k", linewidth=lw, ls="--",
                     label="DE-Rainbow Baseline")
 
@@ -152,7 +152,7 @@ if True:
 
 # human normalized median performance
 ss = df.groupby(["ENV", "Step", compare_var], as_index=False).agg({"Reward": "mean"})
-#ss = df
+print(ss[ss["Step"]==80_000])
 """
 Create a new column by mapping env name to the sota dict, then convert this column of 
 tuples to seperate columns and rename.

@@ -36,20 +36,20 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": small_env_list,
+    "ENV": env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "PROJECTION": "sparse",
     "EXPLORE": False,
     "K_EXP": 100,
-    "K_ACT": 5,
+    "K_ACT": 8,
     "DISCOUNT": 0.95,
     "EPSILON": 0,
     "EPS-DECAY": 0.1,
-    "STATE-DIM": 200,
+    "STATE-DIM": 250,
     "STICKY-ACTIONS": False,
     "FRAMESTACK": 2,
     "CLIP-REWARD": False,
-    "M": 15,
+    "M": 20,
     "TIME-SIG": 100,
     "SEED": list(range(5)),
 }
@@ -189,5 +189,5 @@ if __name__ == "__main__":
     #main(all_configs[0])
     #exit()
 
-    with Pool(18) as p:
+    with Pool(20) as p:
         p.map(main, all_configs)

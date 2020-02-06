@@ -41,6 +41,7 @@ class KLT:
         for b in self.buffers:
             b.update_normalization(mins=mins, maxes=maxes)
 
+
     def estimate(self, state, action, time):
         """Return the estimated value of the given state"""
         buffer = self.buffers[action]
@@ -55,10 +56,10 @@ class KLT:
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
         dists = np.sqrt(dists[0])+0.01
-        w = self.gaus(dists, np.min(dists)) + 0.01
+        w = self.laplace(dists, np.min(dists))
 
         counts = [buffer.counts_list[n] for n in neighbors]
-        pseudo_count = np.average(counts, weights=w)
+        pseudo_count = np.dot(counts, w)/np.sum(w)
 
         small_k = self.k_act
         neighbors = neighbors[:small_k]
@@ -68,11 +69,11 @@ class KLT:
 
         v_over_time = []
         for times, values in zip(times_lists, values_lists):
-            w_t = self.gaus(time - np.asarray(times), self.time_sig) + 0.01
-            val = np.average(values, weights=w_t)
+            w_t = self.laplace(time - np.asarray(times), self.time_sig) + 0.01
+            val = np.dot(values, w_t)
             v_over_time.append(val)
 
-        weighted_reward = np.average(v_over_time, weights=w)
+        weighted_reward = np.dot(v_over_time, w)/ np.sum(w)
 
         return weighted_reward, pseudo_count
 
