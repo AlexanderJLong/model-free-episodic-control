@@ -36,9 +36,12 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": medium_env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
-    "K": 200,
+    "PROJECTION": "sparse",
+    "EXPLORE": False,
+    "K_EXP": 100,
+    "K_ACT": 5,
     "DISCOUNT": 0.95,
     "EPSILON": 0,
     "EPS-DECAY": 0.1,
@@ -46,9 +49,7 @@ config = {
     "STICKY-ACTIONS": False,
     "FRAMESTACK": 2,
     "CLIP-REWARD": False,
-    "M": 25,
-    "B": 0,
-    "NORM-FREQ": 0,
+    "M": 15,
     "TIME-SIG": 100,
     "SEED": list(range(5)),
 }
@@ -97,7 +98,8 @@ def main(cfg):
     obv_dim = np.prod(env.reset().shape)
     agent = MFECAgent(
         buffer_size=cfg["ACTION-BUFFER-SIZE"],
-        k=cfg["K"],
+        k_exp=cfg["K_EXP"],
+        k_act=cfg["K_ACT"],
         discount=cfg["DISCOUNT"],
         epsilon=cfg["EPSILON"],
         observation_dim=obv_dim,
@@ -107,9 +109,9 @@ def main(cfg):
         epsilon_decay=cfg["EPS-DECAY"],
         clip_rewards=cfg["CLIP-REWARD"],
         M=cfg["M"],
-        B=cfg["B"],
         time_sig=cfg["TIME-SIG"],
-        norm_freq=cfg["NORM-FREQ"],
+        projection=cfg["PROJECTION"],
+        explore=cfg["EXPLORE"],
     )
 
     env.train()  # turn on episodic life

@@ -6,10 +6,12 @@ import numpy as np
 import umap
 
 
+
 class KLT:
-    def __init__(self, actions, buffer_size, k, state_dim, M, time_sig, seed):
+    def __init__(self, actions, buffer_size, k_exp, k_act, state_dim, M, explore, time_sig, seed):
         self.buffer_size = buffer_size
         self.time_sig = time_sig
+        self.explore = explore
         self.buffers = tuple(
             [ActionBuffer(n=a,
                           capacity=self.buffer_size,
@@ -17,7 +19,9 @@ class KLT:
                           M=M,
                           seed=seed,
                           ) for a in actions])
-        self.k = k
+        self.k_exp = k_exp
+        self.k_act = k_act
+
 
     def gaus(self, x, sig):
         # Goes to 0 in 2xsig
@@ -44,23 +48,23 @@ class KLT:
         n = buffer.length
         if n == 0:
             return 1e6, 0.01
-        k = min(self.k, n)
+        if self.explore:
+            k = min(self.k_exp, n)
+        else:
+            k = min(self.k_act, n)
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
-        dists = np.sqrt(dists[0]) + 0.01
-        w = self.gaus(dists, np.mean(dists))
+        dists = np.sqrt(dists[0])+0.01
+        w = self.gaus(dists, np.min(dists)) + 0.01
 
-        values_lists = [buffer.values_list[n] for n in neighbors]
         counts = [buffer.counts_list[n] for n in neighbors]
         pseudo_count = np.average(counts, weights=w)
 
-        small_k = 8
-        values_lists = values_lists[:small_k]
+        small_k = self.k_act
         neighbors = neighbors[:small_k]
-        dists = dists[:small_k]
-        w = self.gaus(dists, np.min(dists))
-
+        values_lists = [buffer.values_list[n] for n in neighbors]
         times_lists = [buffer.times_list[n] for n in neighbors]
+        w = w[:small_k]
 
         v_over_time = []
         for times, values in zip(times_lists, values_lists):

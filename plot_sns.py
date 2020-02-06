@@ -5,6 +5,34 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+sota= { #simple, rainbow, human, random
+"alien"               :( 616.9     ,739.9	        ,7127.7	     ,227.8	    ),
+"amidar"              :( 74.3      ,188.6	        ,1719.5	     ,5.8	    ),
+"assault"             :( 527.2     ,431.2	        ,742	     ,222.4	    ),
+"asterix"             :( 1128.3    ,470.8	        ,8503.3	     ,210	    ),
+"bank_heist"          :( 34.2      ,51	            ,753.1	     ,14.2	    ),
+"battle_zone"         :( 4031.2    ,10124.6         ,37187.5	 ,2360	    ),
+"boxing"              :( 7.8       ,0.2	            ,12.1	     ,0.1	    ),
+"breakout"            :( 16.4      ,1.9	            ,30.5	     ,1.7	    ),
+"chopper_command"     :( 979.4     ,861.8	        ,7387.8	     ,811	    ),
+"crazy_climber"       :( 62583.6   ,16185.3         ,35829.4	 ,10780.5   ),
+"demon_attack"        :( 208.1     ,508	            ,1971	     ,152.1	    ),
+"freeway"             :( 16.7      ,27.9	        ,29.6	     ,0	        ),
+"frostbite"           :( 236.9     ,866.8	        ,4334.7	     ,65.2	    ),
+"gopher"              :( 596.8     ,349.5	        ,2412.5	     ,257.6     ),
+"hero"                :( 2656.6    ,6857	        ,30826.4	 ,1027	    ),
+"jamesbond"           :( 100.5     ,301.6	        ,302.8	     ,29	    ),
+"kangaroo"            :( 51.2      ,779.3	        ,3035	     ,52	    ),
+"krull"               :( 2204.8    ,2851.5          ,2665.5	     ,1598	    ),
+"kung_fu_master"      :( 14862.5   ,14346.1         ,22736.3	 ,258.5     ),
+"ms_pacman"           :( 1480      ,1204.1          ,6951.6	     ,307.3	    ),
+"pong"                :( 12.8      ,-19.3	        ,14.6	     ,-20.7	    ),
+"private_eye"         :( 35        ,97.8	        ,69571.3	 ,24.9	    ),
+"qbert"               :( 1288.8    ,1152.9          ,13455	     ,163.9	    ),
+"road_runner"         :( 5640.6    ,9600	        ,7845	     ,11.5	    ),
+"seaquest"            :( 683.3     ,354.1	        ,42054.7	 ,68.4	    ),
+"up_n_down"           :( 3350.3    ,2877.4	        ,11693.2	 ,533.4	    ),
+}
 
 # simple, otrainbow at 100k, human, random
 sota = {
@@ -79,7 +107,7 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "B"
+compare_var = "EXPLORE"
 #compare_var = 'STATE-DIM'
 #df = df[(df["STATE-DIM"] == 200)]
 
@@ -102,26 +130,29 @@ if True:
     for ax in g.axes.flat:
         env_name = ax.get_title()
         if env_name in sota:
-            # ax.plot((0, max_frames), (sota[env_name][0], sota[env_name][0]), c="k", linewidth=1, ls=":",
-            # label="SimPLe")
+            ax.plot((0, max_frames), (sota[env_name][0], sota[env_name][0]), c="k", linewidth=1, ls=":",
+            label="SimPLe Baseline")
             ax.plot((0, max_frames), (sota[env_name][1], sota[env_name][1]), c="k", linewidth=lw, ls="--",
                     label="DE-Rainbow Baseline")
 
-    #lines = ax.get_legend_handles_labels()[1]
-    legend = plt.figlegend(loc="upper center", ncol=10, bbox_to_anchor=[0.5, 0.98], borderaxespad=0)
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    #plt.legend(by_label.values(), by_label.keys())
+    legend = plt.figlegend(handles=by_label.values(), labels=by_label.keys(), loc="upper center", ncol=10, bbox_to_anchor=[0.5, 0.98], borderaxespad=0)
     #legend.get_texts()[0].set_text("Sticky Actions Off")
     #legend.get_texts()[1].set_text("Sticky Actions On")
     #g.add_legend()
 
     plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
     # plt.show()
-    plt.subplots_adjust(top=0.8)
+    plt.subplots_adjust(top=0.9)
     plt.savefig(f"./plots/full_run.png")
     plt.savefig(f"./plots/full_run.pdf", format="pdf")
 
 
 # human normalized median performance
 ss = df.groupby(["ENV", "Step", compare_var], as_index=False).agg({"Reward": "mean"})
+#ss = df
 """
 Create a new column by mapping env name to the sota dict, then convert this column of 
 tuples to seperate columns and rename.
