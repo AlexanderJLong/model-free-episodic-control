@@ -94,11 +94,11 @@ small_env_list = [
 ]
 
 small_env_list2 = [
-    "alien",
-    "amidar",
-    "frostbite",
-    "breakout",
-     #"crazy_climber",
+    #"alien",
+    "qbert",
+    "krull",
+    "ms_pacman",
+     "hero",
 ]
 
 medium_env_list = [

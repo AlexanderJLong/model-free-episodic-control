@@ -113,7 +113,7 @@ compare_var = "EXPLORE"
 
 df.to_csv("results/df.csv")
 
-cols = min(num_envs, 4)
+cols = min(num_envs, 5)
 max_frames = max(df["Step"])
 
 lw = 0.75
@@ -123,7 +123,7 @@ if True:
     g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
     g.set(xlim=(0, 8e4))
     try:
-        (g.map(sns.lineplot, "Step", "Reward", ci=90, estimator=np.mean, linewidth=lw)).set_titles("{col_name}")
+        (g.map(sns.lineplot, "Step", "Reward", ci=90, estimator=np.mean, linewidth=lw, label="AKR2")).set_titles("{col_name}")
     except:
         (g.map(plt.plot, "Step", "Reward")).set_titles("{col_name}")
 
@@ -139,19 +139,20 @@ if True:
     by_label = dict(zip(labels, handles))
     #plt.legend(by_label.values(), by_label.keys())
     legend = plt.figlegend(handles=by_label.values(), labels=by_label.keys(), loc="upper center", ncol=10, bbox_to_anchor=[0.5, 0.98], borderaxespad=0)
-    #legend.get_texts()[0].set_text("Sticky Actions Off")
-    #legend.get_texts()[1].set_text("Sticky Actions On")
+    #legend.get_texts()[0].set_text("Sticky Actions On")
+    #legend.get_texts()[1].set_text("Sticky Actions Off")
     #g.add_legend()
-
+    plt.tight_layout()
     plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
     # plt.show()
-    plt.subplots_adjust(top=0.9)
+    plt.subplots_adjust(top=0.8)
     plt.savefig(f"./plots/full_run.png")
     plt.savefig(f"./plots/full_run.pdf", format="pdf")
 
 
 # human normalized median performance
-ss = df.groupby(["ENV", "Step", compare_var], as_index=False).agg({"Reward": "mean"})
+#ss = df.groupby(["ENV", "Step", compare_var], as_index=False).agg({"Reward": "mean"})
+ss = df
 print(ss[ss["Step"]==80_000])
 """
 Create a new column by mapping env name to the sota dict, then convert this column of 
@@ -159,9 +160,8 @@ tuples to seperate columns and rename.
 """
 
 ss[["simple", "rainbow", "human", "random"]] = pd.DataFrame(ss["ENV"].map(sota).tolist())
-ss["reward_rnd_normed"] = ss["Reward"] - ss["random"]
-ss["human_rnd_normed"] = ss["human"] - ss["random"]
-ss["normalized_reward"] = ss["reward_rnd_normed"] / ss["human_rnd_normed"]
+ss["normalized_reward"] = (ss["Reward"] - ss["random"]) / (ss["human"] - ss["random"])
+
 
 ss.to_csv("results/processed.csv")
 
@@ -171,27 +171,33 @@ num_lines = ss[compare_var].nunique()
 
 plt.figure()
 sns.set(rc={'figure.figsize':(5,4)})
+sns.set_context("notebook")
+sns.set_style("ticks")
 sns.lineplot("Step",
              "normalized_reward",
              ci=90,
              estimator=np.median,
              data=ss,
              linewidth=1.25,
-             hue=compare_var,
-             palette=sns.color_palette("colorblind", num_lines),
+             #hue=compare_var,
+             #palette=sns.color_palette("colorblind", num_lines),
+             label="AKR2",
              )
 plt.plot((0, max_frames), (0.161, 0.161), c="k", linewidth=lw, ls="--",
-         label="Rainbow (DE)")
+         label="DE-Rainbow")
 plt.plot((0, max_frames), (0.098, 0.098), c="k", linewidth=lw, ls=":",
          label="SimPLe")
 plt.xlim(0, 8e4)
 plt.gcf().set_size_inches(6, 5)
 # Put a legend below current axis
+#plt.legend(by_label.values(), by_label.keys())
 plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.10),
           ncol=5)
+plt.tight_layout()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.ylabel("Median Human Normalized Reward")
 plt.yscale("linear")
+plt.xlabel("Interactions")
 
 plt.savefig(f"./plots/mhns.png")
 plt.savefig(f"./plots/mhns.pdf", format="pdf")
