@@ -119,7 +119,7 @@ if True:
     g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
     g.set(xlim=(0, 8e4))
     try:
-        (g.map(sns.lineplot, "Step", "Reward", ci=90, estimator=np.mean, linewidth=lw, label="AKR2")).set_titles("{col_name}")
+        (g.map(sns.lineplot, "Step", "Reward", ci=0, estimator=np.mean, linewidth=lw, label="AKR2")).set_titles("{col_name}")
     except:
         (g.map(plt.plot, "Step", "Reward")).set_titles("{col_name}")
 
@@ -173,7 +173,7 @@ sns.set_context("notebook")
 sns.set_style("ticks")
 sns.lineplot("Step",
              "normalized_reward",
-             ci=90,
+             ci=0,
              estimator=np.median,
              data=ss,
              linewidth=1.5,

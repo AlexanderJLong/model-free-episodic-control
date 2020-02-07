@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-files = [("alpha_processed.csv", "TIME-SIG", "a)", "\u03B1"), ("ab_time_proc.csv", "TIME-SIG", "b)", "Interpolation"),
+files = [("ab_time_proc.csv", "TIME-SIG", "a)", "\u03B1"), ("ab_fit_proc.csv", "EXPLORE", "b)", "Interpolation"),
          ("alpha_processed.csv", "TIME-SIG", "c)", "Representation"), ]
 fig, ax = plt.subplots(1, len(files), sharey=True)
 sns.set(rc={'figure.figsize': (5, 4)})
@@ -65,5 +65,5 @@ plt.gcf().set_size_inches(12, 5)
 plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.17)
 #plt.tight_layout()
 plt.savefig(f"./plots/ablation.png")
-plt.savefig(f"./plots/ablatoin.pdf", format="pdf")
+plt.savefig(f"./plots/ablation.pdf", format="pdf")
 plt.show()
