@@ -1,8 +1,8 @@
 import pandas as pd
 
-ab_r = pd.read_csv("results/ab_rep_proc.csv")
-logr = pd.read_csv("results/processed.csv")
+ab_r = pd.read_csv("results/ab_time_proc.csv")
+akr2 = pd.read_csv("results/6_no_exp.csv")
+print(max(akr2["normalized_reward"]))
+akr2["TIME-SIG"] = "AKR2"
 
-ab_r = ab_r[(ab_r["PROJECTION"] != "sparse")]
-
-pd.concat([ab_r, logr]).to_csv("results/ab_new.csv")
+pd.concat([ab_r, akr2]).to_csv("results/new_time.csv")

@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-files = [("ab_time_proc.csv", "TIME-SIG", "a)", "\u03B1", "colorblind"),
-         ("ab_fit_proc.csv", "EXPLORE", "b)", "Interpolation", "colorblind"),
-         ("ab_rep_proc.csv", "PROJECTION", "c)", "Representation", "colorblind"), ]
+files = [("new_time.csv", "TIME-SIG", "a)", "\u03B1", "colorblind"),
+         ("new_fit.csv", "EXPLORE", "b)", "Interpolation", "colorblind"),
+         ("new_rep.csv", "PROJECTION", "c)", "Representation", "colorblind"), ]
 fig, ax = plt.subplots(1, len(files), sharey=True)
 sns.set(rc={'figure.figsize': (5, 4)})
 sns.set_context("notebook")
@@ -16,12 +16,18 @@ for f, ax in zip(files, ax):
     ss = pd.read_csv(f"./results/{f[0]}")
     ss = ss[["Step", "ENV", "normalized_reward", compare_var]]
     print(ss)
-    max_frames = 80_000
+    max_frames = 80_001
     num_games = ss["ENV"].nunique()
     ss[compare_var] = ss[compare_var].astype('category')
     ss = ss.groupby(["ENV", "Step", compare_var], as_index=False).mean()
     num_lines = ss[compare_var].nunique()
 
+    p = sns.color_palette(f[4], num_lines)
+    if f[1]=="TIME-SIG":
+        p[4] = (0,0,0)
+    else:
+        p.insert(0, (0, 0, 0))
+        p = p[:-1]
     g = sns.lineplot("Step",
                  "normalized_reward",
                  ci=0,
@@ -29,19 +35,17 @@ for f, ax in zip(files, ax):
                  data=ss,
                  linewidth=1.5,
                  hue=compare_var,
-                 palette=sns.color_palette(f[4], num_lines),
+                 palette=p,
                  ax=ax,
                  )
     ax.get_legend().get_texts()[0].set_text(f[3])
-    if f[1]=="PROJECTION":
-        ax.get_legend().get_texts()[1].set_text("downsampling")
+    #if f[1]=="PROJECTION":
+    #    ax.get_legend().get_texts()[1].set_text("downsampling")
 
     ax.plot((0, max_frames), (0.161, 0.161), c="k", linewidth=2, ls="--", )
     # label="DE-Rainbow")
     ax.plot((0, max_frames), (0.134, 0.134), c="k", linewidth=2, ls=":", )
     # label="SimPLe")
-    ax.plot((0, max_frames), (0.212, 0.212), c="k", linewidth=2, ls="-", )
-    # label="ARK2")
     ax.set_xlim(0, 8e4)
     ax.set_title(f[2], fontsize=11)
     ax.set_ylabel("Median Human Normalized Reward")
@@ -62,7 +66,6 @@ from matplotlib.lines import Line2D
 legend_elements = [
     Line2D([0], [0], color='k', lw=2, ls= "--", label='DE Rainbow'),
     Line2D([0], [0], color='k', lw=2, ls= ":", label='SimPLe'),
-    Line2D([0], [0], color='k', lw=2, ls= "-", label='AKR2'),
  ]
 
 plt.figlegend(handles=legend_elements, loc="lower center", ncol=3, bbox_to_anchor=[0.5, 0], borderaxespad=0)
