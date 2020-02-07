@@ -5,6 +5,7 @@ import numpy as np
 
 from mfec.klt import KLT
 from scipy.sparse import csr_matrix
+import cv2
 
 class MFECAgent:
     def __init__(
@@ -27,6 +28,8 @@ class MFECAgent:
     ):
         self.rs = np.random.RandomState(seed)
         self.actions = actions
+        if projection == "downsize": state_dimension=242
+        self.state_dim = state_dimension
         self.klt = KLT(actions=self.actions,
                        buffer_size=buffer_size,
                        k_exp=k_exp,
@@ -36,6 +39,7 @@ class MFECAgent:
                        time_sig=time_sig,
                        explore = explore,
                        seed=seed)
+        self.projection_type = projection
         self.projection = self.create_projection(state_dimension, observation_dim, projection)
         self.discount = discount
         self.epsilon = epsilon
@@ -49,25 +53,35 @@ class MFECAgent:
             self.clipper = lambda x: x
 
     def create_projection(self, F, D, projection):
-        if projection=="sparse":
-            s = np.sqrt(D)
-            A = np.zeros([F, D], dtype=np.int8)
-            for i in range(F):
-                for j in range(D):
-                    rand = self.rs.random_sample()
-                    if rand <= 1 / (2 * s):
-                        A[i][j] = 1
-                    elif rand < 1 / s:
-                        A[i][j] = -1
-            return csr_matrix(A)
-        elif projection=="gaussian":
+        if projection == "downsize" or projection =="sample":
+            return
+        elif projection == "gaussian":
             return self.rs.random_sample([F, D])
-        else:
-            raise ValueError("Invalid projection type. Options are 'gaussian' or 'sparse'")
+        elif projection=="very sparse":
+            s = np.sqrt(D)
+        elif projection=="very very sparse":
+            s = D/np.log(D)
+        elif projection == "sparse":
+            s = 3
+        A = np.zeros([F, D], dtype=np.int8)
+        for i in range(F):
+            for j in range(D):
+                rand = self.rs.random_sample()
+                if rand <= 1 / (2 * s):
+                    A[i][j] = 1
+                elif rand < 1 / s:
+                    A[i][j] = -1
+        return csr_matrix(A)
 
     def choose_action(self, observation, time):
         # state = self.transformer.transform(observation.reshape(1, -1))[0]
-        state = self.projection.dot(observation.flatten())
+        if self.projection_type == "downsize":
+            observation = np.transpose(observation, (1, 2, 0))
+            state = cv2.resize(observation, (11, 11), interpolation=cv2.INTER_AREA).flatten()
+        elif self.projection_type =="sample":
+            state = np.reshape(self.rs.choice(observation.flatten(), self.state_dim), (1, -1))
+        else:
+            state = self.projection.dot(observation.flatten())
 
         query_results = np.asarray([
             self.klt.estimate(state, action, time)
