@@ -22,7 +22,6 @@ for f, ax in zip(files, ax):
     ss = ss.groupby(["ENV", "Step", compare_var], as_index=False).mean()
     num_lines = ss[compare_var].nunique()
 
-
     g = sns.lineplot("Step",
                  "normalized_reward",
                  ci=0,
@@ -34,6 +33,9 @@ for f, ax in zip(files, ax):
                  ax=ax,
                  )
     ax.get_legend().get_texts()[0].set_text(f[3])
+    if f[1]=="PROJECTION":
+        ax.get_legend().get_texts()[1].set_text("downsampling")
+
     ax.plot((0, max_frames), (0.161, 0.161), c="k", linewidth=2, ls="--", )
     # label="DE-Rainbow")
     ax.plot((0, max_frames), (0.134, 0.134), c="k", linewidth=2, ls=":", )
@@ -64,7 +66,7 @@ legend_elements = [
  ]
 
 plt.figlegend(handles=legend_elements, loc="lower center", ncol=3, bbox_to_anchor=[0.5, 0], borderaxespad=0)
-plt.gcf().set_size_inches(12, 5)
+plt.gcf().set_size_inches(12, 5.3)
 plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.17)
 #plt.tight_layout()
 plt.savefig(f"./plots/ablation.png")

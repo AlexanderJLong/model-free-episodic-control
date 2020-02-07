@@ -54,14 +54,8 @@ class KLT:
         w = self.laplace(dists, np.min(dists))
         sum_w = np.sum(w)
 
-        values_lists = [buffer.values_list[n] for n in neighbors]
-        times_lists = [buffer.times_list[n] for n in neighbors]
+        v_over_time = [buffer.values_list[n][0] for n in neighbors]
 
-        v_over_time = []
-        for times, values in zip(times_lists, values_lists):
-            w_t = self.laplace(time - np.asarray(times), self.time_sig) + 0.01
-            val = np.dot(values, w_t)
-            v_over_time.append(val)
 
         weighted_reward = np.dot(v_over_time, w) / sum_w
         return weighted_reward
@@ -149,7 +143,7 @@ class ActionBuffer:
             dist = dist[0][0]
             if dist == 0:
                 # existing state
-                self.values_list[idx].append(value)
+                self.values_list[idx][0] = 0.7 * self.values_list[idx][0] + 0.3 * value
                 self.times_list[idx].append(time)
                 return
 
