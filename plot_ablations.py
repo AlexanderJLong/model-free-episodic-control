@@ -5,7 +5,7 @@ import seaborn as sns
 
 files = [("ab_time_proc.csv", "TIME-SIG", "a)", "\u03B1", "colorblind"),
          ("ab_fit_proc.csv", "EXPLORE", "b)", "Interpolation", "colorblind"),
-         ("ab_new.csv", "PROJECTION", "c)", "Representation", "colorblind"), ]
+         ("ab_rep_proc.csv", "PROJECTION", "c)", "Representation", "colorblind"), ]
 fig, ax = plt.subplots(1, len(files), sharey=True)
 sns.set(rc={'figure.figsize': (5, 4)})
 sns.set_context("notebook")
