@@ -52,7 +52,7 @@ class KLT:
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
         dists = np.sqrt(dists[0]) + 0.01
-        w = self.laplace(dists, np.min(dists))
+        w = self.laplace(dists, 1000)
         sum_w = np.sum(w)
 
         v_over_time = [buffer.values_list[n][0] for n in neighbors]

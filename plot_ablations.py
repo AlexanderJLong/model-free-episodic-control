@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-files = [("alpha_processed.csv", "TIME-SIG"), ("alpha_processed.csv", "TIME-SIG"),
+files = [("alpha_processed.csv", "TIME-SIG"), ("ab_time_proc.csv", "TIME-SIG"),
          ("alpha_processed.csv", "TIME-SIG"), ]
 fig, ax = plt.subplots(1, len(files), sharey=True)
 sns.set(rc={'figure.figsize': (5, 4)})
