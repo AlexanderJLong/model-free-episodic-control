@@ -107,9 +107,9 @@ df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
 df = df.apply(pd.to_numeric, errors='ignore')
 num_envs = df["ENV"].nunique()
 
-compare_var = "K_ACT"
+compare_var = "TIME-SIG"
 #compare_var = 'STATE-DIM'
-df = df[(df["K_ACT"] != 32)]
+#df = df[(df["K_ACT"] != 32)]
 
 df.to_csv("results/df.csv")
 
@@ -123,7 +123,7 @@ if False:
     g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
     g.set(xlim=(0, 8e4))
     try:
-        (g.map(sns.lineplot, "Step", "Reward", ci=90, estimator=np.mean, linewidth=lw, label="AKR2", alpha=0.5)).set_titles("{col_name}")
+        (g.map(sns.lineplot, "Step", "Reward", ci=0, estimator=np.mean, linewidth=lw, label="AKR2")).set_titles("{col_name}")
     except:
         (g.map(plt.plot, "Step", "Reward")).set_titles("{col_name}")
 
@@ -178,24 +178,27 @@ sns.lineplot("Step",
              ci=0,
              estimator=np.median,
              data=ss,
-             linewidth=1.25,
+             linewidth=1.5,
              hue=compare_var,
              palette=sns.color_palette("colorblind", num_lines),
-             label="AKR2",
+             #label="AKR2",
              )
-plt.plot((0, max_frames), (0.161, 0.161), c="k", linewidth=lw, ls="--",
-         label="DE-Rainbow")
-plt.plot((0, max_frames), (0.098, 0.098), c="k", linewidth=lw, ls=":",
-         label="SimPLe")
+plt.plot((0, max_frames), (0.161, 0.161), c="k", linewidth=2, ls="--",)
+         #label="DE-Rainbow")
+plt.plot((0, max_frames), (0.134, 0.134), c="k", linewidth=2, ls=":",)
+         #label="SimPLe")
+plt.plot((0, max_frames), (0.212, 0.212), c="k", linewidth=2, ls="-",)
+         #label="ARK2")
 plt.xlim(0, 8e4)
-plt.gcf().set_size_inches(6, 5)
+plt.gcf().set_size_inches(6, 6)
 # Put a legend below current axis
 #plt.legend(by_label.values(), by_label.keys())
-plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.10),
-          ncol=5)
+#plt.subplots_adjust(bottom=0.05)
+plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.20), ncol=5).texts[0].set_text("\u03B1")
 plt.tight_layout()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.ylabel("Median Human Normalized Reward")
+plt.title("Time-Sensitivity")
 plt.yscale("linear")
 plt.xlabel("Interactions")
 

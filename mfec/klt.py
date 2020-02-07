@@ -17,6 +17,7 @@ class KLT:
                           state_dim=state_dim,
                           M=M,
                           seed=seed,
+                          time_sig=time_sig,
                           ) for a in actions])
         self.k_exp = k_exp
         self.k_act = k_act
@@ -54,14 +55,14 @@ class KLT:
         w = self.laplace(dists, np.min(dists))
         sum_w = np.sum(w)
 
-        values_lists = [buffer.values_list[n] for n in neighbors]
-        times_lists = [buffer.times_list[n] for n in neighbors]
+        v_over_time = [buffer.values_list[n][0] for n in neighbors]
+        # times_lists = [buffer.times_list[n] for n in neighbors]
 
-        v_over_time = []
-        for times, values in zip(times_lists, values_lists):
-            w_t = self.laplace(time - np.asarray(times), self.time_sig) + 0.01
-            val = np.dot(values, w_t)
-            v_over_time.append(val)
+        # v_over_time = []
+        # for times, values in zip(times_lists, values_lists):
+        #    w_t = self.laplace(time - np.asarray(times), self.time_sig) + 0.01
+        #    val = np.dot(values, w_t)
+        #    v_over_time.append(val)
 
         weighted_reward = np.dot(v_over_time, w) / sum_w
         return weighted_reward
@@ -103,7 +104,7 @@ class KLT:
 
 
 class ActionBuffer:
-    def __init__(self, n, capacity, state_dim, M, seed):
+    def __init__(self, n, capacity, state_dim, M, time_sig, seed):
         self.id = n
         self.state_dim = state_dim
         self.capacity = capacity
@@ -119,6 +120,7 @@ class ActionBuffer:
         self.length = 0
         self.states = []
         self.seed = seed
+        self.a = time_sig
 
     def __getstate__(self):
         # pickle everything but the hnswlib indexes
@@ -149,14 +151,14 @@ class ActionBuffer:
             dist = dist[0][0]
             if dist == 0:
                 # existing state
-                self.values_list[idx].append(value)
-                self.times_list[idx].append(time)
+                self.values_list[idx][0] = (1 - self.a) * self.values_list[idx][0] + self.a * value
+                # self.times_list[idx].append(time)
                 return
 
         # Otherwise it's new
         self._tree.add_items(state)
         self.values_list.append([value])
-        self.times_list.append([time])
+        # self.times_list.append([time])
         self.states.append(state)
         self.length += 1
 

@@ -36,12 +36,12 @@ reward_history_len = 5  # At publication time should be 100.
 
 # SEED MUST BE LAST IN LIST
 config = {
-    "ENV": env_list,
+    "ENV": small_env_list,
     "ACTION-BUFFER-SIZE": total_steps,
     "PROJECTION": "sparse",
     "EXPLORE": False,
     "K_EXP": 100,
-    "K_ACT": [1, 8, 32, 64],
+    "K_ACT": 8,
     "DISCOUNT": 0.95,
     "EPSILON": 0,
     "EPS-DECAY": 0.1,
@@ -50,7 +50,7 @@ config = {
     "FRAMESTACK": 2,
     "CLIP-REWARD": False,
     "M": 20,
-    "TIME-SIG": 100,
+    "TIME-SIG": 0.3,
     "SEED": list(range(5)),
 }
 """Projection type:
