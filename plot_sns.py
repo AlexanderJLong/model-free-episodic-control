@@ -71,51 +71,44 @@ time, frames, episodes, reward_avg, reward_max
 filenames are: ..._K=1_SEED=1
  """
 
-# env_dirs = glob("./agents/*SEED=0*/")
-# envs = sorted(list(set([d.replace("=", ":").split(":")[1] for d in env_dirs])))
-# data = []
-# df = pd.DataFrame()
-# for i, env in enumerate(envs):
-#     data = []
-#     base_dirs = glob(f"./agents/ENV={env}*SEED=0*/")
-#     print(env)
-#     try:
-#         for bd in base_dirs:
-#             base_dir = bd[:-4]  # get current run 15and strip off the seed
-#             files = glob(base_dir + "*/results.csv")
-#             for f in files:
-#                 table = pd.read_csv(f, sep=',', header=0)
-#                 f = f.split("/")[-2]
-#
-#                 for param in f.split(":"):
-#                     if "=" in param:
-#                         p, v = param.split("=")
-#                         if p == "SEED":
-#                             print(f"seed {v}")
-#                         table.insert(len(table.columns), p, v)
-#                 df = pd.concat([df, table], ignore_index=True)
-#     except:
-#         continue
-#
-# sns.set_context("paper")
-# #sns.set(style="whitegrid")
-# #sns.despine()
-# #sns.set_palette("colorblind")
-#
-# df["SEED"] = pd.to_numeric(df["SEED"])
-# df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
-# df = df.apply(pd.to_numeric, errors='ignore')
-# num_envs = df["ENV"].nunique()
-#
-# compare_var = "TIME-SIG"
-# #compare_var = 'STATE-DIM'
-# #df = df[(df["K_ACT"] != 32)]
-#
-# df.to_csv("results/df.csv")
+env_dirs = glob("./agents/*SEED=0*/")
+envs = sorted(list(set([d.replace("=", ":").split(":")[1] for d in env_dirs])))
+data = []
+df = pd.DataFrame()
+for i, env in enumerate(envs):
+    data = []
+    base_dirs = glob(f"./agents/ENV={env}*SEED=0*/")
+    print(env)
+    try:
+        for bd in base_dirs:
+            base_dir = bd[:-4]  # get current run 15and strip off the seed
+            files = glob(base_dir + "*/results.csv")
+            for f in files:
+                table = pd.read_csv(f, sep=',', header=0)
+                f = f.split("/")[-2]
+                for param in f.split(":"):
+                    if "=" in param:
+                        p, v = param.split("=")
+                        if p == "SEED":
+                            print(f"seed {v}")
+                        table.insert(len(table.columns), p, v)
+                df = pd.concat([df, table], ignore_index=True)
+    except:
+        continue
+sns.set_context("paper")
+#sns.set(style="whitegrid")
+#sns.despine()
+#sns.set_palette("colorblind")
+df["SEED"] = pd.to_numeric(df["SEED"])
+df["STATE-DIM"] = pd.to_numeric(df["STATE-DIM"])
+df = df.apply(pd.to_numeric, errors='ignore')
+#compare_var = 'STATE-DIM'
+#df = df[(df["K_ACT"] != 32)]
+df.to_csv("results/df.csv")
 
-df = pd.read_csv("results/6_no_exp_full.csv")
+#df = pd.read_csv("results/6_no_exp_full.csv")
 num_envs = df["ENV"].nunique()
-compare_var = "TIME-SIG"
+compare_var = "EXPLORE"
 cols = min(num_envs, 5)
 max_frames = max(df["Step"])
 
@@ -126,7 +119,7 @@ if True:
     g = sns.FacetGrid(df, col="ENV", hue=compare_var, col_wrap=cols, sharey=False, )
     g.set(xlim=(0, 8e4))
     try:
-        (g.map(sns.lineplot, "Step", "Reward", ci=0, estimator=np.mean, linewidth=lw, label="AKR2")).set_titles("{col_name}")
+        (g.map(sns.lineplot, "Step", "Reward", ci=90, estimator=np.mean, linewidth=lw, label="AKR2")).set_titles("{col_name}")
     except:
         (g.map(plt.plot, "Step", "Reward")).set_titles("{col_name}")
 
@@ -180,7 +173,7 @@ sns.set_context("notebook")
 sns.set_style("ticks")
 sns.lineplot("Step",
              "normalized_reward",
-             ci=0,
+             ci=90,
              estimator=np.median,
              data=ss,
              linewidth=1.5,

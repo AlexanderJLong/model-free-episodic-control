@@ -11,6 +11,7 @@ class KLT:
         self.buffer_size = buffer_size
         self.time_sig = time_sig
         self.explore = explore
+        self.dist_sig = explore
         self.buffers = tuple(
             [ActionBuffer(n=a,
                           capacity=self.buffer_size,
@@ -52,10 +53,19 @@ class KLT:
         neighbors, dists = buffer.find_neighbors(state, k)
         neighbors = neighbors[0]
         dists = np.sqrt(dists[0]) + 0.01
-        w = self.laplace(dists, 1000)
-        sum_w = np.sum(w)
 
         v_over_time = [buffer.values_list[n][0] for n in neighbors]
+
+        if self.dist_sig =="mean":
+            weighted_reward = np.mean(v_over_time)
+        elif self.dist_sig=="best fixed":
+            w = self.laplace(dists, 110)+1e-6
+            sum_w = np.sum(w)
+            weighted_reward = np.dot(v_over_time, w) / sum_w
+        elif self.dist_sig == "inverse":
+            w = np.divide(1, dists+1e-6)
+            sum_w = np.sum(w)
+            weighted_reward = np.dot(v_over_time, w) / sum_w
         # times_lists = [buffer.times_list[n] for n in neighbors]
 
         # v_over_time = []
@@ -64,7 +74,6 @@ class KLT:
         #    val = np.dot(values, w_t)
         #    v_over_time.append(val)
 
-        weighted_reward = np.dot(v_over_time, w) / sum_w
         return weighted_reward
 
     def update(self, state, action, value, time):
